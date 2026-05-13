@@ -1967,6 +1967,23 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, user }) {
               {checkoutLoading ? "Redirigiendo…" : "Proceder al pago"}
             </button>
 
+            {/* Botón seguir viendo */}
+            <button
+              onClick={onClose}
+              style={{
+                width: "100%", padding: "12px",
+                background: "none", border: `1.5px solid ${CORAL}`,
+                color: CORAL, borderRadius: "28px",
+                fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", fontWeight: 600,
+                cursor: "pointer", transition: "background 0.15s, color 0.15s",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = CORAL_LIGHT; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
+            >
+              ← Seguir viendo
+            </button>
+
             {checkoutError && (
               <p style={{ textAlign: "center", fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: CORAL, marginTop: "-4px" }}>
                 {checkoutError}
