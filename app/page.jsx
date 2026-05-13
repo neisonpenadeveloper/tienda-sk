@@ -813,7 +813,7 @@ function AnnouncementBar() {
 }
 
 // ─── NAVBAR ───────────────────────────────────────────────────────────────────
-function Navbar({ cartCount, menuOpen, setMenuOpen, activeCategory, setActiveCategory, user, isAdmin, onLogin, onLogout, onPublish, onCartOpen, searchQuery, setSearchQuery }) {
+function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, setActiveCategory, user, isAdmin, onLogin, onLogout, onPublish, onCartOpen, searchQuery, setSearchQuery }) {
   const desktopInputRef = useRef(null);
   const mobileInputRef  = useRef(null);
 
@@ -911,15 +911,17 @@ function Navbar({ cartCount, menuOpen, setMenuOpen, activeCategory, setActiveCat
             </button>
             <button
               onClick={onCartOpen}
+              className={cartBounce ? "cart-bounce" : ""}
               style={{ position: "relative", background: "none", border: "none", cursor: "pointer", color: "#6B6560", padding: "8px" }}
             >
               <ShoppingBag size={18} />
               {cartCount > 0 && (
-                <span style={{
-                  position: "absolute", top: "2px", right: "2px",
+                <span className={cartBounce ? "badge-pop" : ""} style={{
+                  position: "absolute", top: "0px", right: "0px",
                   background: CORAL, color: "#fff", borderRadius: "50%",
-                  width: "16px", height: "16px", fontSize: "9px", fontWeight: 700,
+                  width: "18px", height: "18px", fontSize: "10px", fontWeight: 800,
                   display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 2px 6px rgba(37,99,235,0.4)",
                 }}>{cartCount}</span>
               )}
             </button>
@@ -2313,6 +2315,7 @@ export default function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [editingProduct, setEditingProduct]   = useState(null);
   const [showScrollTop, setShowScrollTop]     = useState(false);
+  const [cartBounce, setCartBounce]           = useState(false);
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -2424,7 +2427,8 @@ export default function App() {
       }
       return [...prev, { ...product, quantity: 1 }];
     });
-    setShowCart(true);
+    setCartBounce(true);
+    setTimeout(() => setCartBounce(false), 600);
   };
 
   const handleDeleteProduct = async (productId) => {
@@ -2479,6 +2483,21 @@ export default function App() {
         @media (max-width: 480px) {
           .grid-products { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
         }
+
+        /* ── Carrito: animaciones ── */
+        @keyframes cart-bounce {
+          0%   { transform: scale(1); }
+          30%  { transform: scale(1.35) rotate(-8deg); }
+          60%  { transform: scale(1.15) rotate(6deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        @keyframes badge-pop {
+          0%   { transform: scale(0.5); opacity: 0.5; }
+          60%  { transform: scale(1.4); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .cart-bounce { animation: cart-bounce 0.5s cubic-bezier(0.36,0.07,0.19,0.97); }
+        .badge-pop   { animation: badge-pop 0.4s cubic-bezier(0.36,0.07,0.19,0.97); }
 
         /* ── Keyframes ── */
         @keyframes float {
@@ -2613,6 +2632,7 @@ export default function App() {
       <div style={{ minHeight: "100vh", background: "#FAF7F4" }}>
         <Navbar
           cartCount={cartCount}
+          cartBounce={cartBounce}
           menuOpen={menuOpen}
           setMenuOpen={setMenuOpen}
           activeCategory={activeCategory}
