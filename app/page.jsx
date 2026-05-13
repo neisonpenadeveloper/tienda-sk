@@ -2460,7 +2460,7 @@ export default function App() {
           .grid-products { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         @media (max-width: 480px) {
-          .grid-products { grid-template-columns: 1fr; }
+          .grid-products { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
         }
 
         /* ── Keyframes ── */
