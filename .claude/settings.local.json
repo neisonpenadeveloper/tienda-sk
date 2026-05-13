@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(ls -Path \"D:\\\\TIENDA WEB\\\\tienda-sk\" | where {$_.PSIsContainer})",
+      "PowerShell(Get-ChildItem \"D:\\\\TIENDA WEB\\\\tienda-sk\" | Where-Object { $_.Name -ne \"node_modules\" } | Select-Object Name, PSIsContainer)",
+      "PowerShell($lines = \\(Get-Content \"D:\\\\TIENDA WEB\\\\tienda-sk\\\\app\\\\page.jsx\"\\).Count; Write-Output \"Total de líneas: $lines\")",
+      "PowerShell(Copy-Item *)",
+      "PowerShell(head *)",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\TIENDA WEB\\\\tienda-sk\" -Exclude node_modules -Recurse -File | Where-Object { $_.Extension -match '\\\\.\\(tsx?|jsx?|json\\)$' } | Select-Object FullName | Select-Object -First 50)",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\TIENDA WEB\\\\tienda-sk\" -Directory | Where-Object { $_.Name -ne 'node_modules' })",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\TIENDA WEB\\\\tienda-sk\\\\app\" -Recurse | Where-Object { $_.Extension -match '\\\\.\\(tsx|ts|jsx|js\\)$' } | Select-Object FullName)",
+      "PowerShell(Get-ChildItem -Path \"D:\\\\TIENDA WEB\\\\tienda-sk\\\\lib\" -Recurse | Where-Object { $_.Extension -match '\\\\.\\(tsx|ts|jsx|js\\)$' } | Select-Object FullName)",
+      "PowerShell(\\(Get-Content \"D:\\\\TIENDA WEB\\\\tienda-sk\\\\app\\\\page.jsx\" | Measure-Object -Line\\).Lines)"
+    ]
+  }
+}
