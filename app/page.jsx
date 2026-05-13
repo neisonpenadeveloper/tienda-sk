@@ -1813,9 +1813,17 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, user }) {
           </div>
           <button
             onClick={onClose}
-            style={{ background: "#F5F0EA", border: "none", borderRadius: "50%", width: "36px", height: "36px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+            style={{
+              background: CORAL, color: "#fff", border: "none",
+              borderRadius: "20px", padding: "7px 16px",
+              fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 700,
+              cursor: "pointer", display: "flex", alignItems: "center", gap: "6px",
+              boxShadow: "0 3px 10px rgba(37,99,235,0.3)", transition: "opacity 0.15s",
+            }}
+            onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+            onMouseLeave={e => e.currentTarget.style.opacity = "1"}
           >
-            <X size={16} />
+            <X size={13} /> Cerrar
           </button>
         </div>
 
