@@ -1693,7 +1693,8 @@ function CartItem({ item, onRemove, onUpdateQty }) {
             </span>
             <button
               onClick={() => onUpdateQty(item.id, item.quantity + 1)}
-              style={{ width: "30px", height: "30px", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6B6560" }}
+              disabled={item.stock != null && item.quantity >= item.stock}
+              style={{ width: "30px", height: "30px", background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", color: "#6B6560", cursor: item.stock != null && item.quantity >= item.stock ? "not-allowed" : "pointer", opacity: item.stock != null && item.quantity >= item.stock ? 0.3 : 1 }}
             >
               <Plus size={12} />
             </button>
@@ -2405,6 +2406,7 @@ export default function App() {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
+        if (product.stock != null && existing.quantity >= product.stock) return prev;
         return prev.map(item =>
           item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
         );
@@ -2431,7 +2433,11 @@ export default function App() {
   const handleUpdateQty = (productId, newQty) => {
     if (newQty <= 0) { handleRemoveFromCart(productId); return; }
     setCart(prev =>
-      prev.map(item => item.id === productId ? { ...item, quantity: newQty } : item)
+      prev.map(item => {
+        if (item.id !== productId) return item;
+        const max = item.stock != null ? item.stock : newQty;
+        return { ...item, quantity: Math.min(newQty, max) };
+      })
     );
   };
 
