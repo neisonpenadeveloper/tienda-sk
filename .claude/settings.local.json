@@ -10,7 +10,9 @@
       "PowerShell(Get-ChildItem -Path \"D:\\\\TIENDA WEB\\\\tienda-sk\" -Directory | Where-Object { $_.Name -ne 'node_modules' })",
       "PowerShell(Get-ChildItem -Path \"D:\\\\TIENDA WEB\\\\tienda-sk\\\\app\" -Recurse | Where-Object { $_.Extension -match '\\\\.\\(tsx|ts|jsx|js\\)$' } | Select-Object FullName)",
       "PowerShell(Get-ChildItem -Path \"D:\\\\TIENDA WEB\\\\tienda-sk\\\\lib\" -Recurse | Where-Object { $_.Extension -match '\\\\.\\(tsx|ts|jsx|js\\)$' } | Select-Object FullName)",
-      "PowerShell(\\(Get-Content \"D:\\\\TIENDA WEB\\\\tienda-sk\\\\app\\\\page.jsx\" | Measure-Object -Line\\).Lines)"
+      "PowerShell(\\(Get-Content \"D:\\\\TIENDA WEB\\\\tienda-sk\\\\app\\\\page.jsx\" | Measure-Object -Line\\).Lines)",
+      "PowerShell(git *)",
+      "Skill(update-config)"
     ]
   }
 }

@@ -1279,7 +1279,7 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
       className="product-card"
       style={{ background: "#fff", borderRadius: "18px", overflow: "hidden", border: "1px solid #EDE8E2" }}
     >
-      <div style={{ background: product.images?.length > 0 ? "#F5F0EA" : (product.color || "#F5F0EA"), height: "210px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", fontSize: "64px", overflow: "hidden" }}>
+      <div className="pc-img-wrap" style={{ background: product.images?.length > 0 ? "#F5F0EA" : (product.color || "#F5F0EA"), height: "210px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", fontSize: "64px", overflow: "hidden" }}>
         {product.images?.length > 0 ? (
           <img src={product.images[0]} alt={product.name} className="pc-img" />
         ) : (
@@ -1315,7 +1315,7 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
         </button>
       </div>
 
-      <div style={{ padding: "16px" }}>
+      <div className="pc-body" style={{ padding: "16px" }}>
         {product.rating != null && (
           <div className="flex items-center gap-1" style={{ marginBottom: "6px" }}>
             <Star size={12} fill="#F5A623" color="#F5A623" />
@@ -1354,13 +1354,13 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
           </div>
         )}
 
-        <div className="flex items-center justify-between">
-          <div>
-            <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", fontWeight: 800, color: product.oldPrice ? CORAL : "#1A1A1A" }}>
+        <div className="pc-price-row">
+          <div className="pc-prices">
+            <span className="pc-price" style={{ fontFamily: "var(--font-roboto), sans-serif", fontWeight: 800, color: product.oldPrice ? CORAL : "#1A1A1A" }}>
               {fmt(product.price)}
             </span>
             {product.oldPrice && (
-              <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#9B948E", textDecoration: "line-through", marginLeft: "6px" }}>
+              <span className="pc-old-price" style={{ fontFamily: "var(--font-roboto), sans-serif", color: "#9B948E", textDecoration: "line-through", marginLeft: "6px" }}>
                 {fmt(product.oldPrice)}
               </span>
             )}
@@ -1368,12 +1368,12 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
           <button
             onClick={handleAdd}
             disabled={product.stock === 0}
+            className="pc-add-btn"
             style={{
               background: product.stock === 0 ? "#E0DAD3" : added ? "#2D7A4F" : CORAL,
               color: product.stock === 0 ? "#9B948E" : "#fff",
               border: "none", borderRadius: "20px",
-              padding: "7px 14px",
-              fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 700,
+              fontFamily: "var(--font-roboto), sans-serif", fontWeight: 700,
               cursor: product.stock === 0 ? "not-allowed" : "pointer",
               transition: "background 0.25s ease", whiteSpace: "nowrap",
             }}
@@ -2519,6 +2519,21 @@ export default function App() {
         .product-card {
           transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.28s ease;
           cursor: pointer;
+        }
+        .pc-price-row {
+          display: flex; align-items: center; justify-content: space-between;
+        }
+        .pc-price { font-size: 16px; }
+        .pc-old-price { font-size: 12px; }
+        .pc-add-btn { padding: 7px 14px; font-size: 12px; }
+        @media (max-width: 480px) {
+          .pc-img-wrap { height: 130px !important; font-size: 40px !important; }
+          .pc-body { padding: 10px !important; }
+          .pc-price-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+          .pc-prices { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px; }
+          .pc-price { font-size: 13px; }
+          .pc-old-price { font-size: 11px; margin-left: 0 !important; }
+          .pc-add-btn { width: 100%; text-align: center; padding: 6px 8px; font-size: 11px; }
         }
         .product-card:hover {
           transform: translateY(-8px) scale(1.01);
