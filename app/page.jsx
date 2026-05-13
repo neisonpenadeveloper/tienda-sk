@@ -1451,19 +1451,30 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
 function Banner() {
   return (
     <div style={{
-      background: "linear-gradient(120deg, #1A1A1A 0%, #2D2925 100%)",
-      borderRadius: "20px", padding: "40px 48px",
+      background: "#1A1A1A",
+      borderRadius: "20px", padding: "14px 24px",
       display: "flex", alignItems: "center", justifyContent: "space-between",
-      gap: "24px", flexWrap: "wrap", margin: "48px 0",
+      gap: "12px", flexWrap: "wrap", margin: "48px 0",
     }}>
-      <div>
-        <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#9B948E", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "8px" }}>
-          Envío gratis
-        </p>
-        <h2 style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "28px", fontWeight: 800, color: "#F5F0EA", lineHeight: 1.2, letterSpacing: "-0.5px" }}>
-          En compras mayores<br />a $70.000 COP
-        </h2>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <Truck size={16} color="#9B948E" />
+        <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 600, color: "#F5F0EA" }}>
+          Envío gratis en compras mayores a $70.000 COP
+        </span>
       </div>
+      <button
+        style={{
+          background: CORAL, color: "#fff", border: "none",
+          borderRadius: "20px", padding: "7px 18px",
+          fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600,
+          cursor: "pointer", display: "flex", alignItems: "center", gap: "6px",
+          boxShadow: "0 3px 10px rgba(37,99,235,0.3)", transition: "opacity 0.15s",
+        }}
+        onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+        onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+      >
+        Aprovechar oferta <ArrowRight size={12} />
+      </button>
     </div>
   );
 }
@@ -2739,22 +2750,6 @@ export default function App() {
         </main>
 
         <Footer>
-          <div style={{ display: "flex", justifyContent: "center", padding: "16px 0 8px" }}>
-            <button
-              style={{
-                background: CORAL, color: "#fff", border: "none",
-                borderRadius: "20px", padding: "7px 18px",
-                fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600,
-                cursor: "pointer", display: "flex", alignItems: "center", gap: "6px",
-                transition: "opacity 0.15s",
-                boxShadow: "0 3px 10px rgba(37,99,235,0.3)",
-              }}
-              onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-            >
-              Aprovechar oferta <ArrowRight size={12} />
-            </button>
-          </div>
           <AnnouncementBar />
         </Footer>
 
