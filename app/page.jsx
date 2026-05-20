@@ -2822,35 +2822,6 @@ export default function App() {
                 </svg>
               </button>
             )}
-            {/* Botón WhatsApp */}
-            <a
-              href="https://wa.me/573225306651"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Escríbenos por WhatsApp"
-              style={{
-                position: "fixed", bottom: "24px", left: "24px", zIndex: 800,
-                width: "52px", height: "52px", borderRadius: "50%",
-                background: "#25D366",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: "0 4px 20px rgba(37,211,102,0.45)",
-                transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                textDecoration: "none",
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.transform = "scale(1.12)";
-                e.currentTarget.style.boxShadow = "0 6px 28px rgba(37,211,102,0.65)";
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.transform = "scale(1)";
-                e.currentTarget.style.boxShadow = "0 4px 20px rgba(37,211,102,0.45)";
-              }}
-            >
-              <svg width="28" height="28" viewBox="0 0 32 32" fill="#fff" xmlns="http://www.w3.org/2000/svg">
-                <path d="M16 3C9.373 3 4 8.373 4 15c0 2.385.668 4.61 1.832 6.51L4 29l7.695-1.81A12.94 12.94 0 0016 28c6.627 0 12-5.373 12-12S22.627 3 16 3zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10a10.94 10.94 0 01-5.29-1.358l-.37-.215-4.57 1.075 1.1-4.46-.23-.385A9.953 9.953 0 016 15C6 9.477 10.477 5 16 5zm-3.17 5.5c-.22 0-.576.082-.878.41-.303.327-1.155 1.13-1.155 2.755s1.182 3.196 1.347 3.417c.165.22 2.32 3.726 5.724 5.075 2.843 1.12 3.405.9 4.02.845.613-.056 1.98-.81 2.26-1.593.28-.782.28-1.453.196-1.593-.083-.14-.303-.22-.634-.385-.33-.165-1.98-.978-2.286-1.09-.303-.11-.524-.165-.744.165-.22.33-.854 1.09-1.046 1.31-.193.22-.385.248-.716.083-.33-.165-1.394-.514-2.654-1.638-.98-.875-1.64-1.956-1.833-2.286-.192-.33-.02-.508.145-.672.148-.148.33-.385.495-.578.165-.193.22-.33.33-.55.11-.22.055-.413-.028-.578-.082-.165-.738-1.797-1.018-2.458-.27-.644-.544-.556-.744-.556z"/>
-              </svg>
-            </a>
-
             <a
               href="https://www.facebook.com/profile.php?id=61567143641146"
               target="_blank"
@@ -2880,6 +2851,35 @@ export default function App() {
             </a>
           </div>
         )}
+
+        {/* Botón WhatsApp — siempre visible, incluso en móvil */}
+        <a
+          href="https://wa.me/573225306651"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Escríbenos por WhatsApp"
+          style={{
+            position: "fixed", bottom: "24px", left: "24px", zIndex: 900,
+            width: "56px", height: "56px", borderRadius: "50%",
+            background: "#25D366",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 20px rgba(37,211,102,0.5)",
+            transition: "transform 0.2s ease, box-shadow 0.2s ease",
+            textDecoration: "none",
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = "scale(1.12)";
+            e.currentTarget.style.boxShadow = "0 6px 28px rgba(37,211,102,0.7)";
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = "scale(1)";
+            e.currentTarget.style.boxShadow = "0 4px 20px rgba(37,211,102,0.5)";
+          }}
+        >
+          <svg width="30" height="30" viewBox="0 0 32 32" fill="#fff" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 3C9.373 3 4 8.373 4 15c0 2.385.668 4.61 1.832 6.51L4 29l7.695-1.81A12.94 12.94 0 0016 28c6.627 0 12-5.373 12-12S22.627 3 16 3zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10a10.94 10.94 0 01-5.29-1.358l-.37-.215-4.57 1.075 1.1-4.46-.23-.385A9.953 9.953 0 016 15C6 9.477 10.477 5 16 5zm-3.17 5.5c-.22 0-.576.082-.878.41-.303.327-1.155 1.13-1.155 2.755s1.182 3.196 1.347 3.417c.165.22 2.32 3.726 5.724 5.075 2.843 1.12 3.405.9 4.02.845.613-.056 1.98-.81 2.26-1.593.28-.782.28-1.453.196-1.593-.083-.14-.303-.22-.634-.385-.33-.165-1.98-.978-2.286-1.09-.303-.11-.524-.165-.744.165-.22.33-.854 1.09-1.046 1.31-.193.22-.385.248-.716.083-.33-.165-1.394-.514-2.654-1.638-.98-.875-1.64-1.956-1.833-2.286-.192-.33-.02-.508.145-.672.148-.148.33-.385.495-.578.165-.193.22-.33.33-.55.11-.22.055-.413-.028-.578-.082-.165-.738-1.797-1.018-2.458-.27-.644-.544-.556-.744-.556z"/>
+          </svg>
+        </a>
       </div>
     </>
   );
