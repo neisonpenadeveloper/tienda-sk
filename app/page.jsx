@@ -1730,6 +1730,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, user }) {
   const [couponInput, setCouponInput]         = useState("");
   const [couponError, setCouponError]         = useState("");
   const [appliedCoupon, setAppliedCoupon]     = useState(null); // { code, pct }
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
 
   const handleApplyCoupon = () => {
     const code = couponInput.trim().toUpperCase();
@@ -1782,6 +1783,18 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, user }) {
   const fmtCOP     = n => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
   const FREE_SHIP  = 70000;
   const progress   = Math.min((total / FREE_SHIP) * 100, 100);
+
+  const buildWhatsAppUrl = () => {
+    const lines = cart.map(item =>
+      `• ${item.quantity}x ${item.name} — ${fmtCOP(item.price * item.quantity)}`
+    ).join("\n");
+    let msg = `Hola! 👋 Quiero realizar un pedido en Tienda S&K:\n\n${lines}`;
+    if (appliedCoupon) {
+      msg += `\n\nCupón: ${appliedCoupon.code} (-${appliedCoupon.pct}%)\nDescuento: -${fmtCOP(discount)}`;
+    }
+    msg += `\n\n*Total: ${fmtCOP(total)}*`;
+    return `https://wa.me/573225306651?text=${encodeURIComponent(msg)}`;
+  };
 
   return (
     <>
@@ -1948,23 +1961,22 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, user }) {
 
             {/* Botón de pago */}
             <button
-              onClick={handleCheckout}
-              disabled={checkoutLoading}
+              onClick={() => setShowWhatsAppModal(true)}
               style={{
                 width: "100%", padding: "16px",
-                background: checkoutLoading ? "#c97060" : CORAL,
+                background: CORAL,
                 color: "#fff", border: "none", borderRadius: "28px",
                 fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px", fontWeight: 700,
-                cursor: checkoutLoading ? "not-allowed" : "pointer",
+                cursor: "pointer",
                 transition: "opacity 0.15s",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: "9px",
                 boxShadow: "0 8px 24px rgba(37,99,235,0.35)",
               }}
-              onMouseEnter={e => { if (!checkoutLoading) e.currentTarget.style.opacity = "0.9"; }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = "0.9"; }}
               onMouseLeave={e => e.currentTarget.style.opacity = "1"}
             >
               <ShoppingBag size={18} />
-              {checkoutLoading ? "Redirigiendo…" : "Proceder al pago"}
+              Proceder al pago
             </button>
 
             {/* Botón seguir viendo */}
@@ -1993,6 +2005,71 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, user }) {
             <p style={{ textAlign: "center", fontFamily: "var(--font-roboto), sans-serif", fontSize: "11.5px", color: "#9B948E" }}>
               🔒 Pago 100% seguro y encriptado
             </p>
+          </div>
+        )}
+
+        {/* Modal aviso pagos en proceso */}
+        {showWhatsAppModal && (
+          <div style={{
+            position: "absolute", inset: 0, zIndex: 20,
+            background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "24px",
+          }}>
+            <div style={{
+              background: "#fff", borderRadius: "24px",
+              padding: "36px 28px 28px", maxWidth: "360px", width: "100%",
+              textAlign: "center", boxShadow: "0 24px 60px rgba(0,0,0,0.2)",
+              animation: "fadeInUp 0.25s ease",
+            }}>
+              <div style={{ fontSize: "48px", marginBottom: "16px" }}>💬</div>
+              <h3 style={{
+                fontFamily: "var(--font-roboto), sans-serif", fontSize: "18px",
+                fontWeight: 800, color: "#1A1A1A", margin: "0 0 12px",
+              }}>
+                Pagos en línea en proceso
+              </h3>
+              <p style={{
+                fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px",
+                color: "#6B6560", lineHeight: 1.6, margin: "0 0 28px",
+              }}>
+                Los pagos en línea están en proceso. Por el momento puedes realizar tus pagos por medio de{" "}
+                <strong style={{ color: "#25D366" }}>WhatsApp</strong> con uno de nuestros asesores.
+              </p>
+              <a
+                href={buildWhatsAppUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: "block", textDecoration: "none", marginBottom: "12px" }}
+              >
+                <button style={{
+                  width: "100%", padding: "15px",
+                  background: "#25D366", color: "#fff", border: "none",
+                  borderRadius: "28px", fontSize: "15px", fontWeight: 700,
+                  fontFamily: "var(--font-roboto), sans-serif",
+                  cursor: "pointer", display: "flex", alignItems: "center",
+                  justifyContent: "center", gap: "10px",
+                  boxShadow: "0 6px 20px rgba(37,211,102,0.4)",
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 32 32" fill="#fff" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 3C9.373 3 4 8.373 4 15c0 2.385.668 4.61 1.832 6.51L4 29l7.695-1.81A12.94 12.94 0 0016 28c6.627 0 12-5.373 12-12S22.627 3 16 3zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10a10.94 10.94 0 01-5.29-1.358l-.37-.215-4.57 1.075 1.1-4.46-.23-.385A9.953 9.953 0 016 15C6 9.477 10.477 5 16 5zm-3.17 5.5c-.22 0-.576.082-.878.41-.303.327-1.155 1.13-1.155 2.755s1.182 3.196 1.347 3.417c.165.22 2.32 3.726 5.724 5.075 2.843 1.12 3.405.9 4.02.845.613-.056 1.98-.81 2.26-1.593.28-.782.28-1.453.196-1.593-.083-.14-.303-.22-.634-.385-.33-.165-1.98-.978-2.286-1.09-.303-.11-.524-.165-.744.165-.22.33-.854 1.09-1.046 1.31-.193.22-.385.248-.716.083-.33-.165-1.394-.514-2.654-1.638-.98-.875-1.64-1.956-1.833-2.286-.192-.33-.02-.508.145-.672.148-.148.33-.385.495-.578.165-.193.22-.33.33-.55.11-.22.055-.413-.028-.578-.082-.165-.738-1.797-1.018-2.458-.27-.644-.544-.556-.744-.556z"/>
+                  </svg>
+                  Continuar por WhatsApp
+                </button>
+              </a>
+              <button
+                onClick={() => setShowWhatsAppModal(false)}
+                style={{
+                  width: "100%", padding: "13px",
+                  background: "transparent", color: "#9B948E",
+                  border: "1.5px solid #E8E3DE", borderRadius: "28px",
+                  fontSize: "14px", fontWeight: 600,
+                  fontFamily: "var(--font-roboto), sans-serif", cursor: "pointer",
+                }}
+              >
+                Volver al carrito
+              </button>
+            </div>
           </div>
         )}
       </div>
