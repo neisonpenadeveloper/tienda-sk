@@ -1603,9 +1603,9 @@ function ProductCarousel({ products, onSelect }) {
         </div>
         <div
           ref={outerRef}
-          style={{ overflow: "hidden", cursor: isDragging ? "grabbing" : "grab", userSelect: "none" }}
+          style={{ overflow: "hidden", cursor: isDragging ? "grabbing" : "grab", userSelect: "none", touchAction: "pan-x" }}
           onTouchStart={e => onDragStart(e.touches[0].clientX)}
-          onTouchMove={e => { e.preventDefault(); onDragMove(e.touches[0].clientX); }}
+          onTouchMove={e => onDragMove(e.touches[0].clientX)}
           onTouchEnd={onDragEnd}
           onMouseDown={e => { e.preventDefault(); onDragStart(e.clientX); }}
           onMouseMove={e => { if (isDragging) onDragMove(e.clientX); }}
