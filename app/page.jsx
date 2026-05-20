@@ -2859,7 +2859,7 @@ export default function App() {
           rel="noopener noreferrer"
           title="Escríbenos por WhatsApp"
           style={{
-            position: "fixed", bottom: "24px", left: "24px", zIndex: 900,
+            position: "fixed", bottom: "88px", right: "24px", zIndex: 900,
             width: "56px", height: "56px", borderRadius: "50%",
             background: "#25D366",
             display: "flex", alignItems: "center", justifyContent: "center",
