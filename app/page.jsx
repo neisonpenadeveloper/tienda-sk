@@ -1450,7 +1450,7 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
 }
 
 // ─── PROMO BANNER ─────────────────────────────────────────────────────────────
-function Banner() {
+function Banner({ onOferta }) {
   return (
     <div style={{
       background: "#1A1A1A",
@@ -1465,6 +1465,7 @@ function Banner() {
         </span>
       </div>
       <button
+        onClick={onOferta}
         style={{
           background: CORAL, color: "#fff", border: "none",
           borderRadius: "20px", padding: "7px 18px",
@@ -2503,6 +2504,7 @@ export default function App() {
       );
     }
     if (activeCategory === "favoritos") return wishlist.includes(p.id);
+    if (activeCategory === "ofertas")   return p.oldPrice != null && p.oldPrice > p.price;
     return activeCategory === "all" || p.category === activeCategory;
   });
 
@@ -2827,6 +2829,7 @@ export default function App() {
               <h2 style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "30px", fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.5px" }}>
                 {searchQuery.trim()
                   ? <>Resultados para <span style={{ color: CORAL }}>"{searchQuery.trim()}"</span></>
+                  : activeCategory === "ofertas" ? <><span style={{ color: CORAL }}>🔥</span> Ofertas especiales</>
                   : activeCategory === "all" ? "Todos los productos" : CATEGORIES.find(c => c.id === activeCategory)?.label
                 }
               </h2>
@@ -2890,7 +2893,10 @@ export default function App() {
             </div>
           )}
 
-          <Banner />
+          <Banner onOferta={() => {
+            setActiveCategory("ofertas");
+            setTimeout(() => document.getElementById("productos")?.scrollIntoView({ behavior: "smooth" }), 50);
+          }} />
         </main>
 
         <Footer>
