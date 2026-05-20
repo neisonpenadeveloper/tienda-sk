@@ -2806,7 +2806,7 @@ export default function App() {
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
                 title="Volver arriba"
                 style={{
-                  position: "fixed", bottom: "86px", right: "24px", zIndex: 800,
+                  position: "fixed", bottom: "156px", right: "24px", zIndex: 800,
                   width: "48px", height: "48px", borderRadius: "50%",
                   background: CORAL, border: "none", cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
