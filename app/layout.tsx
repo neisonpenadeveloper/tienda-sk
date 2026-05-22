@@ -17,8 +17,7 @@ const exo2 = Exo_2({
 });
 
 const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ??
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://project-dcnli.vercel.app");
+  process.env.NEXT_PUBLIC_APP_URL ?? "https://tiendasyk.store";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
