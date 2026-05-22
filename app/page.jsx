@@ -70,7 +70,7 @@ function PublishModal({ user, onClose, onPublished }) {
   const [form, setForm] = useState({
     name: "",
     description: "",
-    specs: "",
+    specifications: "",
     price: "",
     oldPrice: "",
     stock: "",
@@ -175,7 +175,7 @@ function PublishModal({ user, onClose, onPublished }) {
         user_id:     user.id,
         name:        form.name,
         description: form.description,
-        specs:       form.specs || null,
+        specifications: form.specifications || null,
         price:       Number(form.price),
         old_price:   form.oldPrice ? Number(form.oldPrice) : null,
         stock:       Number(form.stock),
@@ -289,7 +289,7 @@ function PublishModal({ user, onClose, onPublished }) {
             <div>
               <label style={labelStyle}>Especificaciones</label>
               <textarea
-                name="specs" value={form.specs} onChange={handleChange}
+                name="specifications" value={form.specifications} onChange={handleChange}
                 placeholder="Material: plástico&#10;Dimensiones: 30x20x10 cm&#10;Peso: 500g&#10;Color: blanco"
                 rows={4}
                 maxLength={1000}
@@ -466,7 +466,7 @@ function EditModal({ product, user, onClose, onSaved }) {
   const [form, setForm] = useState({
     name:        product.name        || "",
     description: product.description || "",
-    specs:       product.specs       || "",
+    specifications: product.specifications || "",
     price:       String(product.price    || ""),
     oldPrice:    String(product.oldPrice || ""),
     stock:       String(product.stock    ?? ""),
@@ -550,7 +550,7 @@ function EditModal({ product, user, onClose, onSaved }) {
         .update({
           name:        form.name,
           description: form.description,
-          specs:       form.specs || null,
+          specifications: form.specifications || null,
           price,
           old_price:   form.oldPrice ? Number(form.oldPrice) : null,
           stock,
@@ -643,7 +643,7 @@ function EditModal({ product, user, onClose, onSaved }) {
             {/* Especificaciones */}
             <div>
               <label style={labelStyle}>Especificaciones</label>
-              <textarea name="specs" value={form.specs} onChange={handleChange}
+              <textarea name="specifications" value={form.specifications} onChange={handleChange}
                 rows={4} placeholder="Material: plástico&#10;Dimensiones: 30x20x10 cm&#10;Peso: 500g"
                 maxLength={1000}
                 style={{ ...inputStyle, resize: "vertical", minHeight: "80px" }} />
@@ -2328,7 +2328,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
 
             {activeTab === "especificaciones" && (
               <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: "#5A5A5A", lineHeight: 1.75, margin: 0, whiteSpace: "pre-line" }}>
-                {product.specs || "Este producto aún no tiene especificaciones."}
+                {product.specifications || "Este producto aún no tiene especificaciones."}
               </p>
             )}
 
