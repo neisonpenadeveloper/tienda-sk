@@ -2084,6 +2084,20 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const [added, setAdded]                 = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shared, setShared]               = useState(false);
+  const [isMobile, setIsMobile]           = useState(false);
+  const [contentScroll, setContentScroll] = useState(0);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const IMG_MAX     = 230;
+  const COLLAPSE_PX = 160;
+  const imgH        = isMobile ? Math.max(0, IMG_MAX - (contentScroll / COLLAPSE_PX) * IMG_MAX) : null;
+  const imgOpacity  = isMobile ? Math.max(0, 1 - contentScroll / (COLLAPSE_PX * 0.65)) : 1;
 
   const isOwner = !!user && ADMIN_EMAILS.has(user.email);
   const imgs    = product.images?.length > 0 ? product.images : null;
@@ -2115,17 +2129,23 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
         position: "fixed", inset: 0, zIndex: 500,
         background: "rgba(15,15,15,0.65)",
         backdropFilter: "blur(6px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "16px",
+        display: "flex",
+        alignItems: isMobile ? "flex-end" : "center",
+        justifyContent: "center",
+        padding: isMobile ? 0 : "16px",
       }}
     >
       <div
         className="modal-inner"
         style={{
-          background: "#fff", borderRadius: "24px",
+          background: "#fff",
+          borderRadius: isMobile ? "20px 20px 0 0" : "24px",
           width: "100%", maxWidth: "880px",
-          maxHeight: "92vh", overflowY: "auto",
-          display: "flex", position: "relative",
+          maxHeight: isMobile ? "96vh" : "92vh",
+          overflowY: isMobile ? "hidden" : "auto",
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          position: "relative",
           boxShadow: "0 40px 100px rgba(0,0,0,0.28)",
         }}
       >
@@ -2147,17 +2167,26 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
         <div
           className="modal-gallery"
           style={{
-            flex: "0 0 48%", padding: "24px",
-            display: "flex", flexDirection: "column", gap: "12px",
-            background: "#FAF7F4", borderRadius: "24px 0 0 24px",
+            flex: isMobile ? "none" : "0 0 48%",
+            height: isMobile ? imgH : undefined,
+            overflow: "hidden",
+            transition: "height 0.06s linear",
+            padding: isMobile ? (imgH > 20 ? "12px 16px 8px" : "0") : "24px",
+            display: "flex", flexDirection: "column", gap: "8px",
+            background: "#FAF7F4",
+            borderRadius: isMobile ? "20px 20px 0 0" : "24px 0 0 24px",
+            flexShrink: 0,
+            opacity: isMobile ? imgOpacity : 1,
           }}
         >
           <div style={{
-            borderRadius: "16px", overflow: "hidden",
-            height: "340px", flexShrink: 0,
+            borderRadius: "12px", overflow: "hidden",
+            height: isMobile ? "100%" : "340px",
+            minHeight: isMobile ? 0 : undefined,
+            flexShrink: 0, flex: isMobile ? 1 : undefined,
             display: "flex", alignItems: "center", justifyContent: "center",
             background: imgs ? "#fff" : (product.color || "#F5F0EA"),
-            fontSize: "96px", border: "1px solid #EDE8E2",
+            fontSize: isMobile ? "72px" : "96px", border: "1px solid #EDE8E2",
           }}>
             {imgs ? (
               <img src={imgs[selectedImg]} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -2187,11 +2216,15 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
         </div>
 
         {/* ── Info ── */}
-        <div style={{
-          flex: 1, padding: "36px 32px",
-          display: "flex", flexDirection: "column", gap: "18px",
-          overflowY: "auto",
-        }}>
+        <div
+          onScroll={(e) => isMobile && setContentScroll(e.currentTarget.scrollTop)}
+          style={{
+            flex: 1,
+            padding: isMobile ? "20px 20px 100px" : "36px 32px",
+            display: "flex", flexDirection: "column", gap: "18px",
+            overflowY: "auto",
+          }}
+        >
           {product.badge && (
             <span style={{
               display: "inline-block", width: "fit-content",
