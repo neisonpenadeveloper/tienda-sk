@@ -2093,6 +2093,11 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
   const isOwner = !!user && ADMIN_EMAILS.has(user.email);
   const imgs    = product.images?.length > 0 ? product.images : null;
   const savings = product.oldPrice ? product.oldPrice - product.price : 0;
@@ -2137,6 +2142,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
           width: "100%", maxWidth: "880px",
           maxHeight: isMobile ? "96vh" : "92vh",
           overflowY: "auto",
+          WebkitOverflowScrolling: "touch",
           display: "flex",
           flexDirection: isMobile ? "column" : "row",
           position: "relative",
