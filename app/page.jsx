@@ -70,6 +70,7 @@ function PublishModal({ user, onClose, onPublished }) {
   const [form, setForm] = useState({
     name: "",
     description: "",
+    specs: "",
     price: "",
     oldPrice: "",
     stock: "",
@@ -174,6 +175,7 @@ function PublishModal({ user, onClose, onPublished }) {
         user_id:     user.id,
         name:        form.name,
         description: form.description,
+        specs:       form.specs || null,
         price:       Number(form.price),
         old_price:   form.oldPrice ? Number(form.oldPrice) : null,
         stock:       Number(form.stock),
@@ -278,6 +280,18 @@ function PublishModal({ user, onClose, onPublished }) {
                 name="description" value={form.description} onChange={handleChange}
                 placeholder="Describe tu producto, materiales, dimensiones, etc."
                 rows={3}
+                maxLength={1000}
+                style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
+              />
+            </div>
+
+            {/* Especificaciones */}
+            <div>
+              <label style={labelStyle}>Especificaciones</label>
+              <textarea
+                name="specs" value={form.specs} onChange={handleChange}
+                placeholder="Material: plástico&#10;Dimensiones: 30x20x10 cm&#10;Peso: 500g&#10;Color: blanco"
+                rows={4}
                 maxLength={1000}
                 style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
               />
@@ -452,6 +466,7 @@ function EditModal({ product, user, onClose, onSaved }) {
   const [form, setForm] = useState({
     name:        product.name        || "",
     description: product.description || "",
+    specs:       product.specs       || "",
     price:       String(product.price    || ""),
     oldPrice:    String(product.oldPrice || ""),
     stock:       String(product.stock    ?? ""),
@@ -535,6 +550,7 @@ function EditModal({ product, user, onClose, onSaved }) {
         .update({
           name:        form.name,
           description: form.description,
+          specs:       form.specs || null,
           price,
           old_price:   form.oldPrice ? Number(form.oldPrice) : null,
           stock,
@@ -621,6 +637,15 @@ function EditModal({ product, user, onClose, onSaved }) {
               <label style={labelStyle}>Descripción</label>
               <textarea name="description" value={form.description} onChange={handleChange}
                 rows={3} placeholder="Describe el producto..."
+                style={{ ...inputStyle, resize: "vertical", minHeight: "80px" }} />
+            </div>
+
+            {/* Especificaciones */}
+            <div>
+              <label style={labelStyle}>Especificaciones</label>
+              <textarea name="specs" value={form.specs} onChange={handleChange}
+                rows={4} placeholder="Material: plástico&#10;Dimensiones: 30x20x10 cm&#10;Peso: 500g"
+                maxLength={1000}
                 style={{ ...inputStyle, resize: "vertical", minHeight: "80px" }} />
             </div>
 
@@ -2269,11 +2294,11 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
             )}
           </div>
 
-          {/* ── Tabs descripción / especificaciones ── */}
+          {/* ── Tabs descripción / especificaciones / resumen ── */}
           <div>
             <div style={{ display: "flex", borderBottom: "2px solid #EDE8E2", marginBottom: "14px" }}>
-              {["descripcion", "especificaciones"].map((tab) => {
-                const label = tab === "descripcion" ? "Descripción" : "Especificaciones";
+              {["descripcion", "especificaciones", "resumen"].map((tab) => {
+                const label = tab === "descripcion" ? "Descripción" : tab === "especificaciones" ? "Especificaciones" : "Resumen";
                 const active = activeTab === tab;
                 return (
                   <button
@@ -2302,6 +2327,12 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
             )}
 
             {activeTab === "especificaciones" && (
+              <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: "#5A5A5A", lineHeight: 1.75, margin: 0, whiteSpace: "pre-line" }}>
+                {product.specs || "Este producto aún no tiene especificaciones."}
+              </p>
+            )}
+
+            {activeTab === "resumen" && (
               <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
                 {[
                   { label: "Categoría",      value: product.category || "General" },
