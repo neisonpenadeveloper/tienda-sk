@@ -2914,7 +2914,7 @@ export default function App() {
           <PublishModal
             user={user}
             onClose={() => setShowPublish(false)}
-            onPublished={fetchProducts}
+            onPublished={() => setTimeout(fetchProducts, 800)}
           />
         )}
 
