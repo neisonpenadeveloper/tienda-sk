@@ -2094,10 +2094,10 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  const IMG_MAX     = 230;
-  const COLLAPSE_PX = 160;
-  const imgH        = isMobile ? Math.max(0, IMG_MAX - (contentScroll / COLLAPSE_PX) * IMG_MAX) : null;
-  const imgOpacity  = isMobile ? Math.max(0, 1 - contentScroll / (COLLAPSE_PX * 0.65)) : 1;
+  const IMG_MAX     = 300;
+  const COLLAPSE_PX = 200;
+  const imgH        = isMobile ? Math.max(0, IMG_MAX - (contentScroll / COLLAPSE_PX) * IMG_MAX) : 340;
+  const imgOpacity  = isMobile ? Math.max(0, 1 - contentScroll / (COLLAPSE_PX * 0.7)) : 1;
 
   const isOwner = !!user && ADMIN_EMAILS.has(user.email);
   const imgs    = product.images?.length > 0 ? product.images : null;
@@ -2168,22 +2168,20 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
           className="modal-gallery"
           style={{
             flex: isMobile ? "none" : "0 0 48%",
-            height: isMobile ? imgH : undefined,
             overflow: "hidden",
-            transition: "height 0.06s linear",
-            padding: isMobile ? (imgH > 20 ? "12px 16px 8px" : "0") : "24px",
+            padding: isMobile ? "12px 16px 8px" : "24px",
             display: "flex", flexDirection: "column", gap: "8px",
             background: "#FAF7F4",
             borderRadius: isMobile ? "20px 20px 0 0" : "24px 0 0 24px",
             flexShrink: 0,
-            opacity: isMobile ? imgOpacity : 1,
           }}
         >
           <div style={{
             borderRadius: "12px", overflow: "hidden",
-            height: isMobile ? "100%" : "340px",
-            minHeight: isMobile ? 0 : undefined,
-            flexShrink: 0, flex: isMobile ? 1 : undefined,
+            height: imgH,
+            flexShrink: 0,
+            transition: "height 0.07s linear, opacity 0.07s linear",
+            opacity: imgOpacity,
             display: "flex", alignItems: "center", justifyContent: "center",
             background: imgs ? "#fff" : (product.color || "#F5F0EA"),
             fontSize: isMobile ? "72px" : "96px", border: "1px solid #EDE8E2",
