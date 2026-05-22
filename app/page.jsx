@@ -2168,7 +2168,6 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
           className="modal-gallery"
           style={{
             flex: isMobile ? "none" : "0 0 48%",
-            overflow: "hidden",
             padding: isMobile ? "12px 16px 8px" : "24px",
             display: "flex", flexDirection: "column", gap: "8px",
             background: "#FAF7F4",
@@ -2187,14 +2186,14 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
             fontSize: isMobile ? "72px" : "96px", border: "1px solid #EDE8E2",
           }}>
             {imgs ? (
-              <img src={imgs[selectedImg]} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src={imgs[selectedImg]} alt={product.name} style={{ width: "100%", height: "100%", objectFit: isMobile ? "contain" : "cover" }} />
             ) : (
               <span style={{ filter: "drop-shadow(0 8px 20px rgba(0,0,0,0.14))" }}>{product.emoji}</span>
             )}
           </div>
 
           {imgs && imgs.length > 1 && (
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <div style={{ display: isMobile && imgH < 60 ? "none" : "flex", gap: "8px", flexWrap: "wrap", opacity: imgOpacity, transition: "opacity 0.07s" }}>
               {imgs.map((src, i) => (
                 <button
                   key={i}
