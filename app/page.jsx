@@ -2592,17 +2592,18 @@ export default function App() {
 
   const displayProducts = dbProducts.length > 0
     ? dbProducts.map(p => ({
-        id:          p.id,
-        category:    p.category,
-        name:        p.name,
-        price:       p.price,
-        oldPrice:    p.old_price ?? null,
-        badge:       p.badge,
-        images:      p.images ?? [],
-        description: p.description,
-        stock:       p.stock,
-        user_id:     p.user_id,
-        created_at:  p.created_at,
+        id:             p.id,
+        category:       p.category,
+        name:           p.name,
+        price:          p.price,
+        oldPrice:       p.old_price ?? null,
+        badge:          p.badge,
+        images:         p.images ?? [],
+        description:    p.description,
+        specifications: p.specifications ?? null,
+        stock:          p.stock,
+        user_id:        p.user_id,
+        created_at:     p.created_at,
       }))
     : PRODUCTS;
 
