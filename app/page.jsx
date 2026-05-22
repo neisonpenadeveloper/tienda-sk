@@ -2084,8 +2084,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const [added, setAdded]                 = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shared, setShared]               = useState(false);
-  const [isMobile, setIsMobile]           = useState(false);
-  const [contentScroll, setContentScroll] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 640);
@@ -2093,11 +2092,6 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
-
-  const IMG_MAX     = 300;
-  const COLLAPSE_PX = 200;
-  const imgH        = isMobile ? Math.max(0, IMG_MAX - (contentScroll / COLLAPSE_PX) * IMG_MAX) : 340;
-  const imgOpacity  = isMobile ? Math.max(0, 1 - contentScroll / (COLLAPSE_PX * 0.7)) : 1;
 
   const isOwner = !!user && ADMIN_EMAILS.has(user.email);
   const imgs    = product.images?.length > 0 ? product.images : null;
@@ -2142,7 +2136,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
           borderRadius: isMobile ? "20px 20px 0 0" : "24px",
           width: "100%", maxWidth: "880px",
           maxHeight: isMobile ? "96vh" : "92vh",
-          overflowY: isMobile ? "hidden" : "auto",
+          overflowY: "auto",
           display: "flex",
           flexDirection: isMobile ? "column" : "row",
           position: "relative",
@@ -2168,32 +2162,30 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
           className="modal-gallery"
           style={{
             flex: isMobile ? "none" : "0 0 48%",
-            padding: isMobile ? "12px 16px 8px" : "24px",
-            display: "flex", flexDirection: "column", gap: "8px",
+            padding: isMobile ? "16px" : "24px",
+            display: "flex", flexDirection: "column", gap: "10px",
             background: "#FAF7F4",
             borderRadius: isMobile ? "20px 20px 0 0" : "24px 0 0 24px",
             flexShrink: 0,
           }}
         >
           <div style={{
-            borderRadius: "12px", overflow: "hidden",
-            height: imgH,
+            borderRadius: "16px", overflow: "hidden",
+            height: isMobile ? 260 : 340,
             flexShrink: 0,
-            transition: "height 0.07s linear, opacity 0.07s linear",
-            opacity: imgOpacity,
             display: "flex", alignItems: "center", justifyContent: "center",
             background: imgs ? "#fff" : (product.color || "#F5F0EA"),
-            fontSize: isMobile ? "72px" : "96px", border: "1px solid #EDE8E2",
+            fontSize: isMobile ? "80px" : "96px", border: "1px solid #EDE8E2",
           }}>
             {imgs ? (
-              <img src={imgs[selectedImg]} alt={product.name} style={{ width: "100%", height: "100%", objectFit: isMobile ? "contain" : "cover" }} />
+              <img src={imgs[selectedImg]} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
             ) : (
               <span style={{ filter: "drop-shadow(0 8px 20px rgba(0,0,0,0.14))" }}>{product.emoji}</span>
             )}
           </div>
 
           {imgs && imgs.length > 1 && (
-            <div style={{ display: isMobile && imgH < 60 ? "none" : "flex", gap: "8px", flexWrap: "wrap", opacity: imgOpacity, transition: "opacity 0.07s" }}>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               {imgs.map((src, i) => (
                 <button
                   key={i}
@@ -2214,12 +2206,10 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
 
         {/* ── Info ── */}
         <div
-          onScroll={(e) => isMobile && setContentScroll(e.currentTarget.scrollTop)}
           style={{
             flex: 1,
-            padding: isMobile ? "20px 20px 100px" : "36px 32px",
+            padding: isMobile ? "20px 20px 32px" : "36px 32px",
             display: "flex", flexDirection: "column", gap: "18px",
-            overflowY: "auto",
           }}
         >
           {product.badge && (
