@@ -2085,6 +2085,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shared, setShared]               = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [activeTab, setActiveTab]         = useState("descripcion");
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 640);
@@ -2268,11 +2269,66 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
             )}
           </div>
 
-          {product.description && (
-            <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: "#5A5A5A", lineHeight: 1.75, margin: 0 }}>
-              {product.description}
-            </p>
-          )}
+          {/* ── Tabs descripción / especificaciones ── */}
+          <div>
+            <div style={{ display: "flex", borderBottom: "2px solid #EDE8E2", marginBottom: "14px" }}>
+              {["descripcion", "especificaciones"].map((tab) => {
+                const label = tab === "descripcion" ? "Descripción" : "Especificaciones";
+                const active = activeTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    style={{
+                      fontFamily: "var(--font-roboto), sans-serif",
+                      fontSize: "13px", fontWeight: active ? 700 : 500,
+                      color: active ? CORAL : "#9B948E",
+                      background: "none", border: "none", cursor: "pointer",
+                      padding: "8px 16px 10px",
+                      borderBottom: active ? `2.5px solid ${CORAL}` : "2.5px solid transparent",
+                      marginBottom: "-2px", transition: "all 0.15s",
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {activeTab === "descripcion" && (
+              <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: "#5A5A5A", lineHeight: 1.75, margin: 0 }}>
+                {product.description || "Este producto no tiene descripción."}
+              </p>
+            )}
+
+            {activeTab === "especificaciones" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+                {[
+                  { label: "Categoría",      value: product.category || "General" },
+                  { label: "Precio",         value: fmt(product.price) },
+                  ...(product.oldPrice ? [{ label: "Precio anterior", value: fmt(product.oldPrice) }] : []),
+                  { label: "Disponibilidad", value: product.stock > 5 ? "En stock" : product.stock > 0 ? `Solo ${product.stock} disponibles` : "Agotado" },
+                  { label: "Garantía",       value: "30 días" },
+                  { label: "Envío gratis",   value: "En compras mayores a $70.000" },
+                ].map(({ label, value }, i) => (
+                  <div
+                    key={label}
+                    style={{
+                      display: "flex", justifyContent: "space-between", alignItems: "center",
+                      padding: "10px 0",
+                      borderBottom: "1px solid #F0EBE5",
+                      background: i % 2 === 0 ? "transparent" : "#FAF7F4",
+                      borderRadius: "4px", paddingLeft: i % 2 !== 0 ? "8px" : "0",
+                      paddingRight: i % 2 !== 0 ? "8px" : "0",
+                    }}
+                  >
+                    <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", color: "#9B948E", fontWeight: 500 }}>{label}</span>
+                    <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", color: "#1A1A1A", fontWeight: 600, textAlign: "right", maxWidth: "55%" }}>{value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {product.stock > 0 && product.stock < 5 && (
             <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "#FFF0EE", borderRadius: "12px", padding: "11px 16px" }}>
