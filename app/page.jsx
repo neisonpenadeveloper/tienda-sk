@@ -870,10 +870,18 @@ function AnnouncementBar() {
 function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, setActiveCategory, user, isAdmin, onLogin, onLogout, onPublish, onCartOpen, searchQuery, setSearchQuery }) {
   const desktopInputRef = useRef(null);
   const mobileInputRef  = useRef(null);
+  const [showNavAll, setShowNavAll] = useState(false);
+  const navDropRef = useRef(null);
 
   const focusSearch = () => {
     desktopInputRef.current?.focus() || mobileInputRef.current?.focus();
   };
+
+  useEffect(() => {
+    const handler = e => { if (navDropRef.current && !navDropRef.current.contains(e.target)) setShowNavAll(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   return (
     <header style={{ borderBottom: "1px solid #EDE8E2", background: "#fff" }} className="sticky top-0 z-50">
@@ -910,6 +918,71 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
                 </button>
               );
             })}
+
+            {/* Dropdown: Todas las categorías */}
+            <div ref={navDropRef} style={{ position: "relative" }}>
+              {(() => {
+                const isExtraActive = EXTRA_CATEGORIES.some(c => c.id === activeCategory);
+                return (
+                  <>
+                    <button
+                      onClick={() => setShowNavAll(v => !v)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: "6px",
+                        fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px",
+                        fontWeight: isExtraActive ? 700 : 500,
+                        color: isExtraActive ? "#fff" : "#4A4A4A",
+                        background: isExtraActive ? CORAL : "transparent",
+                        border: "none", borderRadius: "20px",
+                        padding: "7px 18px", cursor: "pointer",
+                        transition: "all 0.18s ease",
+                      }}
+                    >
+                      <LayoutGrid size={14} />
+                      Todas
+                      <ChevronDown size={12} style={{ transition: "transform 0.2s", transform: showNavAll ? "rotate(180deg)" : "rotate(0deg)" }} />
+                    </button>
+
+                    {showNavAll && (
+                      <div style={{
+                        position: "absolute", top: "calc(100% + 8px)", left: 0, zIndex: 300,
+                        background: "#fff", borderRadius: "16px",
+                        boxShadow: "0 8px 32px rgba(0,0,0,0.13)",
+                        border: "1px solid #E8E4DF",
+                        padding: "10px",
+                        display: "grid", gridTemplateColumns: "1fr 1fr",
+                        gap: "6px", minWidth: "270px",
+                      }}>
+                        {EXTRA_CATEGORIES.map(cat => {
+                          const Icon = cat.icon;
+                          const isActive = activeCategory === cat.id;
+                          return (
+                            <button
+                              key={cat.id}
+                              onClick={() => { setActiveCategory(cat.id); setShowNavAll(false); }}
+                              style={{
+                                display: "flex", alignItems: "center", gap: "8px",
+                                padding: "10px 14px", borderRadius: "10px", border: "none",
+                                background: isActive ? `linear-gradient(135deg, ${CORAL}, #ff6b52)` : "#F8FAFC",
+                                color: isActive ? "#fff" : "#334155",
+                                fontFamily: "var(--font-roboto), sans-serif",
+                                fontSize: "13px", fontWeight: isActive ? 700 : 500,
+                                cursor: "pointer", textAlign: "left", transition: "background 0.15s",
+                              }}
+                              onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "#EEF2FF"; }}
+                              onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "#F8FAFC"; }}
+                            >
+                              <Icon size={15} />
+                              {cat.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
           </nav>
 
           {/* Buscador siempre visible */}
@@ -1118,7 +1191,7 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
               </div>
             </div>
 
-            {CATEGORIES.map((cat) => (
+            {ALL_CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => { setActiveCategory(cat.id); setMenuOpen(false); }}
