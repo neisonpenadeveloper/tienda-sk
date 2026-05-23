@@ -867,7 +867,7 @@ function AnnouncementBar() {
 }
 
 // ─── NAVBAR ───────────────────────────────────────────────────────────────────
-function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, setActiveCategory, user, isAdmin, onLogin, onLogout, onPublish, onUncategorized, onCartOpen, searchQuery, setSearchQuery }) {
+function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, setActiveCategory, user, isAdmin, onLogin, onLogout, onPublish, onUncategorized, onCouponManager, onCartOpen, searchQuery, setSearchQuery }) {
   const desktopInputRef = useRef(null);
   const mobileInputRef  = useRef(null);
   const [showNavAll, setShowNavAll] = useState(false);
@@ -1084,6 +1084,22 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
                   >
                     <LayoutGrid size={14} />
                     <span className="hidden sm:inline">Sin categoría</span>
+                  </button>
+                  <button
+                    onClick={onCouponManager}
+                    title="Gestionar cupones"
+                    style={{
+                      display: "flex", alignItems: "center", gap: "7px",
+                      background: "#F0FDF4", color: "#15803D", border: "1.5px solid #86EFAC",
+                      borderRadius: "24px", padding: "7px 14px",
+                      fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700,
+                      cursor: "pointer", transition: "opacity 0.15s",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
+                    onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                  >
+                    <Tag size={14} />
+                    <span className="hidden sm:inline">Cupones</span>
                   </button>
                   <button
                     onClick={onPublish}
@@ -1326,6 +1342,156 @@ function Hero({ onShop, stats }) {
         </div>
       </div>
     </section>
+  );
+}
+
+// ─── ADMIN STATS BAR ─────────────────────────────────────────────────────────
+function AdminStatsBar({ dbProducts }) {
+  const active   = dbProducts.filter(p => p.is_active !== false).length;
+  const inactive = dbProducts.filter(p => p.is_active === false).length;
+  const noStock  = dbProducts.filter(p => p.is_active !== false && (p.stock === 0 || p.stock == null)).length;
+  const noCat    = dbProducts.filter(p => !p.category || !REAL_CATS.find(c => c.id === p.category)).length;
+
+  const Stat = ({ label, value, color }) => (
+    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+      <span style={{ fontFamily: F_UI, fontSize: "12px", fontWeight: 800, color }}>{value}</span>
+      <span style={{ fontFamily: F_UI, fontSize: "11px", color: "#94A3B8" }}>{label}</span>
+    </div>
+  );
+
+  return (
+    <div style={{
+      background: "#0F172A", borderBottom: "1px solid #1E293B",
+      padding: "7px 32px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap",
+    }}>
+      <span style={{ fontFamily: F_UI, fontSize: "10px", fontWeight: 800, color: CORAL, letterSpacing: "1px", textTransform: "uppercase", marginRight: "8px" }}>ADMIN</span>
+      <Stat label="activos"      value={active}   color="#4ADE80" />
+      <span style={{ color: "#334155" }}>·</span>
+      <Stat label="inactivos"    value={inactive} color={inactive > 0 ? "#FB923C" : "#4ADE80"} />
+      <span style={{ color: "#334155" }}>·</span>
+      <Stat label="sin stock"    value={noStock}  color={noStock  > 0 ? "#F87171" : "#4ADE80"} />
+      <span style={{ color: "#334155" }}>·</span>
+      <Stat label="sin categoría" value={noCat}   color={noCat    > 0 ? "#FBBF24" : "#4ADE80"} />
+    </div>
+  );
+}
+
+// ─── COUPON MANAGER (solo admin) ─────────────────────────────────────────────
+function CouponManager({ coupons, onClose, onChanged }) {
+  const [newCode, setNewCode]   = useState("");
+  const [newPct, setNewPct]     = useState("10");
+  const [adding, setAdding]     = useState(false);
+  const [error, setError]       = useState("");
+
+  const handleAdd = async () => {
+    const code = newCode.trim().toUpperCase();
+    if (!code) { setError("Escribe un código"); return; }
+    const pct = parseInt(newPct, 10);
+    if (!pct || pct < 1 || pct > 100) { setError("Descuento entre 1 y 100"); return; }
+    setAdding(true);
+    const { error: err } = await supabase.from("coupons").insert({ code, discount_pct: pct, is_active: true });
+    setAdding(false);
+    if (err) { setError(err.message.includes("unique") ? "Ese código ya existe" : err.message); return; }
+    setNewCode(""); setNewPct("10"); setError("");
+    onChanged();
+  };
+
+  const handleToggle = async (id, current) => {
+    await supabase.from("coupons").update({ is_active: !current }).eq("id", id);
+    onChanged();
+  };
+
+  const handleDelete = async (id) => {
+    await supabase.from("coupons").delete().eq("id", id);
+    onChanged();
+  };
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 800, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(3px)" }} />
+      <div style={{
+        position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+        zIndex: 801, background: "#fff", borderRadius: "20px",
+        width: "min(520px, 95vw)", maxHeight: "82vh",
+        display: "flex", flexDirection: "column",
+        boxShadow: "0 24px 64px rgba(0,0,0,0.22)",
+      }}>
+        {/* Header */}
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid #EDE8E2", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#F0FDF4", borderRadius: "20px 20px 0 0" }}>
+          <div>
+            <h2 style={{ fontFamily: F_DISPLAY, fontSize: "17px", fontWeight: 700, color: "#1A1A1A", display: "flex", alignItems: "center", gap: "8px" }}>
+              <Tag size={17} color="#15803D" /> Gestión de cupones
+            </h2>
+            <p style={{ fontFamily: F_UI, fontSize: "13px", color: "#9B948E", marginTop: "3px" }}>{coupons.length} cupón{coupons.length !== 1 ? "es" : ""} registrado{coupons.length !== 1 ? "s" : ""}</p>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", padding: "6px", color: "#6B6560" }}><X size={20} /></button>
+        </div>
+
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+          {/* Agregar cupón */}
+          <div style={{ background: "#F8FAFC", borderRadius: "12px", padding: "14px", border: "1.5px solid #E2E8F0" }}>
+            <p style={{ fontFamily: F_UI, fontSize: "12px", fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px" }}>Nuevo cupón</p>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <input
+                value={newCode}
+                onChange={e => setNewCode(e.target.value.toUpperCase())}
+                placeholder="CODIGO"
+                maxLength={20}
+                style={{ flex: 2, minWidth: "100px", padding: "9px 12px", borderRadius: "8px", border: "1.5px solid #E0D8CC", fontFamily: F_UI, fontSize: "13px", fontWeight: 700, background: "#fff", color: "#1A1A1A", outline: "none" }}
+              />
+              <div style={{ display: "flex", alignItems: "center", gap: "4px", flex: 1, minWidth: "80px" }}>
+                <input
+                  value={newPct}
+                  onChange={e => setNewPct(e.target.value)}
+                  type="number" min="1" max="100"
+                  style={{ width: "60px", padding: "9px 8px", borderRadius: "8px", border: "1.5px solid #E0D8CC", fontFamily: F_UI, fontSize: "13px", background: "#fff", color: "#1A1A1A", outline: "none", textAlign: "center" }}
+                />
+                <span style={{ fontFamily: F_UI, fontSize: "13px", color: "#64748B" }}>%</span>
+              </div>
+              <button
+                onClick={handleAdd}
+                disabled={adding}
+                style={{ padding: "9px 16px", background: "#15803D", color: "#fff", border: "none", borderRadius: "8px", fontFamily: F_UI, fontSize: "13px", fontWeight: 700, cursor: "pointer", opacity: adding ? 0.65 : 1 }}
+              >
+                {adding ? "..." : "+ Agregar"}
+              </button>
+            </div>
+            {error && <p style={{ fontFamily: F_UI, fontSize: "12px", color: "#E53E3E", marginTop: "8px" }}>{error}</p>}
+          </div>
+
+          {/* Lista de cupones */}
+          {coupons.length === 0 ? (
+            <p style={{ textAlign: "center", fontFamily: F_UI, fontSize: "14px", color: "#9B948E", padding: "24px" }}>No hay cupones aún.</p>
+          ) : coupons.map(c => (
+            <div key={c.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", border: `1.5px solid ${c.is_active ? "#E2E8F0" : "#FEE2E2"}`, borderRadius: "10px", background: c.is_active ? "#fff" : "#FFF5F5" }}>
+              <span style={{ fontFamily: F_UI, fontSize: "14px", fontWeight: 800, color: "#1A1A1A", flex: 1 }}>{c.code}</span>
+              <span style={{ fontFamily: F_UI, fontSize: "13px", fontWeight: 700, color: CORAL }}>{c.discount_pct}%</span>
+              <span style={{
+                fontFamily: F_UI, fontSize: "11px", fontWeight: 700, padding: "3px 9px", borderRadius: "12px",
+                background: c.is_active ? "#DCFCE7" : "#FEE2E2",
+                color: c.is_active ? "#15803D" : "#DC2626",
+              }}>{c.is_active ? "Activo" : "Inactivo"}</span>
+              <button
+                onClick={() => handleToggle(c.id, c.is_active)}
+                title={c.is_active ? "Desactivar" : "Activar"}
+                style={{ background: "none", border: "1.5px solid #E0D8CC", borderRadius: "8px", padding: "5px 10px", cursor: "pointer", fontFamily: F_UI, fontSize: "12px", color: "#6B6560" }}
+              >
+                {c.is_active ? "⏸" : "▶"}
+              </button>
+              <button
+                onClick={() => handleDelete(c.id)}
+                title="Eliminar"
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#C0B8B0", padding: "4px" }}
+                onMouseEnter={e => e.currentTarget.style.color = CORAL}
+                onMouseLeave={e => e.currentTarget.style.color = "#C0B8B0"}
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -1644,6 +1810,16 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
           }}>
             {product.badge}
           </span>
+        )}
+        {isOwner && product.is_active === false && (
+          <div style={{
+            position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)",
+            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3,
+          }}>
+            <span style={{ background: "#E65100", color: "#fff", fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", fontWeight: 800, padding: "5px 12px", borderRadius: "20px", letterSpacing: "0.5px" }}>
+              INACTIVO
+            </span>
+          </div>
         )}
         <button
           onClick={(e) => { e.stopPropagation(); onWishlist(product.id); }}
@@ -2111,7 +2287,7 @@ const cleanText  = (v, max) => v.replace(/[<>"';&`\\]/g, "").slice(0, max);
 const isEmail    = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
 const isPhone    = v => /^[\d\s+\-()]{7,15}$/.test(v.trim());
 
-function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user }) {
+function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, coupons }) {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError]     = useState("");
   const [couponInput, setCouponInput]         = useState("");
@@ -2126,7 +2302,8 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user })
   const handleApplyCoupon = () => {
     const code = couponInput.trim().toUpperCase();
     if (!code) return;
-    const pct = COUPONS[code];
+    const found = coupons?.find(c => c.code === code && c.is_active);
+    const pct = found ? found.discount_pct : (COUPONS[code] ?? null);
     if (pct == null) {
       setCouponError("Cupón inválido o expirado.");
       return;
@@ -2573,7 +2750,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user })
 }
 
 // ─── PRODUCT MODAL ────────────────────────────────────────────────────────────
-function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, user, onDelete, onEdit }) {
+function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, user, onDelete, onEdit, onToggleActive }) {
   const [selectedImg, setSelectedImg]     = useState(0);
   const [added, setAdded]                 = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -2907,6 +3084,23 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
                 Administrar producto
               </p>
 
+              {/* Toggle activo / inactivo */}
+              <button
+                onClick={() => { onToggleActive?.(product.id, product.is_active ?? true); onClose(); }}
+                style={{
+                  display: "flex", alignItems: "center", gap: "8px",
+                  width: "100%", padding: "12px 16px", marginBottom: "10px",
+                  background: product.is_active !== false ? "#FFF9F0" : "#F0FDF4",
+                  border: `1.5px solid ${product.is_active !== false ? "#FFCC80" : "#86EFAC"}`,
+                  borderRadius: "12px", cursor: "pointer",
+                  fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px",
+                  fontWeight: 600, color: product.is_active !== false ? "#E65100" : "#15803D",
+                  justifyContent: "center", transition: "all 0.15s",
+                }}
+              >
+                {product.is_active !== false ? "⏸ Desactivar (ocultarlo)" : "▶ Activar (mostrarlo)"}
+              </button>
+
               {/* Botón editar */}
               <button
                 onClick={() => { onClose(); onEdit?.(product); }}
@@ -2996,6 +3190,8 @@ export default function App() {
   const [user, setUser]                       = useState(null);
   const [showPublish, setShowPublish]         = useState(false);
   const [showUncategorized, setShowUncategorized] = useState(false);
+  const [showCouponManager, setShowCouponManager] = useState(false);
+  const [dbCoupons, setDbCoupons]             = useState([]);
   const [dbProducts, setDbProducts]           = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -3019,10 +3215,19 @@ export default function App() {
     const { data } = await supabase
       .from("products")
       .select("*")
-      .eq("is_active", true)
       .order("created_at", { ascending: false });
     setDbProducts(data ?? []);
     setLoadingProducts(false);
+  };
+
+  const fetchCoupons = async () => {
+    const { data } = await supabase.from("coupons").select("*").order("created_at", { ascending: false });
+    if (data) setDbCoupons(data);
+  };
+
+  const handleToggleActive = async (productId, currentState) => {
+    await supabase.from("products").update({ is_active: !currentState }).eq("id", productId);
+    fetchProducts();
   };
 
   useEffect(() => {
@@ -3036,6 +3241,7 @@ export default function App() {
     });
 
     fetchProducts();
+    fetchCoupons();
 
     const channel = supabase
       .channel("products-changes")
@@ -3060,6 +3266,8 @@ export default function App() {
     setUser(null);
   };
 
+  const isAdmin = !!user && ADMIN_EMAILS.has(user.email);
+
   const displayProducts = dbProducts.length > 0
     ? dbProducts.map(p => ({
         id:             p.id,
@@ -3072,12 +3280,14 @@ export default function App() {
         description:    p.description,
         specifications: p.specifications ?? null,
         stock:          p.stock,
+        is_active:      p.is_active ?? true,
         user_id:        p.user_id,
         created_at:     p.created_at,
       }))
     : PRODUCTS;
 
   const filteredProducts = displayProducts.filter(p => {
+    if (!isAdmin && !p.is_active) return false;
     const q = searchQuery.trim().toLowerCase();
     if (q) {
       return (
@@ -3359,6 +3569,7 @@ export default function App() {
           onLogout={handleLogout}
           onPublish={() => setShowPublish(true)}
           onUncategorized={() => setShowUncategorized(true)}
+          onCouponManager={() => setShowCouponManager(true)}
           onCartOpen={() => setShowCart(true)}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -3372,6 +3583,7 @@ export default function App() {
             onUpdateQty={handleUpdateQty}
             onClearCart={() => setCart([])}
             user={user}
+            coupons={dbCoupons}
           />
         )}
 
@@ -3385,6 +3597,7 @@ export default function App() {
             user={user}
             onDelete={handleDeleteProduct}
             onEdit={setEditingProduct}
+            onToggleActive={handleToggleActive}
           />
         )}
 
@@ -3402,6 +3615,16 @@ export default function App() {
             onCategoryChanged={fetchProducts}
           />
         )}
+
+        {showCouponManager && (
+          <CouponManager
+            coupons={dbCoupons}
+            onClose={() => setShowCouponManager(false)}
+            onChanged={fetchCoupons}
+          />
+        )}
+
+        {isAdmin && <AdminStatsBar dbProducts={dbProducts} />}
 
         {editingProduct && (
           <EditModal
