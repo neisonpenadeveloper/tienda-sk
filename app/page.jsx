@@ -1148,7 +1148,7 @@ function Hero({ onShop, stats }) {
           }}>
             <span style={{ fontSize: "13px", lineHeight: 1 }}>🛵</span>
             <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 700, color: "#059669" }}>
-              Paga cuando lo recibas · Medellín y sus alrededores
+              Paga cuando lo recibas · A todo Colombia
             </span>
           </div>
           <h1 style={{
@@ -1498,7 +1498,7 @@ function Banner({ onOferta }) {
         <span style={{ fontSize: "16px", lineHeight: 1 }}>🛵</span>
         <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 600, color: "#F5F0EA" }}>
           Entregas en{" "}
-          <span style={{ color: "#34D399", fontWeight: 800 }}>Medellín y alrededores</span>
+          <span style={{ color: "#34D399", fontWeight: 800 }}>todo Colombia</span>
           {" "}· Pagas al recibir tu pedido ✅
         </span>
       </div>
@@ -2131,7 +2131,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user })
                 style={{ width: "100%", padding: "16px", marginBottom: "12px", background: "linear-gradient(135deg,#059669,#10b981)", color: "#fff", border: "none", borderRadius: "16px", fontFamily: "var(--font-roboto), sans-serif", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px", boxShadow: "0 6px 20px rgba(16,185,129,0.35)" }}
               >
                 <span style={{ fontSize: "15px", fontWeight: 700, display: "flex", alignItems: "center", gap: "7px" }}>🛵 Pagar al recibir</span>
-                <span style={{ fontSize: "11px", fontWeight: 500, opacity: 0.85 }}>Pagas cuando llegue · Solo Medellín y alrededores</span>
+                <span style={{ fontSize: "11px", fontWeight: 500, opacity: 0.85 }}>Pagas cuando llegue a tu puerta · Todo Colombia</span>
               </button>
               <div style={{ width: "100%", padding: "14px 16px", marginBottom: "16px", background: "#F8FAFC", border: "1.5px dashed #CBD5E1", borderRadius: "16px", boxSizing: "border-box" }}>
                 <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", fontWeight: 700, color: "#94A3B8", margin: "0 0 3px", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px" }}>💳 Pagar ahora mismo</p>
