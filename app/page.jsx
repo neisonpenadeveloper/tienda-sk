@@ -2951,8 +2951,8 @@ export default function App() {
         }
         .product-card:hover .pc-overlay { transform: translateY(0); }
 
-        /* ── Botones flotantes: barra inferior en móvil ── */
-        @media (max-width: 768px) {
+        /* ── Botones flotantes: barra inferior en móvil y laptops pequeños ── */
+        @media (max-width: 1380px) {
           .floating-btns {
             position: fixed !important;
             bottom: 0 !important; left: 0 !important; right: 0 !important;
