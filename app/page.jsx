@@ -1761,7 +1761,7 @@ function CartItem({ item, onRemove, onUpdateQty }) {
 }
 
 // ─── CART DRAWER ──────────────────────────────────────────────────────────────
-function CartDrawer({ cart, onClose, onRemove, onUpdateQty, user }) {
+function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user }) {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError]     = useState("");
   const [couponInput, setCouponInput]         = useState("");
@@ -1769,6 +1769,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, user }) {
   const [appliedCoupon, setAppliedCoupon]     = useState(null); // { code, pct }
   const [showPaymentModal, setShowPaymentModal]   = useState(false);
   const [showDeliveryForm, setShowDeliveryForm]   = useState(false);
+  const [showOrderSuccess, setShowOrderSuccess]   = useState(false);
   const [deliveryForm, setDeliveryForm] = useState({ nombre: "", telefono: "", correo: "", notas: "", direccion: "", referencia: "", ciudad: "Medellín", departamento: "Antioquia", adicional: "" });
   const [deliveryErrors, setDeliveryErrors]       = useState({});
 
@@ -1868,9 +1869,8 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, user }) {
     if (Object.keys(errors).length > 0) { setDeliveryErrors(errors); return; }
     setDeliveryErrors({});
     window.open(buildDeliveryWhatsAppUrl(), "_blank");
-    setShowPaymentModal(false);
     setShowDeliveryForm(false);
-    setDeliveryForm({ nombre: "", telefono: "", correo: "", notas: "", direccion: "", referencia: "", ciudad: "Medellín", departamento: "Antioquia", adicional: "" });
+    setShowOrderSuccess(true);
   };
 
   return (
@@ -2107,6 +2107,23 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, user }) {
                 Volver al carrito
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Pantalla de éxito */}
+        {showOrderSuccess && (
+          <div style={{ position: "absolute", inset: 0, zIndex: 20, background: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 24px", textAlign: "center", animation: "fadeInUp 0.3s ease" }}>
+            <div style={{ fontSize: "64px", marginBottom: "20px" }}>🎉</div>
+            <h3 style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "20px", fontWeight: 800, color: "#1A1A1A", margin: "0 0 12px" }}>¡Pedido enviado!</h3>
+            <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: "#64748B", lineHeight: 1.65, margin: "0 0 32px", maxWidth: "280px" }}>
+              Tu compra continuará por <strong style={{ color: "#25D366" }}>WhatsApp</strong> con uno de nuestros asesores. ¡Estamos listos para atenderte!
+            </p>
+            <button
+              onClick={() => { onClearCart(); setShowOrderSuccess(false); setShowPaymentModal(false); setDeliveryForm({ nombre: "", telefono: "", correo: "", notas: "", direccion: "", referencia: "", ciudad: "Medellín", departamento: "Antioquia", adicional: "" }); onClose(); }}
+              style={{ width: "100%", maxWidth: "280px", padding: "15px", background: CORAL, color: "#fff", border: "none", borderRadius: "28px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px", fontWeight: 700, cursor: "pointer", boxShadow: `0 6px 20px rgba(37,99,235,0.35)` }}
+            >
+              Seguir viendo productos
+            </button>
           </div>
         )}
 
@@ -2984,6 +3001,7 @@ export default function App() {
             onClose={() => setShowCart(false)}
             onRemove={handleRemoveFromCart}
             onUpdateQty={handleUpdateQty}
+            onClearCart={() => setCart([])}
             user={user}
           />
         )}
