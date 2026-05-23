@@ -57,12 +57,16 @@ export default function TerminosPage() {
 
         <Section title="4. Proceso de compra">
           <p>
-            Las compras se coordinan a través de <strong>WhatsApp</strong> al número
-            <strong> +57 322 530 6651</strong>. Al iniciar el proceso de compra, recibirás un mensaje
-            con el resumen de tu pedido y las instrucciones de pago.
+            Las compras se realizan a través de nuestra tienda en línea. Al finalizar tu pedido,
+            serás redirigido a <strong>WhatsApp</strong> (+57 322 530 6651) donde uno de nuestros
+            asesores confirmará tu pedido y coordinará la entrega.
           </p>
           <p style={{ marginTop: 12 }}>
-            El pedido se confirma una vez verificado el pago correspondiente.
+            El método de pago disponible es <strong>contra entrega</strong>: pagas cuando recibes
+            tu pedido, disponible para todo el territorio colombiano.
+          </p>
+          <p style={{ marginTop: 12 }}>
+            El pedido se confirma una vez coordinado con nuestro equipo por WhatsApp.
           </p>
         </Section>
 
