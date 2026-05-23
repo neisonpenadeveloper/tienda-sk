@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { ShoppingBag, Search, Heart, Menu, X, Star, Home, Sparkles, Smile, ArrowRight, Package, Truck, PlusCircle, LogOut, LogIn, Upload, Trash2, Minus, Plus, ChevronDown, Share2, Check, Copy, Pencil } from "lucide-react";
+import { ShoppingBag, Search, Heart, Menu, X, Star, Home, Sparkles, Smile, ArrowRight, Package, Truck, PlusCircle, LogOut, LogIn, Upload, Trash2, Minus, Plus, ChevronDown, Share2, Check, Copy, Pencil, Wrench, Droplets, Tag, ChefHat, Shirt, Laptop, Activity, PawPrint, LayoutGrid } from "lucide-react";
 
 // ─── SUPABASE CLIENT ──────────────────────────────────────────────────────────
 const supabase = createClient(
@@ -52,6 +52,19 @@ const CATEGORIES = [
   { id: "juguetes",  label: "Juguetes",         icon: Package },
   { id: "favoritos", label: "Favoritos",        icon: Heart },
 ];
+
+const EXTRA_CATEGORIES = [
+  { id: "herramientas", label: "Herramientas",      icon: Wrench },
+  { id: "aseo",         label: "Aseo",              icon: Droplets },
+  { id: "accesorios",   label: "Accesorios",        icon: Tag },
+  { id: "cocina",       label: "Cocina",            icon: ChefHat },
+  { id: "moda",         label: "Moda y Ropa",       icon: Shirt },
+  { id: "tecnologia",   label: "Tecnología",        icon: Laptop },
+  { id: "salud",        label: "Salud y Bienestar", icon: Activity },
+  { id: "mascotas",     label: "Mascotas",          icon: PawPrint },
+];
+
+const ALL_CATEGORIES = [...CATEGORIES, ...EXTRA_CATEGORIES];
 
 const PRODUCTS = [
   { id: 1, category: "hogar",    name: "Lámpara Arc Minimal",    price: 189000, oldPrice: 230000, rating: 4.8, reviews: 124, badge: "Nuevo",            color: "#E8E0D5", emoji: "🕯️" },
@@ -329,6 +342,14 @@ function PublishModal({ user, onClose, onPublished }) {
                 <option value="hogar">🏠 Hogar</option>
                 <option value="personal">✨ Cuidado Personal</option>
                 <option value="juguetes">🧸 Juguetes</option>
+                <option value="herramientas">🔧 Herramientas</option>
+                <option value="aseo">💧 Aseo</option>
+                <option value="accesorios">🏷️ Accesorios</option>
+                <option value="cocina">🍳 Cocina</option>
+                <option value="moda">👕 Moda y Ropa</option>
+                <option value="tecnologia">💻 Tecnología</option>
+                <option value="salud">💪 Salud y Bienestar</option>
+                <option value="mascotas">🐾 Mascotas</option>
               </select>
             </div>
 
@@ -688,6 +709,14 @@ function EditModal({ product, user, onClose, onSaved }) {
                 <option value="hogar">Hogar</option>
                 <option value="personal">Cuidado Personal</option>
                 <option value="juguetes">Juguetes</option>
+                <option value="herramientas">Herramientas</option>
+                <option value="aseo">Aseo</option>
+                <option value="accesorios">Accesorios</option>
+                <option value="cocina">Cocina</option>
+                <option value="moda">Moda y Ropa</option>
+                <option value="tecnologia">Tecnología</option>
+                <option value="salud">Salud y Bienestar</option>
+                <option value="mascotas">Mascotas</option>
               </select>
             </div>
 
@@ -1211,40 +1240,96 @@ function Hero({ onShop, stats }) {
 
 // ─── CATEGORY PILLS ───────────────────────────────────────────────────────────
 function CategoryPills({ active, onChange }) {
+  const [showAll, setShowAll] = useState(false);
+  const dropRef = useRef(null);
+  const isExtraActive = EXTRA_CATEGORIES.some(c => c.id === active);
+
+  useEffect(() => {
+    const handler = e => { if (dropRef.current && !dropRef.current.contains(e.target)) setShowAll(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const pillStyle = (isActive) => ({
+    display: "flex", alignItems: "center", gap: "7px",
+    padding: "10px 22px", borderRadius: "24px",
+    border: isActive ? "none" : "1.5px solid #E0D8CC",
+    background: isActive ? `linear-gradient(135deg, ${CORAL}, #ff6b52)` : "#fff",
+    color: isActive ? "#fff" : "#6B6560",
+    fontFamily: "var(--font-roboto), sans-serif",
+    fontSize: "13.5px", fontWeight: isActive ? 700 : 400,
+    cursor: "pointer",
+    boxShadow: isActive ? "0 6px 20px rgba(37,99,235,0.35)" : "none",
+  });
+
   return (
     <div className="flex items-center gap-3 flex-wrap">
       {CATEGORIES.map((cat) => {
         const Icon = cat.icon;
-        const isActive = active === cat.id;
         return (
-          <button
-            key={cat.id}
-            onClick={() => onChange(cat.id)}
-            className="cat-pill"
-            style={{
-              display: "flex", alignItems: "center", gap: "7px",
-              padding: "10px 22px", borderRadius: "24px",
-              border: isActive ? "none" : "1.5px solid #E0D8CC",
-              background: isActive ? `linear-gradient(135deg, ${CORAL}, #ff6b52)` : "#fff",
-              color: isActive ? "#fff" : "#6B6560",
-              fontFamily: "var(--font-roboto), sans-serif",
-              fontSize: "13.5px", fontWeight: isActive ? 700 : 400,
-              cursor: "pointer",
-              boxShadow: isActive ? "0 6px 20px rgba(37,99,235,0.35)" : "none",
-            }}
-          >
+          <button key={cat.id} onClick={() => onChange(cat.id)} className="cat-pill" style={pillStyle(active === cat.id)}>
             <Icon size={14} />
             {cat.label}
           </button>
         );
       })}
+
+      {/* Dropdown: Todas las categorías */}
+      <div ref={dropRef} style={{ position: "relative" }}>
+        <button
+          onClick={() => setShowAll(v => !v)}
+          className="cat-pill"
+          style={{ ...pillStyle(isExtraActive), fontWeight: isExtraActive ? 700 : 600 }}
+        >
+          <LayoutGrid size={14} />
+          Todas las categorías
+          <ChevronDown size={13} style={{ transition: "transform 0.2s", transform: showAll ? "rotate(180deg)" : "rotate(0deg)", marginLeft: "2px" }} />
+        </button>
+
+        {showAll && (
+          <div style={{
+            position: "absolute", top: "calc(100% + 8px)", left: 0, zIndex: 200,
+            background: "#fff", borderRadius: "16px",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.13)",
+            border: "1px solid #E8E4DF",
+            padding: "10px",
+            display: "grid", gridTemplateColumns: "1fr 1fr",
+            gap: "6px", minWidth: "270px",
+          }}>
+            {EXTRA_CATEGORIES.map(cat => {
+              const Icon = cat.icon;
+              const isActive = active === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => { onChange(cat.id); setShowAll(false); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "8px",
+                    padding: "10px 14px", borderRadius: "10px", border: "none",
+                    background: isActive ? `linear-gradient(135deg, ${CORAL}, #ff6b52)` : "#F8FAFC",
+                    color: isActive ? "#fff" : "#334155",
+                    fontFamily: "var(--font-roboto), sans-serif",
+                    fontSize: "13px", fontWeight: isActive ? 700 : 500,
+                    cursor: "pointer", textAlign: "left", transition: "background 0.15s",
+                  }}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "#EEF2FF"; }}
+                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "#F8FAFC"; }}
+                >
+                  <Icon size={15} />
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 // ─── EMPTY STATE ──────────────────────────────────────────────────────────────
 function EmptyState({ category, searchQuery }) {
-  const cat = CATEGORIES.find(c => c.id === category);
+  const cat = ALL_CATEGORIES.find(c => c.id === category);
   if (searchQuery?.trim()) {
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "80px 24px", textAlign: "center" }}>
@@ -3113,7 +3198,7 @@ export default function App() {
                 {searchQuery.trim()
                   ? <>Resultados para <span style={{ color: CORAL }}>"{searchQuery.trim()}"</span></>
                   : activeCategory === "ofertas" ? <><span style={{ color: CORAL }}>🔥</span> Ofertas especiales</>
-                  : activeCategory === "all" ? "Todos los productos" : CATEGORIES.find(c => c.id === activeCategory)?.label
+                  : activeCategory === "all" ? "Todos los productos" : ALL_CATEGORIES.find(c => c.id === activeCategory)?.label
                 }
               </h2>
             </div>
