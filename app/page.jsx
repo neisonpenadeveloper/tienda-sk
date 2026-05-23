@@ -1140,6 +1140,17 @@ function Hero({ onShop, stats }) {
               Nuevos productos cada semana
             </span>
           </div>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: "7px",
+            background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.30)",
+            borderRadius: "20px", padding: "5px 14px",
+            boxShadow: "0 0 12px rgba(16,185,129,0.15)",
+          }}>
+            <span style={{ fontSize: "13px", lineHeight: 1 }}>🛵</span>
+            <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 700, color: "#059669" }}>
+              Paga cuando lo recibas · Medellín
+            </span>
+          </div>
           <h1 style={{
             fontFamily: "var(--font-roboto), sans-serif",
             fontSize: "clamp(18px, 2.2vw, 26px)",
@@ -1484,9 +1495,11 @@ function Banner({ onOferta }) {
       gap: "12px", flexWrap: "wrap", margin: "48px 0",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <Truck size={16} color="#9B948E" />
+        <span style={{ fontSize: "16px", lineHeight: 1 }}>🛵</span>
         <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 600, color: "#F5F0EA" }}>
-          Envío gratis en compras mayores a $70.000 COP
+          Entregas en{" "}
+          <span style={{ color: "#34D399", fontWeight: 800 }}>Medellín y alrededores</span>
+          {" "}· Pagas al recibir tu pedido ✅
         </span>
       </div>
       <button
