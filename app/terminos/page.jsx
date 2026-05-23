@@ -79,7 +79,7 @@ export default function TerminosPage() {
 
         <Section title="6. Devoluciones y garantía">
           <p>
-            Ofrecemos <strong>30 días de garantía</strong> en todos nuestros productos contados
+            Ofrecemos <strong>10 días de garantía</strong> en todos nuestros productos contados
             desde la fecha de entrega. Si el producto presenta defectos de fábrica o llegó en mal
             estado, coordina la devolución o cambio por WhatsApp.
           </p>
