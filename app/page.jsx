@@ -2163,7 +2163,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user })
 
         {/* Modal: formulario de entrega */}
         {showPaymentModal && showDeliveryForm && (
-          <div style={{ position: "absolute", inset: 0, zIndex: 20, background: "#fff", display: "flex", flexDirection: "column" }}>
+          <div style={{ position: "absolute", inset: 0, zIndex: 20, background: "#fff", display: "flex", flexDirection: "column", colorScheme: "light" }}>
             <div style={{ padding: "18px 20px 14px", borderBottom: "1px solid #F1F5F9", display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
               <button onClick={() => { setShowDeliveryForm(false); setDeliveryErrors({}); }} style={{ background: "#F1F5F9", border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", color: "#475569", fontWeight: 600 }}>← Volver</button>
               <div>
@@ -2177,48 +2177,48 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user })
 
               <div style={{ marginBottom: "12px" }}>
                 <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Nombre de quien recibe *</label>
-                <input value={deliveryForm.nombre} onChange={e => setDeliveryForm(f => ({ ...f, nombre: e.target.value }))} placeholder="Ej: Juan García" style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${deliveryErrors.nombre ? "#EF4444" : "#E2E8F0"}`, borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", outline: "none", boxSizing: "border-box", background: "#FAFBFC" }} />
+                <input value={deliveryForm.nombre} onChange={e => setDeliveryForm(f => ({ ...f, nombre: e.target.value }))} placeholder="Ej: Juan García" style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${deliveryErrors.nombre ? "#EF4444" : "#E2E8F0"}`, borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
                 {deliveryErrors.nombre && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#EF4444", margin: "3px 0 0" }}>Campo requerido</p>}
               </div>
 
               <div style={{ marginBottom: "12px" }}>
                 <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Teléfono *</label>
-                <input value={deliveryForm.telefono} onChange={e => setDeliveryForm(f => ({ ...f, telefono: e.target.value }))} placeholder="Ej: 3001234567" type="tel" style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${deliveryErrors.telefono ? "#EF4444" : "#E2E8F0"}`, borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", outline: "none", boxSizing: "border-box", background: "#FAFBFC" }} />
+                <input value={deliveryForm.telefono} onChange={e => setDeliveryForm(f => ({ ...f, telefono: e.target.value }))} placeholder="Ej: 3001234567" type="tel" style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${deliveryErrors.telefono ? "#EF4444" : "#E2E8F0"}`, borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
                 {deliveryErrors.telefono && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#EF4444", margin: "3px 0 0" }}>Campo requerido</p>}
               </div>
 
               <div style={{ marginBottom: "20px" }}>
                 <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Correo electrónico</label>
-                <input value={deliveryForm.correo} onChange={e => setDeliveryForm(f => ({ ...f, correo: e.target.value }))} placeholder="Ej: correo@email.com" type="email" style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", outline: "none", boxSizing: "border-box", background: "#FAFBFC" }} />
+                <input value={deliveryForm.correo} onChange={e => setDeliveryForm(f => ({ ...f, correo: e.target.value }))} placeholder="Ej: correo@email.com" type="email" style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
               </div>
 
               <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "10px", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px", margin: "0 0 10px" }}>Dirección de entrega</p>
 
               <div style={{ marginBottom: "12px" }}>
                 <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Dirección completa *</label>
-                <input value={deliveryForm.direccion} onChange={e => setDeliveryForm(f => ({ ...f, direccion: e.target.value }))} placeholder="Ej: Calle 80 #45-32, Apto 201" style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${deliveryErrors.direccion ? "#EF4444" : "#E2E8F0"}`, borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", outline: "none", boxSizing: "border-box", background: "#FAFBFC" }} />
+                <input value={deliveryForm.direccion} onChange={e => setDeliveryForm(f => ({ ...f, direccion: e.target.value }))} placeholder="Ej: Calle 80 #45-32, Apto 201" style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${deliveryErrors.direccion ? "#EF4444" : "#E2E8F0"}`, borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
                 {deliveryErrors.direccion && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#EF4444", margin: "3px 0 0" }}>Campo requerido</p>}
               </div>
 
               <div style={{ marginBottom: "12px" }}>
                 <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Punto de referencia</label>
-                <input value={deliveryForm.referencia} onChange={e => setDeliveryForm(f => ({ ...f, referencia: e.target.value }))} placeholder="Ej: Cerca al Éxito de la 80" style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", outline: "none", boxSizing: "border-box", background: "#FAFBFC" }} />
+                <input value={deliveryForm.referencia} onChange={e => setDeliveryForm(f => ({ ...f, referencia: e.target.value }))} placeholder="Ej: Cerca al Éxito de la 80" style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "12px" }}>
                 <div>
                   <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Ciudad *</label>
-                  <input value={deliveryForm.ciudad} onChange={e => setDeliveryForm(f => ({ ...f, ciudad: e.target.value }))} style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", outline: "none", boxSizing: "border-box", background: "#FAFBFC" }} />
+                  <input value={deliveryForm.ciudad} onChange={e => setDeliveryForm(f => ({ ...f, ciudad: e.target.value }))} style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
                 </div>
                 <div>
                   <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Departamento *</label>
-                  <input value={deliveryForm.departamento} onChange={e => setDeliveryForm(f => ({ ...f, departamento: e.target.value }))} style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", outline: "none", boxSizing: "border-box", background: "#FAFBFC" }} />
+                  <input value={deliveryForm.departamento} onChange={e => setDeliveryForm(f => ({ ...f, departamento: e.target.value }))} style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
                 </div>
               </div>
 
               <div style={{ marginBottom: "20px" }}>
                 <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Información adicional</label>
-                <input value={deliveryForm.adicional} onChange={e => setDeliveryForm(f => ({ ...f, adicional: e.target.value }))} placeholder="Ej: Llamar antes de llegar" style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", outline: "none", boxSizing: "border-box", background: "#FAFBFC" }} />
+                <input value={deliveryForm.adicional} onChange={e => setDeliveryForm(f => ({ ...f, adicional: e.target.value }))} placeholder="Ej: Llamar antes de llegar" style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
               </div>
 
               <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "10px", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px", margin: "0 0 10px" }}>Notas del pedido</p>
