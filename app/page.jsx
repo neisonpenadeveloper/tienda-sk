@@ -1575,12 +1575,13 @@ function CarouselCard({ product, onSelect, cardWidth }) {
 }
 
 function ProductCarousel({ products, onSelect }) {
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1); // 1 = primera página real (0 es clon del final)
   const [itemsPerView, setItemsPerView] = useState(4);
   const [shuffled, setShuffled] = useState([]);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [cardWidth, setCardWidth] = useState(0);
+  const [noTransition, setNoTransition] = useState(false);
   const outerRef = useRef(null);
   const dragStart = useRef(null);
   const hasDragged = useRef(false);
@@ -1606,38 +1607,71 @@ function ProductCarousel({ products, onSelect }) {
       const ipv = window.innerWidth < 900 ? 2 : 4;
       setItemsPerView(ipv);
       setCardWidth(outerRef.current.offsetWidth / ipv);
+      setCurrentPage(1);
     }
-  }, [shuffled.length]);
+  }, [shuffled.length, itemsPerView]);
 
-  const numPages = shuffled.length > 0 ? Math.ceil(shuffled.length / itemsPerView) : 0;
-  const maxPage = Math.max(0, numPages - 1);
+  // Rellena hasta múltiplo exacto de itemsPerView para evitar espacios en blanco
+  const paddedItems = shuffled.length > 0
+    ? Array.from({ length: Math.ceil(shuffled.length / itemsPerView) * itemsPerView }, (_, i) => shuffled[i % shuffled.length])
+    : [];
 
+  // Array con clones: [última página] + [items reales] + [primera página]
+  const loopItems = paddedItems.length > 0
+    ? [...paddedItems.slice(-itemsPerView), ...paddedItems, ...paddedItems.slice(0, itemsPerView)]
+    : [];
+
+  const numRealPages = paddedItems.length > 0 ? paddedItems.length / itemsPerView : 0;
+
+  // Snap silencioso al llegar a los clones (infinito sin salto visual)
   useEffect(() => {
-    if (shuffled.length === 0 || numPages <= 1) return;
-    const t = setInterval(() => setCurrentPage(p => p >= maxPage ? 0 : p + 1), 20000);
+    if (numRealPages === 0) return;
+    if (currentPage === 0) {
+      const t = setTimeout(() => {
+        setNoTransition(true);
+        setCurrentPage(numRealPages);
+        requestAnimationFrame(() => requestAnimationFrame(() => setNoTransition(false)));
+      }, 460);
+      return () => clearTimeout(t);
+    }
+    if (currentPage === numRealPages + 1) {
+      const t = setTimeout(() => {
+        setNoTransition(true);
+        setCurrentPage(1);
+        requestAnimationFrame(() => requestAnimationFrame(() => setNoTransition(false)));
+      }, 460);
+      return () => clearTimeout(t);
+    }
+  }, [currentPage, numRealPages]);
+
+  // Auto-avance
+  useEffect(() => {
+    if (numRealPages <= 1) return;
+    const t = setInterval(() => setCurrentPage(p => p >= numRealPages ? numRealPages + 1 : p + 1), 20000);
     return () => clearInterval(t);
-  }, [maxPage, shuffled.length, numPages]);
+  }, [numRealPages]);
 
   if (shuffled.length === 0) return null;
 
-  const prev = () => setCurrentPage(p => Math.max(0, p - 1));
-  const next = () => setCurrentPage(p => Math.min(maxPage, p + 1));
+  const prev = () => setCurrentPage(p => p <= 1 ? 0 : p - 1);
+  const next = () => setCurrentPage(p => p >= numRealPages ? numRealPages + 1 : p + 1);
   const onDragStart = x => { dragStart.current = x; hasDragged.current = false; setIsDragging(true); setDragOffset(0); };
   const onDragMove  = x => { if (dragStart.current === null) return; const d = x - dragStart.current; if (Math.abs(d) > 8) hasDragged.current = true; setDragOffset(d); };
   const onDragEnd   = () => { if (dragStart.current !== null) { if (dragOffset < -50) next(); else if (dragOffset > 50) prev(); } dragStart.current = null; setIsDragging(false); setDragOffset(0); };
 
   const translateX = cardWidth > 0 ? -(currentPage * itemsPerView * cardWidth) + dragOffset : 0;
+  const realPageIndex = ((currentPage - 1) % numRealPages + numRealPages) % numRealPages;
 
   return (
     <section style={{ background: "#fff", borderBottom: "1px solid #E2E8F0", padding: "14px 0 24px" }}>
       <div className="carousel-inner" style={{ maxWidth: "1600px", margin: "0 auto", boxSizing: "border-box" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px", marginBottom: "14px" }}>
-          <button onClick={prev} disabled={currentPage === 0} style={{ width: "34px", height: "34px", borderRadius: "50%", border: `1.5px solid ${currentPage === 0 ? "#E2E8F0" : CORAL}`, background: currentPage === 0 ? "#F0F4FF" : "#fff", color: currentPage === 0 ? "#CBD5E1" : CORAL, cursor: currentPage === 0 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s", fontSize: "18px", fontWeight: 700, flexShrink: 0 }}>‹</button>
+          <button onClick={prev} style={{ width: "34px", height: "34px", borderRadius: "50%", border: `1.5px solid ${CORAL}`, background: "#fff", color: CORAL, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s", fontSize: "18px", fontWeight: 700, flexShrink: 0 }}>‹</button>
           <div style={{ textAlign: "center" }}>
             <p style={{ fontFamily: F_UI, fontSize: "9px", color: "#9B948E", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", margin: "0 0 2px" }}>Selección especial</p>
             <h2 style={{ fontFamily: F_DISPLAY, fontSize: "16px", fontWeight: 600, color: "#1A1A1A", margin: 0, fontStyle: "italic" }}>Productos para ti ✨</h2>
           </div>
-          <button onClick={next} disabled={currentPage >= maxPage} style={{ width: "34px", height: "34px", borderRadius: "50%", border: "none", background: currentPage >= maxPage ? "#E2E8F0" : CORAL, color: currentPage >= maxPage ? "#9B948E" : "#fff", cursor: currentPage >= maxPage ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s", fontSize: "18px", fontWeight: 700, flexShrink: 0 }}>›</button>
+          <button onClick={next} style={{ width: "34px", height: "34px", borderRadius: "50%", border: "none", background: CORAL, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s", fontSize: "18px", fontWeight: 700, flexShrink: 0 }}>›</button>
         </div>
         <div
           ref={outerRef}
@@ -1650,15 +1684,15 @@ function ProductCarousel({ products, onSelect }) {
           onMouseUp={onDragEnd}
           onMouseLeave={() => { if (isDragging) onDragEnd(); }}
         >
-          <div style={{ display: "flex", transform: `translateX(${translateX}px)`, transition: isDragging ? "none" : "transform 0.45s cubic-bezier(0.16,1,0.3,1)", visibility: cardWidth > 0 ? "visible" : "hidden" }}>
-            {shuffled.map(p => (
-              <CarouselCard key={p.id} product={p} onSelect={p => { if (!hasDragged.current) onSelect(p); }} cardWidth={cardWidth} />
+          <div style={{ display: "flex", transform: `translateX(${translateX}px)`, transition: (isDragging || noTransition) ? "none" : "transform 0.45s cubic-bezier(0.16,1,0.3,1)", visibility: cardWidth > 0 ? "visible" : "hidden" }}>
+            {loopItems.map((p, i) => (
+              <CarouselCard key={`${p.id}-${i}`} product={p} onSelect={prod => { if (!hasDragged.current) onSelect(prod); }} cardWidth={cardWidth} />
             ))}
           </div>
         </div>
         <div style={{ display: "flex", gap: "6px", justifyContent: "center", marginTop: "20px" }}>
-          {Array.from({ length: numPages }).map((_, i) => (
-            <button key={i} onClick={() => setCurrentPage(i)} style={{ width: i === currentPage ? "22px" : "8px", height: "8px", borderRadius: "4px", background: i === currentPage ? CORAL : "#E2E8F0", border: "none", cursor: "pointer", transition: "all 0.3s ease", padding: 0 }} />
+          {Array.from({ length: numRealPages }).map((_, i) => (
+            <button key={i} onClick={() => setCurrentPage(i + 1)} style={{ width: i === realPageIndex ? "22px" : "8px", height: "8px", borderRadius: "4px", background: i === realPageIndex ? CORAL : "#E2E8F0", border: "none", cursor: "pointer", transition: "all 0.3s ease", padding: 0 }} />
           ))}
         </div>
       </div>
