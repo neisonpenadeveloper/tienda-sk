@@ -1868,39 +1868,44 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user })
   const FREE_SHIP  = 70000;
   const progress   = Math.min((total / FREE_SHIP) * 100, 100);
 
+  const SEP = "━━━━━━━━━━━━━━━━━━";
+
   const buildWhatsAppUrl = () => {
     const lines = cart.map(item =>
-      `• ${item.quantity}x ${item.name} — ${fmtCOP(item.price * item.quantity)}`
+      `  • ${item.quantity}x ${item.name} — ${fmtCOP(item.price * item.quantity)}`
     ).join("\n");
-    let msg = `Hola! 👋 Quiero realizar un pedido en Tienda S&K:\n\n${lines}`;
+    let msg = `👋 ¡Hola! Quiero hacer un pedido en *Tienda S&K* 🛍\n\n`;
+    msg += `${SEP}\n🛒 *PRODUCTOS*\n${SEP}\n${lines}\n`;
     if (appliedCoupon) {
-      msg += `\n\nCupón: ${appliedCoupon.code} (-${appliedCoupon.pct}%)\nDescuento: -${fmtCOP(discount)}`;
+      msg += `\n🏷 Cupón: *${appliedCoupon.code}* (-${appliedCoupon.pct}%)`;
+      msg += `\n💸 Descuento: -${fmtCOP(discount)}\n`;
     }
-    msg += `\n\n*Total: ${fmtCOP(total)}*`;
+    msg += `\n💰 *Total: ${fmtCOP(total)}*`;
     return `https://wa.me/573225306651?text=${encodeURIComponent(msg)}`;
   };
 
   const buildDeliveryWhatsAppUrl = () => {
     const lines = cart.map(item =>
-      `• ${item.quantity}x ${item.name} — ${fmtCOP(item.price * item.quantity)}`
+      `  • ${item.quantity}x ${item.name} — ${fmtCOP(item.price * item.quantity)}`
     ).join("\n");
-    let msg = `Hola! 👋 Quiero realizar un pedido en Tienda S&K:\n\n📦 *PRODUCTOS:*\n${lines}`;
+    let msg = `👋 ¡Hola! Tengo un pedido en *Tienda S&K* 🛍\n\n`;
+    msg += `${SEP}\n🛒 *PRODUCTOS*\n${SEP}\n${lines}\n`;
     if (appliedCoupon) {
-      msg += `\n\nCupón: ${appliedCoupon.code} (-${appliedCoupon.pct}%)`;
-      msg += `\nDescuento: -${fmtCOP(discount)}`;
+      msg += `\n🏷 Cupón: *${appliedCoupon.code}* (-${appliedCoupon.pct}%)`;
+      msg += `\n💸 Descuento: -${fmtCOP(discount)}\n`;
     }
-    msg += `\n\n💰 *Total: ${fmtCOP(total)}*`;
-    msg += `\n💳 *Pago: Contra entrega*`;
-    msg += `\n\n📋 *DATOS DE ENTREGA:*`;
-    msg += `\n👤 Nombre: ${deliveryForm.nombre}`;
-    msg += `\n📞 Teléfono: ${deliveryForm.telefono}`;
-    if (deliveryForm.correo)     msg += `\n📧 Correo: ${deliveryForm.correo}`;
-    msg += `\n📍 Dirección: ${deliveryForm.direccion}`;
-    if (deliveryForm.referencia) msg += `\n🗺 Referencia: ${deliveryForm.referencia}`;
-    msg += `\n🏙 Ciudad: ${deliveryForm.ciudad}`;
-    msg += `\n🏛 Departamento: ${deliveryForm.departamento}`;
-    if (deliveryForm.adicional)  msg += `\n📝 Info adicional: ${deliveryForm.adicional}`;
-    if (deliveryForm.notas)      msg += `\n📌 Notas del pedido: ${deliveryForm.notas}`;
+    msg += `\n💰 *Total: ${fmtCOP(total)}*`;
+    msg += `\n✅ Pago: *Contra entrega*\n\n`;
+    msg += `${SEP}\n📋 *DATOS DE ENTREGA*\n${SEP}\n\n`;
+    msg += `👤 *Nombre:* ${deliveryForm.nombre}\n`;
+    msg += `📱 *Teléfono:* ${deliveryForm.telefono}\n`;
+    if (deliveryForm.correo)     msg += `📧 *Correo:* ${deliveryForm.correo}\n`;
+    msg += `\n📍 *Dirección:* ${deliveryForm.direccion}\n`;
+    if (deliveryForm.referencia) msg += `🏠 *Referencia:* ${deliveryForm.referencia}\n`;
+    msg += `🌇 *Ciudad:* ${deliveryForm.ciudad}\n`;
+    msg += `📌 *Departamento:* ${deliveryForm.departamento}\n`;
+    if (deliveryForm.adicional)  msg += `💬 *Info adicional:* ${deliveryForm.adicional}\n`;
+    if (deliveryForm.notas)      msg += `\n📝 *Notas del pedido:* ${deliveryForm.notas}\n`;
     return `https://wa.me/573225306651?text=${encodeURIComponent(msg)}`;
   };
 
