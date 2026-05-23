@@ -867,7 +867,7 @@ function AnnouncementBar() {
 }
 
 // ─── NAVBAR ───────────────────────────────────────────────────────────────────
-function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, setActiveCategory, user, isAdmin, onLogin, onLogout, onPublish, onCartOpen, searchQuery, setSearchQuery }) {
+function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, setActiveCategory, user, isAdmin, onLogin, onLogout, onPublish, onUncategorized, onCartOpen, searchQuery, setSearchQuery }) {
   const desktopInputRef = useRef(null);
   const mobileInputRef  = useRef(null);
   const [showNavAll, setShowNavAll] = useState(false);
@@ -1068,6 +1068,23 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
                   {user.user_metadata?.name?.split(" ")[0] ?? user.email}
                 </span>
                 {isAdmin && (
+                  <>
+                  <button
+                    onClick={onUncategorized}
+                    title="Productos sin categoría"
+                    style={{
+                      display: "flex", alignItems: "center", gap: "7px",
+                      background: "#FFF3E0", color: "#E65100", border: "1.5px solid #FFCC80",
+                      borderRadius: "24px", padding: "7px 14px",
+                      fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700,
+                      cursor: "pointer", transition: "opacity 0.15s",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
+                    onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                  >
+                    <LayoutGrid size={14} />
+                    <span className="hidden sm:inline">Sin categoría</span>
+                  </button>
                   <button
                     onClick={onPublish}
                     style={{
@@ -1083,6 +1100,7 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
                     <PlusCircle size={15} />
                     <span className="hidden sm:inline">Publicar</span>
                   </button>
+                  </>
                 )}
                 <button
                   onClick={onLogout}
@@ -1308,6 +1326,137 @@ function Hero({ onShop, stats }) {
         </div>
       </div>
     </section>
+  );
+}
+
+// ─── UNCATEGORIZED PANEL (solo admin) ────────────────────────────────────────
+const REAL_CATS = ALL_CATEGORIES.filter(c => c.id !== "all" && c.id !== "favoritos");
+
+function UncategorizedPanel({ onClose, onCategoryChanged }) {
+  const [products, setProducts]     = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [assignments, setAssignments] = useState({});
+  const [saving, setSaving]         = useState({});
+  const [savedIds, setSavedIds]     = useState([]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+      const uncategorized = (data ?? []).filter(p => !p.category || !REAL_CATS.find(c => c.id === p.category));
+      setProducts(uncategorized);
+      const init = {};
+      uncategorized.forEach(p => { init[p.id] = REAL_CATS[0].id; });
+      setAssignments(init);
+      setLoading(false);
+    })();
+  }, []);
+
+  const handleSave = async (productId) => {
+    const newCat = assignments[productId];
+    if (!newCat) return;
+    setSaving(s => ({ ...s, [productId]: true }));
+    const { error } = await supabase.from("products").update({ category: newCat }).eq("id", productId);
+    setSaving(s => ({ ...s, [productId]: false }));
+    if (!error) {
+      setSavedIds(ids => [...ids, productId]);
+      setTimeout(() => {
+        setProducts(ps => ps.filter(p => p.id !== productId));
+        onCategoryChanged();
+      }, 800);
+    }
+  };
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 800, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(3px)" }} />
+      <div style={{
+        position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+        zIndex: 801, background: "#fff", borderRadius: "20px",
+        width: "min(620px, 95vw)", maxHeight: "82vh",
+        display: "flex", flexDirection: "column",
+        boxShadow: "0 24px 64px rgba(0,0,0,0.22)",
+      }}>
+        {/* Header */}
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid #EDE8E2", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#FFF9F0", borderRadius: "20px 20px 0 0" }}>
+          <div>
+            <h2 style={{ fontFamily: F_DISPLAY, fontSize: "17px", fontWeight: 700, color: "#1A1A1A", display: "flex", alignItems: "center", gap: "8px" }}>
+              <LayoutGrid size={18} color={CORAL} /> Productos sin categoría
+            </h2>
+            <p style={{ fontFamily: F_UI, fontSize: "13px", color: "#9B948E", marginTop: "3px" }}>
+              {loading ? "Cargando..." : `${products.length} producto${products.length !== 1 ? "s" : ""} sin asignar`}
+            </p>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", padding: "6px", color: "#6B6560", borderRadius: "8px" }}>
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Lista */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+          {loading ? (
+            <p style={{ textAlign: "center", padding: "40px", fontFamily: F_UI, color: "#9B948E" }}>Cargando productos...</p>
+          ) : products.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "48px 24px" }}>
+              <div style={{ fontSize: "44px", marginBottom: "12px" }}>✅</div>
+              <p style={{ fontFamily: F_UI, fontSize: "15px", fontWeight: 700, color: "#1A1A1A" }}>¡Todos los productos tienen categoría!</p>
+              <p style={{ fontFamily: F_UI, fontSize: "13px", color: "#9B948E", marginTop: "6px" }}>No hay nada pendiente por organizar.</p>
+            </div>
+          ) : products.map(p => {
+            const isSaved = savedIds.includes(p.id);
+            const isSaving = saving[p.id];
+            return (
+              <div key={p.id} style={{
+                display: "flex", alignItems: "center", gap: "12px",
+                padding: "12px 14px", border: `1.5px solid ${isSaved ? "#BBF7D0" : "#EDE8E2"}`,
+                borderRadius: "12px", background: isSaved ? "#F0FDF4" : "#FAFAFA",
+                transition: "all 0.3s",
+              }}>
+                {/* Miniatura */}
+                <div style={{ width: "52px", height: "52px", borderRadius: "10px", background: "#EEF2FF", overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {p.images?.[0]
+                    ? <img src={p.images[0]} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : <span style={{ fontSize: "22px" }}>{p.emoji || "📦"}</span>
+                  }
+                </div>
+
+                {/* Nombre */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontFamily: F_UI, fontSize: "14px", fontWeight: 600, color: "#1A1A1A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</p>
+                  <p style={{ fontFamily: F_UI, fontSize: "12px", color: isSaved ? "#16A34A" : "#E57373", marginTop: "2px" }}>
+                    {isSaved ? "Categoría asignada ✓" : (p.category ? `Categoría desconocida: "${p.category}"` : "Sin categoría")}
+                  </p>
+                </div>
+
+                {/* Select + botón */}
+                {!isSaved && (
+                  <>
+                    <select
+                      value={assignments[p.id] || REAL_CATS[0].id}
+                      onChange={e => setAssignments(a => ({ ...a, [p.id]: e.target.value }))}
+                      style={{ fontFamily: F_UI, fontSize: "13px", padding: "7px 10px", borderRadius: "8px", border: "1.5px solid #E0D8CC", background: "#fff", cursor: "pointer", flexShrink: 0, maxWidth: "160px" }}
+                    >
+                      {REAL_CATS.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                    </select>
+                    <button
+                      onClick={() => handleSave(p.id)}
+                      disabled={isSaving}
+                      style={{
+                        background: CORAL, color: "#fff", border: "none",
+                        borderRadius: "8px", padding: "8px 16px", cursor: "pointer",
+                        fontFamily: F_UI, fontSize: "13px", fontWeight: 700, flexShrink: 0,
+                        opacity: isSaving ? 0.65 : 1, transition: "opacity 0.15s",
+                      }}
+                    >
+                      {isSaving ? "..." : "Asignar"}
+                    </button>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -2846,6 +2995,7 @@ export default function App() {
   const [wishlist, setWishlist]               = useState([]);
   const [user, setUser]                       = useState(null);
   const [showPublish, setShowPublish]         = useState(false);
+  const [showUncategorized, setShowUncategorized] = useState(false);
   const [dbProducts, setDbProducts]           = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -3208,6 +3358,7 @@ export default function App() {
           onLogin={handleLogin}
           onLogout={handleLogout}
           onPublish={() => setShowPublish(true)}
+          onUncategorized={() => setShowUncategorized(true)}
           onCartOpen={() => setShowCart(true)}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -3242,6 +3393,13 @@ export default function App() {
             user={user}
             onClose={() => setShowPublish(false)}
             onPublished={() => setTimeout(fetchProducts, 800)}
+          />
+        )}
+
+        {showUncategorized && (
+          <UncategorizedPanel
+            onClose={() => setShowUncategorized(false)}
+            onCategoryChanged={fetchProducts}
           />
         )}
 
