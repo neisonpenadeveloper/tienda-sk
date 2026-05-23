@@ -1672,11 +1672,9 @@ function Footer({ children }) {
             © 2025 Tienda SYK · Hecho con cuidado en Colombia 🇨🇴
           </p>
           <div className="flex gap-4">
-            {["Privacidad", "Términos", "Contacto"].map(link => (
-              <a key={link} href="#" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#9B948E", textDecoration: "none" }}>
-                {link}
-              </a>
-            ))}
+            <a href="/privacidad" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#9B948E", textDecoration: "none" }}>Privacidad</a>
+            <a href="/terminos" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#9B948E", textDecoration: "none" }}>Términos</a>
+            <a href="https://wa.me/573225306651" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#9B948E", textDecoration: "none" }}>Contacto</a>
           </div>
         </div>
       </div>
