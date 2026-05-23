@@ -2032,7 +2032,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user })
     const lines = cart.map(item =>
       `  • ${item.quantity}x ${item.name} — ${fmtCOP(item.price * item.quantity)}`
     ).join("\n");
-    let msg = `👋 ¡Hola! Quiero hacer un pedido en *Tienda S&K* 🛍\n\n`;
+    let msg = `¡Hola! Quiero hacer un pedido en *Tienda S&K* 🛒\n\n`;
     msg += `${SEP}\n🛒 *PRODUCTOS*\n${SEP}\n${lines}\n`;
     if (appliedCoupon) {
       msg += `\n🏷 Cupón: *${appliedCoupon.code}* (-${appliedCoupon.pct}%)`;
@@ -2046,7 +2046,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user })
     const lines = cart.map(item =>
       `  • ${item.quantity}x ${item.name} — ${fmtCOP(item.price * item.quantity)}`
     ).join("\n");
-    let msg = `👋 ¡Hola! Tengo un pedido en *Tienda S&K* 🛍\n\n`;
+    let msg = `¡Hola! Tengo un pedido en *Tienda S&K* 🛒\n\n`;
     msg += `${SEP}\n🛒 *PRODUCTOS*\n${SEP}\n${lines}\n`;
     if (appliedCoupon) {
       msg += `\n🏷 Cupón: *${appliedCoupon.code}* (-${appliedCoupon.pct}%)`;
