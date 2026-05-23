@@ -2189,7 +2189,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user })
               </div>
             </div>
 
-            <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", WebkitOverflowScrolling: "touch" }}>
+            <div className="delivery-form" style={{ flex: 1, overflowY: "auto", padding: "16px 20px", WebkitOverflowScrolling: "touch" }}>
               <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "10px", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px", margin: "0 0 10px" }}>Contacto</p>
 
               <div style={{ marginBottom: "12px" }}>
@@ -3010,6 +3010,12 @@ export default function App() {
 
         /* ── Cart drawer ── */
         .cart-drawer { animation: slideInRight 0.3s cubic-bezier(0.16,1,0.3,1); }
+
+        /* Evita zoom automático en iOS al enfocar inputs del formulario de entrega */
+        .delivery-form input,
+        .delivery-form textarea {
+          font-size: 16px !important;
+        }
 
         /* ── Category pill hover ── */
         .cat-pill { transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1); }
