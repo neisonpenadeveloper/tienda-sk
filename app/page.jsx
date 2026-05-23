@@ -1148,7 +1148,7 @@ function Hero({ onShop, stats }) {
           }}>
             <span style={{ fontSize: "13px", lineHeight: 1 }}>🛵</span>
             <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 700, color: "#059669" }}>
-              Paga cuando lo recibas · Medellín
+              Paga cuando lo recibas · Medellín y sus alrededores
             </span>
           </div>
           <h1 style={{
