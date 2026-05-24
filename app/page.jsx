@@ -2268,13 +2268,14 @@ function Footer({ children }) {
 
 // ─── CART ITEM ────────────────────────────────────────────────────────────────
 function CartItem({ item, onRemove, onUpdateQty }) {
+  const fmtItem = n => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
   return (
-    <div style={{ display: "flex", gap: "12px", padding: "14px", background: "#FAF7F4", borderRadius: "14px" }}>
-      {/* Imagen / emoji */}
-      <div style={{
-        width: "76px", height: "76px", borderRadius: "10px", overflow: "hidden",
+    <div className="cart-item" style={{ display: "flex", gap: "12px", padding: "12px", background: "#fff", borderRadius: "14px", border: "1px solid #EDE8E2" }}>
+      {/* Imagen */}
+      <div className="cart-item-img" style={{
+        width: "72px", height: "72px", borderRadius: "10px", overflow: "hidden",
         flexShrink: 0, background: item.images?.length > 0 ? "#F5F0EA" : (item.color || "#F5F0EA"),
-        display: "flex", alignItems: "center", justifyContent: "center", fontSize: "30px",
+        display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px",
       }}>
         {item.images?.length > 0
           ? <img src={item.images[0]} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -2283,46 +2284,50 @@ function CartItem({ item, onRemove, onUpdateQty }) {
       </div>
 
       {/* Detalle */}
-      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
-          <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", fontWeight: 700, color: "#1A1A1A", lineHeight: 1.3, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-            {item.name}
-          </p>
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        {/* Fila nombre + eliminar */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "6px" }}>
+          <div style={{ minWidth: 0 }}>
+            <p className="cart-item-name" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13.5px", fontWeight: 700, color: "#1A1A1A", lineHeight: 1.3, margin: 0, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
+              {item.name}
+            </p>
+            <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11.5px", color: "#9B948E", margin: "2px 0 0" }}>
+              {fmtItem(item.price)} c/u
+            </p>
+          </div>
           <button
             onClick={() => onRemove(item.id)}
             title="Eliminar"
-            style={{ background: "none", border: "none", cursor: "pointer", color: "#C0B8B0", padding: "2px", flexShrink: 0, transition: "color 0.15s" }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "#C0B8B0", padding: "4px", flexShrink: 0, transition: "color 0.15s" }}
             onMouseEnter={e => e.currentTarget.style.color = CORAL}
             onMouseLeave={e => e.currentTarget.style.color = "#C0B8B0"}
           >
-            <Trash2 size={15} />
+            <Trash2 size={14} />
           </button>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          {/* Controles de cantidad */}
-          <div style={{ display: "flex", alignItems: "center", border: "1.5px solid #E0D8CC", borderRadius: "20px", overflow: "hidden" }}>
+        {/* Fila cantidad + precio total */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", background: "#F5F0EA", borderRadius: "20px", overflow: "hidden" }}>
             <button
               onClick={() => onUpdateQty(item.id, item.quantity - 1)}
-              style={{ width: "30px", height: "30px", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6B6560" }}
+              style={{ width: "28px", height: "28px", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6B6560" }}
             >
-              <Minus size={12} />
+              <Minus size={11} />
             </button>
-            <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700, color: "#1A1A1A", minWidth: "22px", textAlign: "center" }}>
+            <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700, color: "#1A1A1A", minWidth: "20px", textAlign: "center" }}>
               {item.quantity}
             </span>
             <button
               onClick={() => onUpdateQty(item.id, item.quantity + 1)}
               disabled={item.stock != null && item.quantity >= item.stock}
-              style={{ width: "30px", height: "30px", background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", color: "#6B6560", cursor: item.stock != null && item.quantity >= item.stock ? "not-allowed" : "pointer", opacity: item.stock != null && item.quantity >= item.stock ? 0.3 : 1 }}
+              style={{ width: "28px", height: "28px", background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", color: "#6B6560", cursor: item.stock != null && item.quantity >= item.stock ? "not-allowed" : "pointer", opacity: item.stock != null && item.quantity >= item.stock ? 0.3 : 1 }}
             >
-              <Plus size={12} />
+              <Plus size={11} />
             </button>
           </div>
-
-          {/* Subtotal */}
           <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", fontWeight: 800, color: "#1A1A1A" }}>
-            {new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(item.price * item.quantity)}
+            {fmtItem(item.price * item.quantity)}
           </span>
         </div>
       </div>
@@ -2525,7 +2530,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
         </div>
 
         {/* Lista de productos */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain", background: "#F8F5F2" }}>
           {cart.length === 0 ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "64px 24px", textAlign: "center" }}>
               <div style={{ width: "80px", height: "80px", borderRadius: "50%", background: CORAL_LIGHT, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
@@ -2549,20 +2554,20 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
 
         {/* Footer con resumen */}
         {cart.length > 0 && (
-          <div style={{ padding: "20px 24px", borderTop: "1px solid #EDE8E2", display: "flex", flexDirection: "column", gap: "14px" }}>
+          <div className="cart-footer" style={{ padding: "14px 18px", borderTop: "1px solid #EDE8E2", display: "flex", flexDirection: "column", gap: "10px" }}>
 
             {/* Barra de envío gratis */}
             <div>
               {total < FREE_SHIP ? (
-                <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12.5px", color: "#6B6560", marginBottom: "6px" }}>
-                  Agrega <strong style={{ color: CORAL }}>{fmtCOP(FREE_SHIP - total)}</strong> más para envío gratis
+                <p className="cart-ship-text" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#6B6560", marginBottom: "4px" }}>
+                  Agrega <strong style={{ color: CORAL }}>{fmtCOP(FREE_SHIP - total)}</strong> más para envío gratis 🚚
                 </p>
               ) : (
-                <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12.5px", color: "#2D7A4F", fontWeight: 600, marginBottom: "6px" }}>
+                <p className="cart-ship-text" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#2D7A4F", fontWeight: 600, marginBottom: "4px" }}>
                   ✓ ¡Envío gratis aplicado!
                 </p>
               )}
-              <div style={{ height: "6px", background: "#EDE8E2", borderRadius: "3px" }}>
+              <div style={{ height: "5px", background: "#EDE8E2", borderRadius: "3px" }}>
                 <div style={{ height: "100%", width: `${progress}%`, background: total >= FREE_SHIP ? "#2D7A4F" : CORAL, borderRadius: "3px", transition: "width 0.4s ease" }} />
               </div>
             </div>
@@ -2620,58 +2625,59 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
             )}
 
             {/* Desglose */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: "#6B6560" }}>Subtotal</span>
-                <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: "#1A1A1A", fontWeight: 600 }}>{fmtCOP(subtotal)}</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+              <div className="cart-price-row" style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", color: "#6B6560" }}>Subtotal</span>
+                <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", color: "#1A1A1A", fontWeight: 600 }}>{fmtCOP(subtotal)}</span>
               </div>
               {discount > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: "#2D7A4F" }}>Descuento ({appliedCoupon.pct}%)</span>
-                  <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: "#2D7A4F", fontWeight: 600 }}>− {fmtCOP(discount)}</span>
+                <div className="cart-price-row" style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", color: "#2D7A4F" }}>Descuento ({appliedCoupon.pct}%)</span>
+                  <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", color: "#2D7A4F", fontWeight: 600 }}>− {fmtCOP(discount)}</span>
                 </div>
               )}
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: "#6B6560" }}>Envío</span>
-                <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: total >= FREE_SHIP ? "#2D7A4F" : "#1A1A1A", fontWeight: 600 }}>
-                  {total >= FREE_SHIP ? "Gratis" : "A calcular"}
+              <div className="cart-price-row" style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", color: "#6B6560" }}>Envío</span>
+                <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", color: total >= FREE_SHIP ? "#2D7A4F" : "#1A1A1A", fontWeight: 600 }}>
+                  {total >= FREE_SHIP ? "Gratis 🚚" : "A calcular"}
                 </span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", paddingTop: "10px", borderTop: "1px solid #EDE8E2" }}>
-                <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", fontWeight: 700, color: "#1A1A1A" }}>Total</span>
-                <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "22px", fontWeight: 800, color: "#1A1A1A" }}>{fmtCOP(total)}</span>
+              <div style={{ display: "flex", justifyContent: "space-between", paddingTop: "8px", borderTop: "1px solid #EDE8E2", alignItems: "center" }}>
+                <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px", fontWeight: 700, color: "#1A1A1A" }}>Total</span>
+                <span className="cart-total-price" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "20px", fontWeight: 800, color: "#1A1A1A" }}>{fmtCOP(total)}</span>
               </div>
             </div>
 
             {/* Botón de pago */}
             <button
               onClick={() => setShowPaymentModal(true)}
+              className="cart-checkout-btn"
               style={{
-                width: "100%", padding: "16px",
+                width: "100%", padding: "14px",
                 background: CORAL,
                 color: "#fff", border: "none", borderRadius: "28px",
                 fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px", fontWeight: 700,
-                cursor: "pointer",
-                transition: "opacity 0.15s",
+                cursor: "pointer", transition: "opacity 0.15s",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: "9px",
-                boxShadow: "0 8px 24px rgba(37,99,235,0.35)",
+                boxShadow: "0 6px 20px rgba(37,99,235,0.35)",
               }}
               onMouseEnter={e => { e.currentTarget.style.opacity = "0.9"; }}
               onMouseLeave={e => e.currentTarget.style.opacity = "1"}
             >
-              <ShoppingBag size={18} />
+              <ShoppingBag size={17} />
               Proceder al pago
             </button>
 
-            {/* Botón seguir viendo */}
+            {/* Botón seguir viendo — oculto en móvil */}
             <button
               onClick={onClose}
+              className="cart-continue-btn"
               style={{
-                width: "100%", padding: "12px",
+                width: "100%", padding: "10px",
                 background: "none", border: `1.5px solid ${CORAL}`,
                 color: CORAL, borderRadius: "28px",
-                fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", fontWeight: 600,
-                cursor: "pointer", transition: "background 0.15s, color 0.15s",
+                fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 600,
+                cursor: "pointer", transition: "background 0.15s",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
               }}
               onMouseEnter={e => { e.currentTarget.style.background = CORAL_LIGHT; }}
@@ -2686,7 +2692,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
               </p>
             )}
 
-            <p style={{ textAlign: "center", fontFamily: "var(--font-roboto), sans-serif", fontSize: "11.5px", color: "#9B948E" }}>
+            <p className="cart-security-text" style={{ textAlign: "center", fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#9B948E" }}>
               🔒 Pago 100% seguro y encriptado
             </p>
           </div>
@@ -3751,6 +3757,20 @@ export default function App() {
           .pc-wishlist  { width: 40px !important; height: 40px !important; }
           .pc-add-btn   { font-size: 12px !important; padding: 8px 10px !important; }
           .pc-body      { padding: 12px !important; }
+        }
+
+        /* ── Cart items y footer compacto en móvil ── */
+        @media (max-width: 767px) {
+          .cart-footer       { padding: 10px 14px !important; gap: 8px !important; }
+          .cart-ship-text    { font-size: 11px !important; }
+          .cart-price-row span { font-size: 12px !important; }
+          .cart-total-price  { font-size: 17px !important; }
+          .cart-checkout-btn { padding: 12px !important; font-size: 14px !important; }
+          .cart-continue-btn { display: none !important; }
+          .cart-security-text { display: none !important; }
+          .cart-item         { padding: 10px !important; gap: 10px !important; }
+          .cart-item-img     { width: 60px !important; height: 60px !important; }
+          .cart-item-name    { font-size: 13px !important; }
         }
 
         /* ── Category pill hover ── */
