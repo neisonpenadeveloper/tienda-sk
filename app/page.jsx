@@ -1881,7 +1881,7 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
             </span>
           </div>
         )}
-        <h3 style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px", fontWeight: 700, color: "#1A1A1A", marginBottom: product.stock != null ? "6px" : "10px", lineHeight: 1.3 }}>
+        <h3 style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px", fontWeight: 700, color: "#1A1A1A", marginBottom: product.stock != null ? "6px" : "10px", lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
           {product.name}
         </h3>
 
