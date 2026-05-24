@@ -1629,7 +1629,8 @@ function UncategorizedPanel({ onClose, onCategoryChanged }) {
 // ─── CATEGORY PILLS ───────────────────────────────────────────────────────────
 function CategoryPills({ active, onChange }) {
   const [showAll, setShowAll] = useState(false);
-  const dropRef = useRef(null);
+  const dropRef  = useRef(null);
+  const scrollRef = useRef(null);
   const isExtraActive = EXTRA_CATEGORIES.some(c => c.id === active);
 
   useEffect(() => {
@@ -1638,11 +1639,18 @@ function CategoryPills({ active, onChange }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // Auto-centra el botón activo en móvil cuando cambia la categoría
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    const btn = scrollRef.current.querySelector("[data-active='true']");
+    if (btn) btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [active]);
+
   const pillStyle = (isActive) => ({
     display: "flex", alignItems: "center", gap: "7px",
     padding: "10px 22px", borderRadius: "24px",
     border: isActive ? "none" : "1.5px solid #E0D8CC",
-    background: isActive ? `linear-gradient(135deg, ${CORAL}, #ff6b52)` : "#fff",
+    background: isActive ? `linear-gradient(135deg, ${CORAL}, #1d4ed8)` : "#fff",
     color: isActive ? "#fff" : "#6B6560",
     fontFamily: "var(--font-roboto), sans-serif",
     fontSize: "13.5px", fontWeight: isActive ? 700 : 400,
@@ -1651,67 +1659,109 @@ function CategoryPills({ active, onChange }) {
   });
 
   return (
-    <div className="flex items-center gap-3 flex-wrap">
-      {CATEGORIES.map((cat) => {
-        const Icon = cat.icon;
-        return (
-          <button key={cat.id} onClick={() => onChange(cat.id)} className="cat-pill" style={pillStyle(active === cat.id)}>
-            <Icon size={14} />
-            {cat.label}
-          </button>
-        );
-      })}
-
-      {/* Dropdown: Todas las categorías */}
-      <div ref={dropRef} style={{ position: "relative" }}>
-        <button
-          onClick={() => setShowAll(v => !v)}
-          className="cat-pill"
-          style={{ ...pillStyle(isExtraActive), fontWeight: isExtraActive ? 700 : 600 }}
+    <>
+      {/* ── MÓVIL: carrusel horizontal con todas las categorías ── */}
+      <div className="md:hidden" style={{ width: "100%", overflow: "hidden", margin: "0 -16px" }}>
+        <div
+          ref={scrollRef}
+          className="cat-scroll"
+          style={{
+            display: "flex", gap: "10px",
+            overflowX: "auto", padding: "6px 16px 14px",
+            WebkitOverflowScrolling: "touch",
+          }}
         >
-          <LayoutGrid size={14} />
-          Todas las categorías
-          <ChevronDown size={13} style={{ transition: "transform 0.2s", transform: showAll ? "rotate(180deg)" : "rotate(0deg)", marginLeft: "2px" }} />
-        </button>
-
-        {showAll && (
-          <div style={{
-            position: "absolute", top: "calc(100% + 8px)", left: 0, zIndex: 200,
-            background: "#fff", borderRadius: "16px",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.13)",
-            border: "1px solid #E8E4DF",
-            padding: "10px",
-            display: "grid", gridTemplateColumns: "1fr 1fr",
-            gap: "6px", minWidth: "270px",
-          }}>
-            {EXTRA_CATEGORIES.map(cat => {
-              const Icon = cat.icon;
-              const isActive = active === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => { onChange(cat.id); setShowAll(false); }}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "8px",
-                    padding: "10px 14px", borderRadius: "10px", border: "none",
-                    background: isActive ? `linear-gradient(135deg, ${CORAL}, #ff6b52)` : "#F8FAFC",
-                    color: isActive ? "#fff" : "#334155",
-                    fontFamily: "var(--font-roboto), sans-serif",
-                    fontSize: "13px", fontWeight: isActive ? 700 : 500,
-                    cursor: "pointer", textAlign: "left", transition: "background 0.15s",
-                  }}
-                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "#EEF2FF"; }}
-                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "#F8FAFC"; }}
-                >
-                  <Icon size={15} />
-                  {cat.label}
-                </button>
-              );
-            })}
-          </div>
-        )}
+          {ALL_CATEGORIES.map((cat) => {
+            const Icon = cat.icon;
+            const isActive = active === cat.id;
+            return (
+              <button
+                key={cat.id}
+                data-active={String(isActive)}
+                onClick={() => onChange(cat.id)}
+                style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: "6px",
+                  padding: "14px 18px", borderRadius: "18px", flexShrink: 0,
+                  border: isActive ? "none" : "1.5px solid #E0D8CC",
+                  background: isActive ? `linear-gradient(135deg, ${CORAL}, #1d4ed8)` : "#fff",
+                  color: isActive ? "#fff" : "#4A4A4A",
+                  fontFamily: "var(--font-roboto), sans-serif",
+                  fontSize: "11.5px", fontWeight: isActive ? 700 : 500,
+                  cursor: "pointer", whiteSpace: "nowrap",
+                  boxShadow: isActive ? "0 6px 20px rgba(37,99,235,0.35)" : "0 1px 4px rgba(0,0,0,0.07)",
+                  transition: "all 0.18s ease",
+                  minWidth: "68px",
+                }}
+              >
+                <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
+                {cat.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
-    </div>
+
+      {/* ── DESKTOP: pills + dropdown ── */}
+      <div className="hidden md:flex items-center gap-3 flex-wrap">
+        {CATEGORIES.map((cat) => {
+          const Icon = cat.icon;
+          return (
+            <button key={cat.id} onClick={() => onChange(cat.id)} className="cat-pill" style={pillStyle(active === cat.id)}>
+              <Icon size={14} />
+              {cat.label}
+            </button>
+          );
+        })}
+
+        <div ref={dropRef} style={{ position: "relative" }}>
+          <button
+            onClick={() => setShowAll(v => !v)}
+            className="cat-pill"
+            style={{ ...pillStyle(isExtraActive), fontWeight: isExtraActive ? 700 : 600 }}
+          >
+            <LayoutGrid size={14} />
+            Todas las categorías
+            <ChevronDown size={13} style={{ transition: "transform 0.2s", transform: showAll ? "rotate(180deg)" : "rotate(0deg)", marginLeft: "2px" }} />
+          </button>
+
+          {showAll && (
+            <div style={{
+              position: "absolute", top: "calc(100% + 8px)", left: 0, zIndex: 200,
+              background: "#fff", borderRadius: "16px",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.13)",
+              border: "1px solid #E8E4DF", padding: "10px",
+              display: "grid", gridTemplateColumns: "1fr 1fr",
+              gap: "6px", minWidth: "270px",
+            }}>
+              {EXTRA_CATEGORIES.map(cat => {
+                const Icon = cat.icon;
+                const isActive = active === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => { onChange(cat.id); setShowAll(false); }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "8px",
+                      padding: "10px 14px", borderRadius: "10px", border: "none",
+                      background: isActive ? `linear-gradient(135deg, ${CORAL}, #1d4ed8)` : "#F8FAFC",
+                      color: isActive ? "#fff" : "#334155",
+                      fontFamily: "var(--font-roboto), sans-serif",
+                      fontSize: "13px", fontWeight: isActive ? 700 : 500,
+                      cursor: "pointer", textAlign: "left", transition: "background 0.15s",
+                    }}
+                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "#EEF2FF"; }}
+                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "#F8FAFC"; }}
+                  >
+                    <Icon size={15} />
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -3648,6 +3698,10 @@ export default function App() {
         /* ── Category pill hover ── */
         .cat-pill { transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1); }
         .cat-pill:hover { transform: scale(1.05); }
+
+        /* ── Category scroll (móvil) — ocultar scrollbar ── */
+        .cat-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .cat-scroll::-webkit-scrollbar { display: none; }
 
         /* ── Stat card ── */
         .stat-card {
