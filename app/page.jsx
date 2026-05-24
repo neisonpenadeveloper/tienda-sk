@@ -2931,7 +2931,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
 }
 
 // ─── PRODUCT MODAL ────────────────────────────────────────────────────────────
-function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, user, onDelete, onEdit, onToggleActive }) {
+function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, user, onDelete, onEdit, onToggleActive, onBuyNow }) {
   const [selectedImg, setSelectedImg]     = useState(0);
   const [added, setAdded]                 = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -3215,6 +3215,29 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
               </p>
             )}
           </div>
+
+          {/* ── Botón pagar contra entrega ── */}
+          <button
+            onClick={() => { onBuyNow?.(product); onClose(); }}
+            style={{
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              width: "100%", padding: "16px 20px", borderRadius: "16px", border: "none",
+              background: "linear-gradient(135deg, #16A34A, #15803D)",
+              color: "#fff", cursor: "pointer", gap: "4px",
+              boxShadow: "0 8px 24px rgba(22,163,74,0.35)",
+              transition: "transform 0.15s, box-shadow 0.15s",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 12px 28px rgba(22,163,74,0.45)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(22,163,74,0.35)"; }}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "17px", fontWeight: 800, letterSpacing: "-0.2px" }}>
+              <Truck size={22} strokeWidth={2.5} />
+              Pagar contra entrega
+            </span>
+            <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 400, opacity: 0.88 }}>
+              Recíbelo en casa · paga al llegar
+            </span>
+          </button>
 
           {/* ── Tabs descripción / especificaciones / resumen ── */}
           <div>
@@ -4080,6 +4103,11 @@ export default function App() {
             onDelete={handleDeleteProduct}
             onEdit={setEditingProduct}
             onToggleActive={handleToggleActive}
+            onBuyNow={(product) => {
+              handleAddToCart(product);
+              setShowPaymentModal(true);
+              setShowDeliveryForm(true);
+            }}
           />
         )}
 
