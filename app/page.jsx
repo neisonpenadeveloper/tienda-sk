@@ -883,6 +883,11 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [menuOpen]);
+
   return (
     <header style={{ borderBottom: "1px solid #EDE8E2", background: "#fff" }} className="sticky top-0 z-50">
       <div className="px-4 md:px-8" style={{ maxWidth: "1600px", margin: "0 auto", boxSizing: "border-box" }}>
@@ -1195,7 +1200,16 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
         </div>
 
         {menuOpen && (
-          <div style={{ borderTop: "1px solid #EDE8E2", paddingBottom: "12px" }} className="md:hidden">
+          <div
+            className="md:hidden"
+            style={{
+              position: "fixed", top: "64px", left: 0, right: 0, bottom: 0,
+              zIndex: 49, background: "#fff",
+              overflowY: "auto", WebkitOverflowScrolling: "touch",
+              borderTop: "1px solid #EDE8E2",
+              padding: "0 16px 40px",
+            }}
+          >
             {/* Buscador en menú móvil */}
             <div style={{ padding: "10px 0 4px" }}>
               <div style={{
