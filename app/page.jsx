@@ -3296,7 +3296,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
           <div style={{ borderTop: "1px solid #EDE8E2", paddingTop: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
             {[
               { icon: Truck,    text: "Envío gratis en compras mayores a $70.000" },
-              { icon: Package,  text: "Garantía de calidad en todos los productos"  },
+              { icon: ShoppingBag, text: "Puedes pagar al recibir" },
             ].map(({ icon: Icon, text }) => (
               <div key={text} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <div style={{ background: CORAL_LIGHT, borderRadius: "8px", width: "32px", height: "32px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
