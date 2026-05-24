@@ -3104,7 +3104,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
                   { label: "Precio",         value: fmt(product.price) },
                   ...(product.oldPrice ? [{ label: "Precio anterior", value: fmt(product.oldPrice) }] : []),
                   { label: "Disponibilidad", value: product.stock > 5 ? "En stock" : product.stock > 0 ? `Solo ${product.stock} disponibles` : "Agotado" },
-                  { label: "Garantía",       value: "30 días" },
+                  { label: "Garantía",       value: "10 días" },
                   { label: "Envío gratis",   value: "En compras mayores a $70.000" },
                 ].map(({ label, value }, i) => (
                   <div
@@ -3185,7 +3185,6 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
             {[
               { icon: Truck,    text: "Envío gratis en compras mayores a $70.000" },
               { icon: Package,  text: "Garantía de calidad en todos los productos"  },
-              { icon: ArrowRight, text: "Devoluciones fáciles en 30 días"           },
             ].map(({ icon: Icon, text }) => (
               <div key={text} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <div style={{ background: CORAL_LIGHT, borderRadius: "8px", width: "32px", height: "32px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
