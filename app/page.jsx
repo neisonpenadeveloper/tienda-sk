@@ -886,15 +886,15 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
   return (
     <header style={{ borderBottom: "1px solid #EDE8E2", background: "#fff" }} className="sticky top-0 z-50">
       <div className="px-4 md:px-8" style={{ maxWidth: "1600px", margin: "0 auto", boxSizing: "border-box" }}>
-        <div style={{ display: "flex", alignItems: "center", height: "64px", gap: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", height: "64px", gap: "8px" }}>
 
           {/* Logo */}
-          <div className="flex items-center flex-shrink-0" style={{ height: "52px" }}>
-            <img src="/header-logo.png" alt="Tienda S&K" style={{ height: "52px", width: "auto" }} />
+          <div className="nav-logo-wrap flex items-center flex-shrink-0" style={{ height: "52px" }}>
+            <img src="/header-logo.png" alt="Tienda S&K" className="nav-logo" style={{ height: "52px", width: "auto" }} />
           </div>
 
           {/* Buscador móvil — inline en la fila principal */}
-          <div className="flex md:hidden" style={{ flex: 1 }}>
+          <div className="flex md:hidden" style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
                 display: "flex", alignItems: "center", gap: "8px",
@@ -1168,6 +1168,7 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
             ) : (
               <button
                 onClick={onLogin}
+                className="login-btn-pill"
                 style={{
                   display: "flex", alignItems: "center", gap: "7px",
                   background: CORAL, color: "#fff", border: "none",
@@ -3708,6 +3709,13 @@ export default function App() {
         .delivery-form input,
         .delivery-form textarea {
           font-size: 16px !important;
+        }
+
+        /* ── Header móvil ── */
+        @media (max-width: 767px) {
+          .nav-logo      { height: 38px !important; max-width: 96px; object-fit: contain; }
+          .nav-logo-wrap { height: 38px !important; }
+          .login-btn-pill { padding: 8px 10px !important; }
         }
 
         /* ── Category pill hover ── */
