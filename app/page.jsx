@@ -2670,7 +2670,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
           <div className="cart-footer" style={{ padding: "14px 18px", borderTop: "1px solid #EDE8E2", display: "flex", flexDirection: "column", gap: "10px" }}>
 
             {/* Barra de envío gratis */}
-            <div>
+            <div className="cart-ship-bar">
               {total < FREE_SHIP ? (
                 <p className="cart-ship-text" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#6B6560", marginBottom: "4px" }}>
                   Agrega <strong style={{ color: CORAL }}>{fmtCOP(FREE_SHIP - total)}</strong> más para envío gratis 🚚
@@ -2680,12 +2680,13 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
                   ✓ ¡Envío gratis aplicado!
                 </p>
               )}
-              <div style={{ height: "5px", background: "#EDE8E2", borderRadius: "3px" }}>
+              <div className="cart-ship-progress" style={{ height: "5px", background: "#EDE8E2", borderRadius: "3px" }}>
                 <div style={{ height: "100%", width: `${progress}%`, background: total >= FREE_SHIP ? "#2D7A4F" : CORAL, borderRadius: "3px", transition: "width 0.4s ease" }} />
               </div>
             </div>
 
             {/* Campo de cupón */}
+            <div className="cart-coupon-wrap" style={{ marginTop: 0 }}>
             {appliedCoupon ? (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(45,122,79,0.08)", border: "1.5px solid rgba(45,122,79,0.25)", borderRadius: "14px", padding: "10px 14px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -2705,6 +2706,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
               <div>
                 <div style={{ display: "flex", gap: "8px" }}>
                   <input
+                    className="cart-coupon-input"
                     type="text"
                     value={couponInput}
                     onChange={e => { setCouponInput(e.target.value); setCouponError(""); }}
@@ -2718,6 +2720,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
                     }}
                   />
                   <button
+                    className="cart-coupon-btn"
                     onClick={handleApplyCoupon}
                     style={{
                       padding: "10px 16px", borderRadius: "12px", border: "1.5px solid #1A1A1A",
@@ -2736,9 +2739,10 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
                 )}
               </div>
             )}
+            </div>
 
             {/* Desglose */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+            <div className="cart-breakdown" style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
               <div className="cart-price-row" style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", color: "#6B6560" }}>Subtotal</span>
                 <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", color: "#1A1A1A", fontWeight: 600 }}>{fmtCOP(subtotal)}</span>
@@ -2755,8 +2759,8 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
                   {total >= FREE_SHIP ? "Gratis 🚚" : "A calcular"}
                 </span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", paddingTop: "8px", borderTop: "1px solid #EDE8E2", alignItems: "center" }}>
-                <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px", fontWeight: 700, color: "#1A1A1A" }}>Total</span>
+              <div className="cart-total-row" style={{ display: "flex", justifyContent: "space-between", paddingTop: "8px", borderTop: "1px solid #EDE8E2", alignItems: "center" }}>
+                <span className="cart-total-label" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px", fontWeight: 700, color: "#1A1A1A" }}>Total</span>
                 <span className="cart-total-price" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "20px", fontWeight: 800, color: "#1A1A1A" }}>{fmtCOP(total)}</span>
               </div>
             </div>
@@ -4033,16 +4037,24 @@ export default function App() {
 
         /* ── Cart items y footer compacto en móvil ── */
         @media (max-width: 767px) {
-          .cart-footer       { padding: 10px 14px 90px !important; gap: 8px !important; }
-          .cart-ship-text    { font-size: 11px !important; }
-          .cart-price-row span { font-size: 12px !important; }
-          .cart-total-price  { font-size: 17px !important; }
-          .cart-checkout-btn { padding: 12px !important; font-size: 14px !important; }
-          .cart-continue-btn { display: none !important; }
+          .cart-footer        { padding: 8px 14px 64px !important; gap: 4px !important; }
+          .cart-ship-bar      { margin-bottom: 4px !important; }
+          .cart-ship-text     { font-size: 10.5px !important; margin-bottom: 2px !important; }
+          .cart-ship-progress { height: 4px !important; }
+          .cart-coupon-wrap   { margin-top: 2px !important; }
+          .cart-coupon-input  { padding: 8px 10px !important; font-size: 15px !important; }
+          .cart-coupon-btn    { padding: 8px 12px !important; font-size: 12px !important; }
+          .cart-breakdown     { gap: 2px !important; }
+          .cart-price-row span { font-size: 11.5px !important; }
+          .cart-total-row     { padding-top: 5px !important; }
+          .cart-total-price   { font-size: 16px !important; }
+          .cart-total-label   { font-size: 13px !important; }
+          .cart-checkout-btn  { padding: 13px !important; font-size: 14px !important; margin-top: 2px !important; }
+          .cart-continue-btn  { display: none !important; }
           .cart-security-text { display: none !important; }
-          .cart-item         { padding: 10px !important; gap: 10px !important; }
-          .cart-item-img     { width: 60px !important; height: 60px !important; }
-          .cart-item-name    { font-size: 13px !important; }
+          .cart-item          { padding: 10px !important; gap: 10px !important; }
+          .cart-item-img      { width: 60px !important; height: 60px !important; }
+          .cart-item-name     { font-size: 13px !important; }
         }
 
         /* ── Category pill hover ── */
