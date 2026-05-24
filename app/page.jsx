@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { ShoppingBag, Search, Heart, Menu, X, Star, Home, Sparkles, Smile, ArrowRight, Package, Truck, PlusCircle, LogOut, LogIn, Upload, Trash2, Minus, Plus, ChevronDown, Share2, Check, Copy, Pencil, Wrench, Droplets, Tag, ChefHat, Shirt, Laptop, Activity, PawPrint, LayoutGrid } from "lucide-react";
+import { ShoppingBag, Search, Heart, Menu, X, Star, Home, Sparkles, Smile, ArrowRight, Package, Truck, PlusCircle, LogOut, LogIn, Upload, Trash2, Minus, Plus, ChevronDown, Share2, Check, Copy, Pencil, Wrench, Droplets, Tag, ChefHat, Shirt, Laptop, Activity, PawPrint, LayoutGrid, EyeOff } from "lucide-react";
 
 // ─── SUPABASE CLIENT ──────────────────────────────────────────────────────────
 const supabase = createClient(
@@ -1672,7 +1672,7 @@ function UncategorizedPanel({ onClose, onCategoryChanged }) {
 }
 
 // ─── CATEGORY PILLS ───────────────────────────────────────────────────────────
-function CategoryPills({ active, onChange }) {
+function CategoryPills({ active, onChange, isAdmin }) {
   const [showAll, setShowAll] = useState(false);
   const dropRef  = useRef(null);
   const scrollRef = useRef(null);
@@ -1745,11 +1745,37 @@ function CategoryPills({ active, onChange }) {
               </button>
             );
           })}
+          {isAdmin && (() => {
+            const isActive = active === "inactivos";
+            return (
+              <button
+                data-active={String(isActive)}
+                onClick={() => onChange("inactivos")}
+                style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: "6px",
+                  padding: "14px 18px", borderRadius: "18px", flexShrink: 0,
+                  border: isActive ? "none" : "1.5px solid #FED7AA",
+                  background: isActive ? "linear-gradient(135deg, #EA580C, #C2410C)" : "#FFF7ED",
+                  color: isActive ? "#fff" : "#C2410C",
+                  fontFamily: "var(--font-roboto), sans-serif",
+                  fontSize: "11.5px", fontWeight: isActive ? 700 : 500,
+                  cursor: "pointer", whiteSpace: "nowrap",
+                  boxShadow: isActive ? "0 6px 20px rgba(234,88,12,0.35)" : "0 1px 4px rgba(0,0,0,0.07)",
+                  transition: "all 0.18s ease",
+                  minWidth: "68px",
+                  scrollSnapAlign: "start",
+                }}
+              >
+                <EyeOff size={22} strokeWidth={isActive ? 2.5 : 1.8} />
+                Inactivos
+              </button>
+            );
+          })()}
         </div>
       </div>
 
       {/* ── DESKTOP: pills + dropdown ── */}
-      <div className="hidden md:flex items-center gap-3 flex-wrap">
+      <div className="hidden md:flex items-center gap-3 flex-wrap" style={{ flexWrap: "wrap" }}>
         {CATEGORIES.map((cat) => {
           const Icon = cat.icon;
           return (
@@ -1807,6 +1833,23 @@ function CategoryPills({ active, onChange }) {
             </div>
           )}
         </div>
+
+        {isAdmin && (
+          <button
+            onClick={() => onChange("inactivos")}
+            className="cat-pill"
+            style={{
+              ...pillStyle(active === "inactivos"),
+              background: active === "inactivos" ? "linear-gradient(135deg, #EA580C, #C2410C)" : "#FFF7ED",
+              border: active === "inactivos" ? "none" : "1.5px solid #FED7AA",
+              color: active === "inactivos" ? "#fff" : "#C2410C",
+              boxShadow: active === "inactivos" ? "0 6px 20px rgba(234,88,12,0.35)" : "none",
+            }}
+          >
+            <EyeOff size={14} />
+            Inactivos
+          </button>
+        )}
       </div>
     </>
   );
@@ -3661,8 +3704,9 @@ export default function App() {
         p.category?.toLowerCase().includes(q)
       );
     }
-    if (activeCategory === "favoritos") return wishlist.includes(p.id);
-    if (activeCategory === "ofertas")   return p.oldPrice != null && p.oldPrice > p.price;
+    if (activeCategory === "favoritos")  return wishlist.includes(p.id);
+    if (activeCategory === "ofertas")    return p.oldPrice != null && p.oldPrice > p.price;
+    if (activeCategory === "inactivos")  return p.is_active === false;
     return activeCategory === "all" || p.category === activeCategory;
   });
 
@@ -4089,7 +4133,8 @@ export default function App() {
               <h2 className="catalog-title" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "30px", fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.5px" }}>
                 {searchQuery.trim()
                   ? <>Resultados para <span style={{ color: CORAL }}>"{searchQuery.trim()}"</span></>
-                  : activeCategory === "ofertas" ? <><span style={{ color: CORAL }}>🔥</span> Ofertas especiales</>
+                  : activeCategory === "ofertas"   ? <><span style={{ color: CORAL }}>🔥</span> Ofertas especiales</>
+                  : activeCategory === "inactivos" ? <><span style={{ color: "#EA580C" }}>⏸</span> Productos inactivos</>
                   : activeCategory === "all" ? "Todos los productos" : ALL_CATEGORIES.find(c => c.id === activeCategory)?.label
                 }
               </h2>
@@ -4100,7 +4145,7 @@ export default function App() {
           </div>
 
           <div id="productos" style={{ marginBottom: "32px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
-            <CategoryPills active={activeCategory} onChange={setActiveCategory} />
+            <CategoryPills active={activeCategory} onChange={setActiveCategory} isAdmin={isAdmin} />
             <div style={{ position: "relative", flexShrink: 0 }}>
               <select
                 value={sortBy}
