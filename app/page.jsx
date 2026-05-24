@@ -2346,6 +2346,20 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
   const [showPaymentModal, setShowPaymentModal]   = useState(false);
   const [showDeliveryForm, setShowDeliveryForm]   = useState(false);
   const [showOrderSuccess, setShowOrderSuccess]   = useState(false);
+  const [headerH, setHeaderH] = useState(0);
+
+  useEffect(() => {
+    const update = () => {
+      if (window.innerWidth < 768) {
+        setHeaderH(document.querySelector("header")?.offsetHeight ?? 0);
+      } else {
+        setHeaderH(0);
+      }
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
   const [deliveryForm, setDeliveryForm] = useState({ nombre: "", telefono: "", correo: "", notas: "", direccion: "", referencia: "", ciudad: "Medellín", departamento: "Antioquia", adicional: "" });
   const [deliveryErrors, setDeliveryErrors]       = useState({});
 
@@ -2463,14 +2477,14 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
       {/* Fondo oscuro */}
       <div
         onClick={onClose}
-        style={{ position: "fixed", inset: 0, zIndex: 700, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(3px)" }}
+        style={{ position: "fixed", top: headerH, left: 0, right: 0, bottom: 0, zIndex: 700, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(3px)" }}
       />
 
       {/* Panel deslizante */}
       <div
         className="cart-drawer"
         style={{
-          position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 701,
+          position: "fixed", top: headerH, right: 0, bottom: 0, zIndex: 701,
           width: "100%", maxWidth: "420px",
           background: "#fff", display: "flex", flexDirection: "column",
           boxShadow: "-12px 0 50px rgba(0,0,0,0.18)",
