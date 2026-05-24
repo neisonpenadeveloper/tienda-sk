@@ -2362,6 +2362,11 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
   const [deliveryForm, setDeliveryForm] = useState({ nombre: "", telefono: "", correo: "", notas: "", direccion: "", referencia: "", ciudad: "Medellín", departamento: "Antioquia", adicional: "" });
   const [deliveryErrors, setDeliveryErrors]       = useState({});
 
@@ -2519,7 +2524,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
         </div>
 
         {/* Lista de productos */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
           {cart.length === 0 ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "64px 24px", textAlign: "center" }}>
               <div style={{ width: "80px", height: "80px", borderRadius: "50%", background: CORAL_LIGHT, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
