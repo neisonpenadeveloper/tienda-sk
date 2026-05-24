@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { ShoppingBag, Search, Heart, Menu, X, Star, Home, Sparkles, Smile, ArrowRight, Package, Truck, PlusCircle, LogOut, LogIn, Upload, Trash2, Minus, Plus, ChevronDown, Share2, Check, Copy, Pencil, Wrench, Droplets, Tag, ChefHat, Shirt, Laptop, Activity, PawPrint, LayoutGrid, Smartphone } from "lucide-react";
+import { ShoppingBag, Search, Heart, Menu, X, Star, Home, Sparkles, Smile, ArrowRight, Package, Truck, PlusCircle, LogOut, LogIn, Upload, Trash2, Minus, Plus, ChevronDown, Share2, Check, Copy, Pencil, Wrench, Droplets, Tag, ChefHat, Shirt, Laptop, Activity, PawPrint, LayoutGrid } from "lucide-react";
 
 // ─── SUPABASE CLIENT ──────────────────────────────────────────────────────────
 const supabase = createClient(
@@ -866,88 +866,8 @@ function AnnouncementBar() {
   );
 }
 
-// ─── MOBILE SIMULATOR (solo admin) ───────────────────────────────────────────
-function MobileSimulator({ onClose }) {
-  const url = typeof window !== "undefined" ? window.location.origin : "/";
-
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  return (
-    <div
-      style={{
-        position: "fixed", inset: 0, zIndex: 9999,
-        background: "rgba(0,0,0,0.88)",
-        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-        gap: "14px",
-      }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      {/* Barra superior */}
-      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-        <Smartphone size={16} color="#fff" />
-        <span style={{ color: "#fff", fontFamily: "var(--font-roboto)", fontSize: "13px", fontWeight: 600, letterSpacing: "0.3px" }}>
-          Vista móvil simulada
-        </span>
-        <button
-          onClick={onClose}
-          style={{
-            background: "rgba(255,255,255,0.12)", border: "none", borderRadius: "50%",
-            width: "30px", height: "30px", display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", color: "#fff",
-          }}
-        >
-          <X size={15} />
-        </button>
-      </div>
-
-      {/* Marco del celular */}
-      <div style={{
-        background: "#111",
-        borderRadius: "44px",
-        padding: "14px 8px 20px",
-        boxShadow: "0 0 0 1.5px #333, 0 0 0 3px #222, 0 30px 80px rgba(0,0,0,0.6)",
-        position: "relative",
-        display: "flex", flexDirection: "column", alignItems: "center", gap: "8px",
-      }}>
-        {/* Dynamic island */}
-        <div style={{
-          width: "92px", height: "22px",
-          background: "#111", borderRadius: "20px",
-          flexShrink: 0,
-        }} />
-        {/* Pantalla */}
-        <div style={{
-          width: "390px", height: "750px",
-          borderRadius: "4px", overflow: "hidden",
-          background: "#fff",
-        }}>
-          <iframe
-            src={url}
-            style={{ width: "390px", height: "750px", border: "none", display: "block" }}
-            title="Vista móvil"
-          />
-        </div>
-        {/* Barra home */}
-        <div style={{
-          width: "120px", height: "4px",
-          background: "#444", borderRadius: "4px",
-          flexShrink: 0,
-        }} />
-      </div>
-
-      <span style={{ color: "rgba(255,255,255,0.35)", fontSize: "11px", fontFamily: "var(--font-roboto)" }}>
-        Presiona Esc o haz clic afuera para cerrar
-      </span>
-    </div>
-  );
-}
-
 // ─── NAVBAR ───────────────────────────────────────────────────────────────────
-function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, setActiveCategory, user, isAdmin, onLogin, onLogout, onPublish, onUncategorized, onCouponManager, onMobileSimulator, onCartOpen, searchQuery, setSearchQuery }) {
+function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, setActiveCategory, user, isAdmin, onLogin, onLogout, onPublish, onUncategorized, onCouponManager, onCartOpen, searchQuery, setSearchQuery }) {
   const desktopInputRef = useRef(null);
   const mobileInputRef  = useRef(null);
   const [showNavAll, setShowNavAll] = useState(false);
@@ -1214,22 +1134,6 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
                   >
                     <Tag size={14} />
                     <span className="hidden sm:inline">Cupones</span>
-                  </button>
-                  <button
-                    onClick={onMobileSimulator}
-                    title="Simular vista móvil"
-                    style={{
-                      display: "flex", alignItems: "center", gap: "7px",
-                      background: "#EFF6FF", color: "#1D4ED8", border: "1.5px solid #BFDBFE",
-                      borderRadius: "24px", padding: "7px 14px",
-                      fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700,
-                      cursor: "pointer", transition: "opacity 0.15s",
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
-                    onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-                  >
-                    <Smartphone size={14} />
-                    <span className="hidden sm:inline">Simular móvil</span>
                   </button>
                   <button
                     onClick={onPublish}
@@ -3493,7 +3397,6 @@ export default function App() {
   const [showPublish, setShowPublish]         = useState(false);
   const [showUncategorized, setShowUncategorized] = useState(false);
   const [showCouponManager, setShowCouponManager] = useState(false);
-  const [showMobileSimulator, setShowMobileSimulator] = useState(false);
   const [dbCoupons, setDbCoupons]             = useState([]);
   const [dbProducts, setDbProducts]           = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
@@ -3923,7 +3826,6 @@ export default function App() {
           onPublish={() => setShowPublish(true)}
           onUncategorized={() => setShowUncategorized(true)}
           onCouponManager={() => setShowCouponManager(true)}
-          onMobileSimulator={() => setShowMobileSimulator(true)}
           onCartOpen={() => setShowCart(true)}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -3978,10 +3880,6 @@ export default function App() {
             onClose={() => setShowCouponManager(false)}
             onChanged={fetchCoupons}
           />
-        )}
-
-        {showMobileSimulator && (
-          <MobileSimulator onClose={() => setShowMobileSimulator(false)} />
         )}
 
         {isAdmin && <AdminStatsBar dbProducts={dbProducts} />}
