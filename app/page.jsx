@@ -1204,28 +1204,86 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
             className="md:hidden"
             style={{
               position: "fixed", top: "64px", left: 0, right: 0, bottom: 0,
-              zIndex: 49, background: "#fff",
+              zIndex: 49, background: "#FAFAFA",
               overflowY: "auto", WebkitOverflowScrolling: "touch",
               borderTop: "1px solid #EDE8E2",
-              padding: "0 16px 100px",
+              padding: "12px 16px 100px",
             }}
           >
-            {ALL_CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => { setActiveCategory(cat.id); setMenuOpen(false); }}
-                style={{
-                  display: "block", width: "100%", textAlign: "left",
-                  padding: "12px 4px", background: "none", border: "none",
-                  fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px",
-                  fontWeight: activeCategory === cat.id ? 700 : 400,
-                  color: activeCategory === cat.id ? CORAL : "#4A4A4A",
-                  cursor: "pointer",
-                }}
-              >
-                {cat.label}
-              </button>
-            ))}
+            <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", fontWeight: 700, color: "#9B948E", letterSpacing: "1px", textTransform: "uppercase", padding: "8px 4px 10px" }}>
+              Categorías
+            </p>
+            {CATEGORIES.map((cat) => {
+              const Icon = cat.icon;
+              const isActive = activeCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => { setActiveCategory(cat.id); setMenuOpen(false); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "14px",
+                    width: "100%", textAlign: "left",
+                    padding: "10px 10px", marginBottom: "4px",
+                    background: isActive ? CORAL_LIGHT : "#fff",
+                    border: isActive ? `1.5px solid rgba(37,99,235,0.18)` : "1.5px solid transparent",
+                    borderRadius: "14px",
+                    fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px",
+                    fontWeight: isActive ? 700 : 500,
+                    color: isActive ? CORAL : "#1A1A1A",
+                    cursor: "pointer", boxShadow: isActive ? "none" : "0 1px 3px rgba(0,0,0,0.05)",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  <div style={{
+                    width: "40px", height: "40px", borderRadius: "11px", flexShrink: 0,
+                    background: isActive ? CORAL : "#EEF2FF",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "background 0.15s",
+                  }}>
+                    <Icon size={19} color={isActive ? "#fff" : CORAL} />
+                  </div>
+                  {cat.label}
+                </button>
+              );
+            })}
+
+            <div style={{ borderTop: "1px solid #EDE8E2", margin: "14px 0 8px" }} />
+            <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", fontWeight: 700, color: "#9B948E", letterSpacing: "1px", textTransform: "uppercase", padding: "0 4px 10px" }}>
+              Más categorías
+            </p>
+            {EXTRA_CATEGORIES.map((cat) => {
+              const Icon = cat.icon;
+              const isActive = activeCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => { setActiveCategory(cat.id); setMenuOpen(false); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "14px",
+                    width: "100%", textAlign: "left",
+                    padding: "10px 10px", marginBottom: "4px",
+                    background: isActive ? CORAL_LIGHT : "#fff",
+                    border: isActive ? `1.5px solid rgba(37,99,235,0.18)` : "1.5px solid transparent",
+                    borderRadius: "14px",
+                    fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px",
+                    fontWeight: isActive ? 700 : 500,
+                    color: isActive ? CORAL : "#1A1A1A",
+                    cursor: "pointer", boxShadow: isActive ? "none" : "0 1px 3px rgba(0,0,0,0.05)",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  <div style={{
+                    width: "40px", height: "40px", borderRadius: "11px", flexShrink: 0,
+                    background: isActive ? CORAL : "#EEF2FF",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "background 0.15s",
+                  }}>
+                    <Icon size={19} color={isActive ? "#fff" : CORAL} />
+                  </div>
+                  {cat.label}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -1249,34 +1307,36 @@ function Hero({ onShop, stats }) {
 
       <div className="hero-inner" style={{ width: "100%", maxWidth: "1600px", margin: "0 auto", padding: "0 32px", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
 
-        {/* Izquierda: badge + título en una línea */}
-        <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: "7px",
-            background: CORAL_LIGHT, border: "1px solid rgba(37,99,235,0.22)",
-            borderRadius: "20px", padding: "5px 14px",
-          }}>
-            <span className="pulse-dot" style={{ width: "7px", height: "7px", borderRadius: "50%", background: CORAL, display: "inline-block" }} />
-            <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: CORAL }}>
-              Nuevos productos cada semana
-            </span>
+        {/* Izquierda: badges + título */}
+        <div className="hero-left" style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+          <div className="hero-badges" style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: "7px",
+              background: CORAL_LIGHT, border: "1px solid rgba(37,99,235,0.22)",
+              borderRadius: "20px", padding: "5px 14px",
+            }}>
+              <span className="pulse-dot" style={{ width: "7px", height: "7px", borderRadius: "50%", background: CORAL, display: "inline-block" }} />
+              <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: CORAL }}>
+                Nuevos productos cada semana
+              </span>
+            </div>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: "7px",
+              background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.30)",
+              borderRadius: "20px", padding: "5px 14px",
+              boxShadow: "0 0 12px rgba(16,185,129,0.15)",
+            }}>
+              <span style={{ fontSize: "13px", lineHeight: 1 }}>🛵</span>
+              <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 700, color: "#059669" }}>
+                Paga cuando lo recibas · A todo Colombia
+              </span>
+            </div>
           </div>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: "7px",
-            background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.30)",
-            borderRadius: "20px", padding: "5px 14px",
-            boxShadow: "0 0 12px rgba(16,185,129,0.15)",
-          }}>
-            <span style={{ fontSize: "13px", lineHeight: 1 }}>🛵</span>
-            <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 700, color: "#059669" }}>
-              Paga cuando lo recibas · A todo Colombia
-            </span>
-          </div>
-          <h1 style={{
+          <h1 className="hero-title" style={{
             fontFamily: "var(--font-roboto), sans-serif",
-            fontSize: "clamp(18px, 2.2vw, 26px)",
+            fontSize: "clamp(22px, 3vw, 28px)",
             fontWeight: 800, color: "#111",
-            letterSpacing: "-0.5px", margin: 0, whiteSpace: "nowrap",
+            letterSpacing: "-0.5px", margin: 0,
           }}>
             Date ese{" "}
             <span style={{
@@ -1291,9 +1351,9 @@ function Hero({ onShop, stats }) {
         </div>
 
         {/* Derecha: stats + botón */}
-        <div style={{ display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap" }}>
+        <div className="hero-right" style={{ display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap" }}>
           {stats.products > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div className="hero-stats" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <div style={{ textAlign: "center" }}>
                 <div style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "18px", fontWeight: 800, color: "#1A1A1A", lineHeight: 1 }}>{stats.products}</div>
                 <div style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "10px", color: "#9B948E", fontWeight: 500, marginTop: "2px" }}>productos</div>
@@ -1308,7 +1368,7 @@ function Hero({ onShop, stats }) {
           )}
           <button
             onClick={onShop}
-            className="shimmer-cta"
+            className="shimmer-cta hero-cta"
             style={{
               display: "inline-flex", alignItems: "center", gap: "8px",
               color: "#fff", border: "none", borderRadius: "28px",
@@ -2025,12 +2085,14 @@ function Banner({ onOferta }) {
       </div>
       <button
         onClick={onOferta}
+        className="promo-banner-btn"
         style={{
           background: CORAL, color: "#fff", border: "none",
           borderRadius: "20px", padding: "7px 18px",
           fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600,
           cursor: "pointer", display: "flex", alignItems: "center", gap: "6px",
           boxShadow: "0 3px 10px rgba(37,99,235,0.3)", transition: "opacity 0.15s",
+          whiteSpace: "nowrap",
         }}
         onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
         onMouseLeave={e => e.currentTarget.style.opacity = "1"}
@@ -3739,7 +3801,7 @@ export default function App() {
         .pc-old-price { font-size: 12px; }
         .pc-add-btn { padding: 7px 14px; font-size: 12px; }
         @media (max-width: 480px) {
-          .pc-img-wrap { height: 160px !important; font-size: 44px !important; }
+          .pc-img-wrap { height: 190px !important; font-size: 52px !important; }
           .pc-body { padding: 10px !important; }
           .pc-price-row { flex-direction: column; align-items: flex-start; gap: 6px; }
           .pc-prices { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px; }
@@ -3830,10 +3892,15 @@ export default function App() {
 
           /* Catalog heading */
           .catalog-title { font-size: 22px !important; }
+          .catalog-label { display: none !important; }
 
-          /* Hero inner */
-          .hero-inner    { padding: 0 !important; }
-          .hero-section  { padding: 14px 16px !important; }
+          /* Hero mobile — stacked layout */
+          .hero-section { padding: 20px 16px 24px !important; }
+          .hero-inner   { padding: 0 !important; flex-direction: column !important; align-items: flex-start !important; gap: 14px !important; }
+          .hero-left    { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; width: 100% !important; }
+          .hero-title   { font-size: 28px !important; white-space: normal !important; line-height: 1.2 !important; }
+          .hero-right   { width: 100% !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; flex-wrap: nowrap !important; gap: 12px !important; }
+          .hero-cta     { padding: 12px 18px !important; font-size: 14px !important; white-space: nowrap !important; }
 
           /* Banner */
           .promo-banner  { margin: 20px 0 !important; }
@@ -3848,9 +3915,15 @@ export default function App() {
           .scroll-top-btn { display: none !important; }
         }
 
+        /* ── Banner mobile — apilar verticalmente ── */
+        @media (max-width: 560px) {
+          .promo-banner { flex-direction: column !important; align-items: stretch !important; padding: 18px 16px !important; gap: 14px !important; }
+          .promo-banner-btn { justify-content: center !important; padding: 12px 16px !important; font-size: 13px !important; border-radius: 14px !important; }
+        }
+
         /* Product card imagen más alta en móvil */
         @media (max-width: 480px) {
-          .pc-img-wrap  { height: 160px !important; font-size: 52px !important; }
+          .pc-img-wrap  { height: 190px !important; font-size: 52px !important; }
           .pc-wishlist  { width: 40px !important; height: 40px !important; }
           .pc-add-btn   { font-size: 12px !important; padding: 8px 10px !important; }
           .pc-body      { padding: 12px !important; }
@@ -3986,7 +4059,7 @@ export default function App() {
         <main className="main-catalog" style={{ width: "100%", maxWidth: "1600px", margin: "0 auto", padding: "32px 32px 0", boxSizing: "border-box" }}>
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "20px" }}>
             <div>
-              <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#9B948E", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "4px" }}>
+              <p className="catalog-label" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#9B948E", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "4px" }}>
                 {searchQuery.trim() ? "Búsqueda" : "Catálogo"}
               </p>
               <h2 className="catalog-title" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "30px", fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.5px" }}>
