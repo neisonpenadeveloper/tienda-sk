@@ -1347,7 +1347,7 @@ function AdminStatsBar({ dbProducts }) {
   return (
     <div style={{
       background: "#0F172A", borderBottom: "1px solid #1E293B",
-      padding: "7px 32px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap",
+      padding: "7px 16px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap",
     }}>
       <span style={{ fontFamily: F_UI, fontSize: "10px", fontWeight: 800, color: CORAL, letterSpacing: "1px", textTransform: "uppercase", marginRight: "8px" }}>ADMIN</span>
       <Stat label="activos"      value={active}   color="#4ADE80" />
@@ -1654,6 +1654,7 @@ function CategoryPills({ active, onChange }) {
             display: "flex", gap: "10px",
             overflowX: "auto", padding: "6px 16px 14px",
             WebkitOverflowScrolling: "touch",
+            scrollSnapType: "x mandatory",
           }}
         >
           {ALL_CATEGORIES.map((cat) => {
@@ -1676,6 +1677,7 @@ function CategoryPills({ active, onChange }) {
                   boxShadow: isActive ? "0 6px 20px rgba(37,99,235,0.35)" : "0 1px 4px rgba(0,0,0,0.07)",
                   transition: "all 0.18s ease",
                   minWidth: "68px",
+                  scrollSnapAlign: "start",
                 }}
               >
                 <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
@@ -2494,6 +2496,11 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
           boxShadow: "-12px 0 50px rgba(0,0,0,0.18)",
         }}
       >
+        {/* Handle de swipe — solo visible en móvil */}
+        <div className="md:hidden" style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", display: "flex", alignItems: "center", paddingLeft: "6px", zIndex: 10, pointerEvents: "none" }}>
+          <div style={{ width: "4px", height: "48px", borderRadius: "4px", background: "rgba(0,0,0,0.12)" }} />
+        </div>
+
         {/* Header */}
         <div style={{ padding: "22px 24px", borderBottom: "1px solid #EDE8E2", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
@@ -2590,7 +2597,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
                     placeholder="Código de descuento"
                     style={{
                       flex: 1, padding: "10px 14px",
-                      fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", color: "#1A1A1A",
+                      fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", color: "#1A1A1A",
                       background: "#F5F0EA", border: `1.5px solid ${couponError ? CORAL : "#EDE8E2"}`,
                       borderRadius: "12px", outline: "none",
                     }}
@@ -3740,15 +3747,18 @@ export default function App() {
           .pc-old-price { font-size: 11px; margin-left: 0 !important; }
           .pc-add-btn { width: 100%; text-align: center; padding: 12px 10px; font-size: 13px; }
         }
-        .product-card:hover {
-          transform: translateY(-8px) scale(1.01);
-          box-shadow: 0 24px 56px rgba(26,26,26,0.14) !important;
+        @media (hover: hover) {
+          .product-card:hover {
+            transform: translateY(-8px) scale(1.01);
+            box-shadow: 0 24px 56px rgba(26,26,26,0.14) !important;
+          }
+          .product-card:hover .pc-img { transform: scale(1.09); }
+          .product-card:hover .pc-overlay { transform: translateY(0); }
         }
         .pc-img {
           width: 100%; height: 100%; object-fit: cover;
           transition: transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94);
         }
-        .product-card:hover .pc-img { transform: scale(1.09); }
         .pc-overlay {
           position: absolute; bottom: 0; left: 0; right: 0;
           padding: 18px 12px 14px;
@@ -3758,7 +3768,6 @@ export default function App() {
           display: flex; align-items: center; justify-content: center; gap: 6px;
           pointer-events: none;
         }
-        .product-card:hover .pc-overlay { transform: translateY(0); }
         @media (max-width: 800px) {
           .pc-overlay { display: none !important; }
         }
