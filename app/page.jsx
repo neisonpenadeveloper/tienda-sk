@@ -2835,12 +2835,26 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const [shared, setShared]               = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab]         = useState("descripcion");
+  const [headerH, setHeaderH]             = useState(0);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 640);
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
+    const update = () => {
+      if (window.innerWidth < 768) {
+        setHeaderH(document.querySelector("header")?.offsetHeight ?? 0);
+      } else {
+        setHeaderH(0);
+      }
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, []);
 
   useEffect(() => {
@@ -2875,7 +2889,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
     <div
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       style={{
-        position: "fixed", inset: 0, zIndex: 500,
+        position: "fixed", top: headerH, left: 0, right: 0, bottom: 0, zIndex: 500,
         background: "rgba(15,15,15,0.65)",
         backdropFilter: "blur(6px)",
         display: "flex",
