@@ -3590,10 +3590,10 @@ export default function App() {
   };
 
   const handleToggleActive = async (productId, currentState) => {
-    const { error } = await supabase
-      .from("products")
-      .update({ is_active: !currentState })
-      .eq("id", productId);
+    const { error } = await supabase.rpc("toggle_product_active", {
+      product_id: productId,
+      new_state: !currentState,
+    });
     if (error) return error;
     fetchProducts();
     return null;
