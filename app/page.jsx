@@ -3005,7 +3005,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
         <div
           style={{
             flex: 1,
-            padding: isMobile ? "20px 20px 32px" : "36px 32px",
+            padding: isMobile ? "20px 20px 80px" : "36px 32px",
             display: "flex", flexDirection: "column", gap: "18px",
           }}
         >
