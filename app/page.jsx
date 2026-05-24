@@ -3652,7 +3652,7 @@ export default function App() {
           .pc-prices { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px; }
           .pc-price { font-size: 13px; }
           .pc-old-price { font-size: 11px; margin-left: 0 !important; }
-          .pc-add-btn { width: 100%; text-align: center; padding: 6px 8px; font-size: 11px; }
+          .pc-add-btn { width: 100%; text-align: center; padding: 12px 10px; font-size: 13px; }
         }
         .product-card:hover {
           transform: translateY(-8px) scale(1.01);
