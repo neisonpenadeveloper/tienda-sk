@@ -2819,6 +2819,8 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab]         = useState("descripcion");
   const [headerH, setHeaderH]             = useState(0);
+  const swipeStartX = useRef(null);
+  const swipeStartY = useRef(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 640);
@@ -2848,6 +2850,22 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const isOwner = !!user && ADMIN_EMAILS.has(user.email);
   const imgs    = product.images?.length > 0 ? product.images : null;
   const savings = product.oldPrice ? product.oldPrice - product.price : 0;
+
+  const handleImgTouchStart = (e) => {
+    swipeStartX.current = e.touches[0].clientX;
+    swipeStartY.current = e.touches[0].clientY;
+  };
+  const handleImgTouchEnd = (e) => {
+    if (swipeStartX.current === null || !imgs || imgs.length < 2) return;
+    const dx = e.changedTouches[0].clientX - swipeStartX.current;
+    const dy = Math.abs(e.changedTouches[0].clientY - swipeStartY.current);
+    if (Math.abs(dx) > 40 && Math.abs(dx) > dy) {
+      if (dx < 0) setSelectedImg(i => Math.min(i + 1, imgs.length - 1));
+      else         setSelectedImg(i => Math.max(i - 1, 0));
+    }
+    swipeStartX.current = null;
+    swipeStartY.current = null;
+  };
 
   const handleAdd = () => {
     onAddToCart(product);
@@ -2922,38 +2940,64 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
             flexShrink: 0,
           }}
         >
-          <div style={{
-            borderRadius: "16px", overflow: "hidden",
-            height: isMobile ? 260 : 340,
-            flexShrink: 0,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            background: imgs ? "#fff" : (product.color || "#F5F0EA"),
-            fontSize: isMobile ? "80px" : "96px", border: "1px solid #EDE8E2",
-          }}>
+          <div
+            onTouchStart={handleImgTouchStart}
+            onTouchEnd={handleImgTouchEnd}
+            style={{
+              borderRadius: "16px", overflow: "hidden",
+              height: isMobile ? 260 : 340,
+              flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: imgs ? "#fff" : (product.color || "#F5F0EA"),
+              fontSize: isMobile ? "80px" : "96px", border: "1px solid #EDE8E2",
+              touchAction: "pan-y",
+              userSelect: "none",
+            }}
+          >
             {imgs ? (
-              <img src={imgs[selectedImg]} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+              <img src={imgs[selectedImg]} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none" }} />
             ) : (
               <span style={{ filter: "drop-shadow(0 8px 20px rgba(0,0,0,0.14))" }}>{product.emoji}</span>
             )}
           </div>
 
+          {/* Puntos indicadores (móvil) / miniaturas (desktop) */}
           {imgs && imgs.length > 1 && (
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              {imgs.map((src, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSelectedImg(i)}
-                  style={{
-                    width: "68px", height: "68px", borderRadius: "10px",
-                    overflow: "hidden", padding: 0, cursor: "pointer",
-                    border: selectedImg === i ? `2.5px solid ${CORAL}` : "2px solid #E0D8CC",
-                    background: "none", flexShrink: 0, transition: "border 0.15s",
-                  }}
-                >
-                  <img src={src} alt={`foto-${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                </button>
-              ))}
-            </div>
+            isMobile ? (
+              <div style={{ display: "flex", justifyContent: "center", gap: "6px", paddingTop: "2px" }}>
+                {imgs.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedImg(i)}
+                    style={{
+                      width: selectedImg === i ? "20px" : "8px",
+                      height: "8px",
+                      borderRadius: "4px",
+                      background: selectedImg === i ? CORAL : "#D0C8BF",
+                      border: "none", padding: 0, cursor: "pointer",
+                      transition: "width 0.2s ease, background 0.2s ease",
+                    }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                {imgs.map((src, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedImg(i)}
+                    style={{
+                      width: "68px", height: "68px", borderRadius: "10px",
+                      overflow: "hidden", padding: 0, cursor: "pointer",
+                      border: selectedImg === i ? `2.5px solid ${CORAL}` : "2px solid #E0D8CC",
+                      background: "none", flexShrink: 0, transition: "border 0.15s",
+                    }}
+                  >
+                    <img src={src} alt={`foto-${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  </button>
+                ))}
+              </div>
+            )
           )}
         </div>
 
@@ -3673,6 +3717,9 @@ export default function App() {
           pointer-events: none;
         }
         .product-card:hover .pc-overlay { transform: translateY(0); }
+        @media (max-width: 800px) {
+          .pc-overlay { display: none !important; }
+        }
 
         /* ── Botones flotantes: barra inferior en móvil y laptops pequeños ── */
         @media (max-width: 1380px) {
