@@ -2435,7 +2435,7 @@ const cleanText  = (v, max) => v.replace(/[<>"';&`\\]/g, "").slice(0, max);
 const isEmail    = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
 const isPhone    = v => /^[\d\s+\-()]{7,15}$/.test(v.trim());
 
-function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, coupons }) {
+function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, coupons, quickBuyProduct, onClearQuickBuy }) {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError]     = useState("");
   const [couponInput, setCouponInput]         = useState("");
@@ -2464,6 +2464,14 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
   }, []);
+
+  useEffect(() => {
+    if (quickBuyProduct) {
+      setShowPaymentModal(true);
+      setShowDeliveryForm(true);
+    }
+  }, [quickBuyProduct]);
+
   const [deliveryForm, setDeliveryForm] = useState({ nombre: "", telefono: "", correo: "", notas: "", direccion: "", referencia: "", ciudad: "Medellín", departamento: "Antioquia", adicional: "" });
   const [deliveryErrors, setDeliveryErrors]       = useState({});
 
@@ -2537,16 +2545,18 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
   };
 
   const buildDeliveryWhatsAppUrl = () => {
-    const lines = cart.map(item =>
+    const items = quickBuyProduct ? [{ ...quickBuyProduct, quantity: 1 }] : cart;
+    const orderTotal = quickBuyProduct ? quickBuyProduct.price : total;
+    const lines = items.map(item =>
       `  • ${item.quantity}x ${item.name} — ${fmtCOP(item.price * item.quantity)}`
     ).join("\n");
     let msg = `¡Hola! Tengo un pedido en *Tienda S&K* 🛒\n\n`;
     msg += `${SEP}\n🛒 *PRODUCTOS*\n${SEP}\n${lines}\n`;
-    if (appliedCoupon) {
+    if (!quickBuyProduct && appliedCoupon) {
       msg += `\n🏷 Cupón: *${appliedCoupon.code}* (-${appliedCoupon.pct}%)`;
       msg += `\n💸 Descuento: -${fmtCOP(discount)}\n`;
     }
-    msg += `\n💰 *Total: ${fmtCOP(total)}*`;
+    msg += `\n💰 *Total: ${fmtCOP(orderTotal)}*`;
     msg += `\n✅ Pago: *Contra entrega*\n\n`;
     msg += `${SEP}\n📋 *DATOS DE ENTREGA*\n${SEP}\n\n`;
     msg += `👤 *Nombre:* ${deliveryForm.nombre}\n`;
@@ -2835,7 +2845,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
               Tu compra continuará por <strong style={{ color: "#25D366" }}>WhatsApp</strong> con uno de nuestros asesores. ¡Estamos listos para atenderte!
             </p>
             <button
-              onClick={() => { onClearCart(); setShowOrderSuccess(false); setShowPaymentModal(false); setDeliveryForm({ nombre: "", telefono: "", correo: "", notas: "", direccion: "", referencia: "", ciudad: "Medellín", departamento: "Antioquia", adicional: "" }); onClose(); }}
+              onClick={() => { if (quickBuyProduct) { onClearQuickBuy?.(); } else { onClearCart(); } setShowOrderSuccess(false); setShowPaymentModal(false); setDeliveryForm({ nombre: "", telefono: "", correo: "", notas: "", direccion: "", referencia: "", ciudad: "Medellín", departamento: "Antioquia", adicional: "" }); onClose(); }}
               style={{ width: "100%", maxWidth: "280px", padding: "15px", background: CORAL, color: "#fff", border: "none", borderRadius: "28px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px", fontWeight: 700, cursor: "pointer", boxShadow: `0 6px 20px rgba(37,99,235,0.35)` }}
             >
               Seguir viendo productos
@@ -2847,7 +2857,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
         {showPaymentModal && showDeliveryForm && (
           <div style={{ position: "absolute", inset: 0, zIndex: 20, background: "#fff", display: "flex", flexDirection: "column", colorScheme: "light" }}>
             <div style={{ padding: "18px 20px 14px", borderBottom: "1px solid #F1F5F9", display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-              <button onClick={() => { setShowDeliveryForm(false); setDeliveryErrors({}); }} style={{ background: "#F1F5F9", border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", color: "#475569", fontWeight: 600 }}>← Volver</button>
+              <button onClick={() => { setShowDeliveryForm(false); setDeliveryErrors({}); if (quickBuyProduct) { setShowPaymentModal(false); onClearQuickBuy?.(); onClose(); } }} style={{ background: "#F1F5F9", border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", color: "#475569", fontWeight: 600 }}>← Volver</button>
               <div>
                 <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px", fontWeight: 800, color: "#1A1A1A", margin: 0 }}>Datos de entrega</p>
                 <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#059669", margin: 0, fontWeight: 600 }}>🛵 Pago contra entrega</p>
@@ -3614,6 +3624,7 @@ export default function App() {
     } catch { return []; }
   });
   const [showCart, setShowCart]               = useState(false);
+  const [quickBuyProduct, setQuickBuyProduct] = useState(null);
   const [menuOpen, setMenuOpen]               = useState(false);
   const [wishlist, setWishlist]               = useState([]);
   const [user, setUser]                       = useState(null);
@@ -4089,6 +4100,8 @@ export default function App() {
             onClearCart={() => setCart([])}
             user={user}
             coupons={dbCoupons}
+            quickBuyProduct={quickBuyProduct}
+            onClearQuickBuy={() => setQuickBuyProduct(null)}
           />
         )}
 
@@ -4104,9 +4117,8 @@ export default function App() {
             onEdit={setEditingProduct}
             onToggleActive={handleToggleActive}
             onBuyNow={(product) => {
-              handleAddToCart(product);
-              setShowPaymentModal(true);
-              setShowDeliveryForm(true);
+              setQuickBuyProduct(product);
+              setShowCart(true);
             }}
           />
         )}
