@@ -885,12 +885,45 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
 
   return (
     <header style={{ borderBottom: "1px solid #EDE8E2", background: "#fff" }} className="sticky top-0 z-50">
-      <div style={{ maxWidth: "1600px", margin: "0 auto", padding: "0 32px", boxSizing: "border-box" }}>
-        <div style={{ display: "flex", alignItems: "center", height: "64px", gap: "16px" }}>
+      <div className="px-4 md:px-8" style={{ maxWidth: "1600px", margin: "0 auto", boxSizing: "border-box" }}>
+        <div style={{ display: "flex", alignItems: "center", height: "64px", gap: "10px" }}>
 
           {/* Logo */}
           <div className="flex items-center flex-shrink-0" style={{ height: "52px" }}>
             <img src="/header-logo.png" alt="Tienda S&K" style={{ height: "52px", width: "auto" }} />
+          </div>
+
+          {/* Buscador móvil — inline en la fila principal */}
+          <div className="flex md:hidden" style={{ flex: 1 }}>
+            <div
+              style={{
+                display: "flex", alignItems: "center", gap: "8px",
+                background: "#F0F4FF", borderRadius: "24px", padding: "8px 14px",
+                width: "100%", border: `1.5px solid ${searchQuery ? CORAL : "#E2E8F0"}`,
+                transition: "border-color 0.2s",
+              }}
+            >
+              <Search size={14} color={searchQuery ? CORAL : "#9B948E"} style={{ flexShrink: 0 }} />
+              <input
+                ref={mobileInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={e => e.key === "Escape" && setSearchQuery("")}
+                placeholder="Buscar..."
+                autoComplete="off"
+                style={{
+                  flex: 1, background: "none", border: "none", outline: "none",
+                  fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: "#1A1A1A",
+                  minWidth: 0,
+                }}
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
+                  <X size={13} color="#9B948E" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Desktop nav (categorías) */}
@@ -1024,14 +1057,15 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
           </div>
 
           {/* Actions */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, marginLeft: "auto" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
             <button
               onClick={focusSearch}
               title="Buscar productos"
+              className="hidden md:flex"
               style={{
                 background: "none", border: "none", cursor: "pointer",
                 color: "#6B6560", padding: "8px", borderRadius: "50%",
-                transition: "all 0.18s ease",
+                transition: "all 0.18s ease", alignItems: "center",
               }}
             >
               <Search size={18} />
@@ -1156,39 +1190,6 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
             >
               {menuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-          </div>
-        </div>
-
-        {/* Barra de búsqueda móvil — siempre visible */}
-        <div className="md:hidden" style={{ borderTop: "1px solid #EDE8E2", padding: "10px 0" }}>
-          <div style={{
-            display: "flex", alignItems: "center", gap: "10px",
-            background: "#F0F4FF", borderRadius: "28px", padding: "9px 16px",
-            border: `1.5px solid ${searchQuery ? CORAL : "#E2E8F0"}`,
-            transition: "border-color 0.2s",
-          }}>
-            <Search size={15} color={searchQuery ? CORAL : "#9B948E"} style={{ flexShrink: 0 }} />
-            <input
-              ref={mobileInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              onKeyDown={e => e.key === "Escape" && setSearchQuery("")}
-              placeholder="Buscar productos..."
-              autoComplete="off"
-              style={{
-                flex: 1, background: "none", border: "none", outline: "none",
-                fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: "#1A1A1A",
-              }}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}
-              >
-                <X size={14} color="#9B948E" />
-              </button>
-            )}
           </div>
         </div>
 
