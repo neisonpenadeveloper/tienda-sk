@@ -6,10 +6,10 @@ const securityHeaders = [
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
   },
-  // Impide que la página se cargue dentro de un iframe (anti-clickjacking)
+  // Solo permite cargar la página en un iframe desde el mismo dominio (para el simulador móvil del admin)
   {
     key: "X-Frame-Options",
-    value: "DENY",
+    value: "SAMEORIGIN",
   },
   // Impide que el navegador adivine el tipo de archivo (anti-MIME sniffing)
   {
@@ -43,8 +43,8 @@ const securityHeaders = [
       "connect-src 'self' https://toidqirgvhnukbxubyou.supabase.co wss://toidqirgvhnukbxubyou.supabase.co https://production.wompi.co https://sandbox.wompi.co",
       // Google OAuth y Wompi Checkout necesitan abrir frames
       "frame-src https://accounts.google.com https://checkout.wompi.co",
-      // Nadie puede embeber esta página en un iframe
-      "frame-ancestors 'none'",
+      // Solo el mismo dominio puede embeber la página (para el simulador móvil del admin)
+      "frame-ancestors 'self'",
       // La URL base solo puede ser el propio dominio
       "base-uri 'self'",
       // Los formularios solo pueden enviarse al propio dominio o Google OAuth
