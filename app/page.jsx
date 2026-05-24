@@ -1207,40 +1207,9 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
               zIndex: 49, background: "#fff",
               overflowY: "auto", WebkitOverflowScrolling: "touch",
               borderTop: "1px solid #EDE8E2",
-              padding: "0 16px 40px",
+              padding: "0 16px 100px",
             }}
           >
-            {/* Buscador en menú móvil */}
-            <div style={{ padding: "10px 0 4px" }}>
-              <div style={{
-                display: "flex", alignItems: "center", gap: "10px",
-                background: "#F5F0EA", borderRadius: "28px", padding: "9px 16px",
-                border: `1.5px solid ${searchQuery ? CORAL : "#EDE8E2"}`,
-                transition: "border-color 0.2s",
-              }}>
-                <Search size={14} color={searchQuery ? CORAL : "#9B948E"} />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Buscar productos..."
-                  autoComplete="off"
-                  style={{
-                    flex: 1, background: "none", border: "none", outline: "none",
-                    fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: "#1A1A1A",
-                  }}
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}
-                  >
-                    <X size={14} color="#9B948E" />
-                  </button>
-                )}
-              </div>
-            </div>
-
             {ALL_CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
