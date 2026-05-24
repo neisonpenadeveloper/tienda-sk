@@ -3646,7 +3646,7 @@ export default function App() {
         .pc-old-price { font-size: 12px; }
         .pc-add-btn { padding: 7px 14px; font-size: 12px; }
         @media (max-width: 480px) {
-          .pc-img-wrap { height: 130px !important; font-size: 40px !important; }
+          .pc-img-wrap { height: 160px !important; font-size: 44px !important; }
           .pc-body { padding: 10px !important; }
           .pc-price-row { flex-direction: column; align-items: flex-start; gap: 6px; }
           .pc-prices { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px; }
