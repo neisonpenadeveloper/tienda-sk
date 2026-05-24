@@ -2821,6 +2821,8 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const [headerH, setHeaderH]             = useState(0);
   const swipeStartX = useRef(null);
   const swipeStartY = useRef(null);
+  const [dragX, setDragX]       = useState(0);
+  const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 640);
@@ -2854,12 +2856,25 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const handleImgTouchStart = (e) => {
     swipeStartX.current = e.touches[0].clientX;
     swipeStartY.current = e.touches[0].clientY;
+    setDragging(true);
+  };
+  const handleImgTouchMove = (e) => {
+    if (swipeStartX.current === null || !imgs || imgs.length < 2) return;
+    const dx = e.touches[0].clientX - swipeStartX.current;
+    const dy = Math.abs(e.touches[0].clientY - swipeStartY.current);
+    if (Math.abs(dx) < dy) return;
+    const atEdge = (selectedImg === 0 && dx > 0) || (selectedImg === imgs.length - 1 && dx < 0);
+    setDragX(atEdge ? dx / 3 : dx);
   };
   const handleImgTouchEnd = (e) => {
-    if (swipeStartX.current === null || !imgs || imgs.length < 2) return;
+    setDragging(false);
+    setDragX(0);
+    if (swipeStartX.current === null || !imgs || imgs.length < 2) {
+      swipeStartX.current = null; swipeStartY.current = null; return;
+    }
     const dx = e.changedTouches[0].clientX - swipeStartX.current;
     const dy = Math.abs(e.changedTouches[0].clientY - swipeStartY.current);
-    if (Math.abs(dx) > 40 && Math.abs(dx) > dy) {
+    if (Math.abs(dx) > 50 && Math.abs(dx) > dy) {
       if (dx < 0) setSelectedImg(i => Math.min(i + 1, imgs.length - 1));
       else         setSelectedImg(i => Math.max(i - 1, 0));
     }
@@ -2942,11 +2957,13 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
         >
           <div
             onTouchStart={handleImgTouchStart}
+            onTouchMove={handleImgTouchMove}
             onTouchEnd={handleImgTouchEnd}
             style={{
               borderRadius: "16px", overflow: "hidden",
               height: isMobile ? 260 : 340,
               flexShrink: 0,
+              position: "relative",
               display: "flex", alignItems: "center", justifyContent: "center",
               background: imgs ? "#fff" : (product.color || "#F5F0EA"),
               fontSize: isMobile ? "80px" : "96px", border: "1px solid #EDE8E2",
@@ -2955,7 +2972,24 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
             }}
           >
             {imgs ? (
-              <img src={imgs[selectedImg]} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none" }} />
+              isMobile && imgs.length > 1 ? (
+                <div style={{
+                  position: "absolute", top: 0, left: 0,
+                  width: `${imgs.length * 100}%`, height: "100%",
+                  display: "flex",
+                  transform: `translateX(calc(-${(selectedImg / imgs.length) * 100}% + ${dragX}px))`,
+                  transition: dragging ? "none" : "transform 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                  willChange: "transform",
+                }}>
+                  {imgs.map((src, i) => (
+                    <div key={i} style={{ width: `${100 / imgs.length}%`, height: "100%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <img src={src} alt={product.name} draggable={false} style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <img src={imgs[selectedImg]} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none" }} />
+              )
             ) : (
               <span style={{ filter: "drop-shadow(0 8px 20px rgba(0,0,0,0.14))" }}>{product.emoji}</span>
             )}
