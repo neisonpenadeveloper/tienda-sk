@@ -3778,6 +3778,7 @@ export default function App() {
             height: 48px !important;
             flex-shrink: 0 !important;
           }
+          footer { padding-bottom: 90px !important; }
         }
 
         /* ── Carousel ── */
