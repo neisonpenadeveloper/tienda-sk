@@ -2893,6 +2893,8 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const [added, setAdded]                 = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shared, setShared]               = useState(false);
+  const [toggleLoading, setToggleLoading] = useState(false);
+  const [toggleError, setToggleError]     = useState("");
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab]         = useState("descripcion");
   const [headerH, setHeaderH]             = useState(0);
@@ -3316,20 +3318,37 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
 
               {/* Toggle activo / inactivo */}
               <button
-                onClick={() => { onToggleActive?.(product.id, product.is_active ?? true); onClose(); }}
+                disabled={toggleLoading}
+                onClick={async () => {
+                  setToggleLoading(true);
+                  setToggleError("");
+                  const err = await onToggleActive?.(product.id, product.is_active ?? true);
+                  setToggleLoading(false);
+                  if (err) {
+                    setToggleError("No se pudo cambiar el estado. Verifica los permisos en Supabase.");
+                    return;
+                  }
+                  onClose();
+                }}
                 style={{
                   display: "flex", alignItems: "center", gap: "8px",
-                  width: "100%", padding: "12px 16px", marginBottom: "10px",
+                  width: "100%", padding: "12px 16px", marginBottom: "6px",
                   background: product.is_active !== false ? "#FFF9F0" : "#F0FDF4",
                   border: `1.5px solid ${product.is_active !== false ? "#FFCC80" : "#86EFAC"}`,
-                  borderRadius: "12px", cursor: "pointer",
+                  borderRadius: "12px", cursor: toggleLoading ? "not-allowed" : "pointer",
                   fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px",
                   fontWeight: 600, color: product.is_active !== false ? "#E65100" : "#15803D",
                   justifyContent: "center", transition: "all 0.15s",
+                  opacity: toggleLoading ? 0.65 : 1,
                 }}
               >
-                {product.is_active !== false ? "⏸ Desactivar (ocultarlo)" : "▶ Activar (mostrarlo)"}
+                {toggleLoading ? "Guardando..." : product.is_active !== false ? "⏸ Desactivar (ocultarlo)" : "▶ Activar (mostrarlo)"}
               </button>
+              {toggleError && (
+                <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#E53E3E", marginBottom: "10px", textAlign: "center" }}>
+                  ⚠️ {toggleError}
+                </p>
+              )}
 
               {/* Botón editar */}
               <button
@@ -3571,8 +3590,13 @@ export default function App() {
   };
 
   const handleToggleActive = async (productId, currentState) => {
-    await supabase.from("products").update({ is_active: !currentState }).eq("id", productId);
+    const { error } = await supabase
+      .from("products")
+      .update({ is_active: !currentState })
+      .eq("id", productId);
+    if (error) return error;
     fetchProducts();
+    return null;
   };
 
   useEffect(() => {
