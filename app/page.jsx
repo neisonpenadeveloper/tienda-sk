@@ -2912,6 +2912,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
         alignItems: isMobile ? "flex-end" : "center",
         justifyContent: "center",
         padding: isMobile ? 0 : "16px",
+        overflow: "hidden",
       }}
     >
       <div
@@ -2920,7 +2921,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
           background: "#fff",
           borderRadius: isMobile ? "20px 20px 0 0" : "24px",
           width: "100%", maxWidth: "880px",
-          maxHeight: isMobile ? "96vh" : "92vh",
+          maxHeight: isMobile ? "100%" : "92vh",
           overflowY: "auto",
           WebkitOverflowScrolling: "touch",
           display: "flex",
