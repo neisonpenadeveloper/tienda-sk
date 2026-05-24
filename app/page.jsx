@@ -3325,7 +3325,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
                   const err = await onToggleActive?.(product.id, product.is_active ?? true);
                   setToggleLoading(false);
                   if (err) {
-                    setToggleError("No se pudo cambiar el estado. Verifica los permisos en Supabase.");
+                    setToggleError(`Error: ${err.message || err.code || JSON.stringify(err)}`);
                     return;
                   }
                   onClose();
