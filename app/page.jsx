@@ -1264,7 +1264,7 @@ function Hero({ onShop, stats }) {
       {/* Blob decorativo */}
       <div style={{ position: "absolute", top: "-60px", right: "-60px", width: "260px", height: "260px", borderRadius: "50%", background: "radial-gradient(circle,rgba(37,99,235,0.09) 0%,transparent 70%)", pointerEvents: "none" }} />
 
-      <div style={{ width: "100%", maxWidth: "1600px", margin: "0 auto", padding: "0 32px", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
+      <div className="hero-inner" style={{ width: "100%", maxWidth: "1600px", margin: "0 auto", padding: "0 32px", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
 
         {/* Izquierda: badge + título en una línea */}
         <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
@@ -1875,8 +1875,9 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
         )}
         <button
           onClick={(e) => { e.stopPropagation(); onWishlist(product.id); }}
+          className="pc-wishlist"
           style={{
-            position: "absolute", top: "10px", right: "10px",
+            position: "absolute", top: "8px", right: "8px",
             background: "#fff", border: "none", borderRadius: "50%",
             width: "34px", height: "34px",
             display: "flex", alignItems: "center", justifyContent: "center",
@@ -2023,7 +2024,7 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
 // ─── PROMO BANNER ─────────────────────────────────────────────────────────────
 function Banner({ onOferta }) {
   return (
-    <div style={{
+    <div className="promo-banner" style={{
       background: "#1A1A1A",
       borderRadius: "20px", padding: "14px 24px",
       display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -2201,12 +2202,12 @@ function ProductCarousel({ products, onSelect }) {
     <section style={{ background: "#fff", borderBottom: "1px solid #E2E8F0", padding: "14px 0 24px" }}>
       <div className="carousel-inner" style={{ maxWidth: "1600px", margin: "0 auto", boxSizing: "border-box" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px", marginBottom: "14px" }}>
-          <button onClick={prev} style={{ width: "34px", height: "34px", borderRadius: "50%", border: `1.5px solid ${CORAL}`, background: "#fff", color: CORAL, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s", fontSize: "18px", fontWeight: 700, flexShrink: 0 }}>‹</button>
+          <button onClick={prev} className="carousel-nav-btn" style={{ width: "34px", height: "34px", borderRadius: "50%", border: `1.5px solid ${CORAL}`, background: "#fff", color: CORAL, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s", fontSize: "18px", fontWeight: 700, flexShrink: 0 }}>‹</button>
           <div style={{ textAlign: "center" }}>
             <p style={{ fontFamily: F_UI, fontSize: "9px", color: "#9B948E", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", margin: "0 0 2px" }}>Selección especial</p>
             <h2 style={{ fontFamily: F_DISPLAY, fontSize: "16px", fontWeight: 600, color: "#1A1A1A", margin: 0, fontStyle: "italic" }}>Productos para ti ✨</h2>
           </div>
-          <button onClick={next} style={{ width: "34px", height: "34px", borderRadius: "50%", border: "none", background: CORAL, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s", fontSize: "18px", fontWeight: 700, flexShrink: 0 }}>›</button>
+          <button onClick={next} className="carousel-nav-btn" style={{ width: "34px", height: "34px", borderRadius: "50%", border: "none", background: CORAL, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s", fontSize: "18px", fontWeight: 700, flexShrink: 0 }}>›</button>
         </div>
         <div
           ref={outerRef}
@@ -2254,9 +2255,9 @@ function Footer({ children }) {
             © 2025 Tienda SYK · Hecho con cuidado en Colombia 🇨🇴
           </p>
           <div className="flex gap-4">
-            <a href="/privacidad" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#9B948E", textDecoration: "none" }}>Privacidad</a>
-            <a href="/terminos" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#9B948E", textDecoration: "none" }}>Términos</a>
-            <a href="https://wa.me/573225306651" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#9B948E", textDecoration: "none" }}>Contacto</a>
+            <a href="/privacidad" className="footer-link" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#9B948E", textDecoration: "none" }}>Privacidad</a>
+            <a href="/terminos" className="footer-link" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#9B948E", textDecoration: "none" }}>Términos</a>
+            <a href="https://wa.me/573225306651" target="_blank" rel="noopener noreferrer" className="footer-link" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#9B948E", textDecoration: "none" }}>Contacto</a>
           </div>
         </div>
       </div>
@@ -3721,6 +3722,35 @@ export default function App() {
           .nav-logo      { height: 38px !important; max-width: 96px; object-fit: contain; }
           .nav-logo-wrap { height: 38px !important; }
           .login-btn-pill { padding: 8px 10px !important; }
+
+          /* Main catalog padding */
+          .main-catalog  { padding: 20px 16px 0 !important; }
+
+          /* Catalog heading */
+          .catalog-title { font-size: 22px !important; }
+
+          /* Hero inner */
+          .hero-inner    { padding: 0 !important; }
+
+          /* Banner */
+          .promo-banner  { margin: 20px 0 !important; }
+
+          /* Carrusel nav buttons */
+          .carousel-nav-btn { width: 44px !important; height: 44px !important; }
+
+          /* Footer links */
+          .footer-link   { padding: 8px 6px !important; display: inline-block; }
+
+          /* Ocultar scroll-top en la barra flotante inferior */
+          .scroll-top-btn { display: none !important; }
+        }
+
+        /* Product card imagen más alta en móvil */
+        @media (max-width: 480px) {
+          .pc-img-wrap  { height: 160px !important; font-size: 52px !important; }
+          .pc-wishlist  { width: 40px !important; height: 40px !important; }
+          .pc-add-btn   { font-size: 12px !important; padding: 8px 10px !important; }
+          .pc-body      { padding: 12px !important; }
         }
 
         /* ── Category pill hover ── */
@@ -3836,13 +3866,13 @@ export default function App() {
           onSelect={p => setSelectedProduct(displayProducts.find(dp => dp.id === p.id) ?? p)}
         />
 
-        <main style={{ width: "100%", maxWidth: "1600px", margin: "0 auto", padding: "32px 32px 0", boxSizing: "border-box" }}>
+        <main className="main-catalog" style={{ width: "100%", maxWidth: "1600px", margin: "0 auto", padding: "32px 32px 0", boxSizing: "border-box" }}>
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "20px" }}>
             <div>
               <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#9B948E", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "4px" }}>
                 {searchQuery.trim() ? "Búsqueda" : "Catálogo"}
               </p>
-              <h2 style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "30px", fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.5px" }}>
+              <h2 className="catalog-title" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "30px", fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.5px" }}>
                 {searchQuery.trim()
                   ? <>Resultados para <span style={{ color: CORAL }}>"{searchQuery.trim()}"</span></>
                   : activeCategory === "ofertas" ? <><span style={{ color: CORAL }}>🔥</span> Ofertas especiales</>
@@ -3925,6 +3955,7 @@ export default function App() {
             {showScrollTop && (
               <button
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                className="scroll-top-btn"
                 title="Volver arriba"
                 style={{
                   position: "fixed", bottom: "156px", right: "24px", zIndex: 800,
