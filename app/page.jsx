@@ -2019,11 +2019,12 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
         {product.badge && (
           <span style={{
             position: "absolute", top: "12px", left: "12px",
-            background: product.badge.startsWith("−") ? CORAL : "#1A1A1A",
+            background: product.badge.startsWith("−") ? "linear-gradient(135deg, #DC2626, #EF4444)" : "#1A1A1A",
             color: "#fff", fontFamily: "var(--font-roboto), sans-serif",
-            fontSize: "10px", fontWeight: 700, padding: "4px 10px", borderRadius: "12px",
+            fontSize: "10px", fontWeight: 800, padding: "4px 10px", borderRadius: "12px",
+            boxShadow: product.badge.startsWith("−") ? "0 2px 8px rgba(220,38,38,0.35)" : "none",
           }}>
-            {product.badge}
+            {product.badge.startsWith("−") ? `Descuento ${product.badge.replace("− ", "")}` : product.badge}
           </span>
         )}
         {isOwner && product.is_active === false && (
@@ -2252,10 +2253,12 @@ function CarouselCard({ product, onSelect, cardWidth }) {
           {product.badge && (
             <div style={{
               position: "absolute", top: "12px", left: "12px",
-              background: "#1A1A1A", color: "#fff", borderRadius: "7px",
-              padding: "4px 11px", fontSize: "11px", fontWeight: 700,
+              background: product.badge.startsWith("−") ? "linear-gradient(135deg, #DC2626, #EF4444)" : "#1A1A1A",
+              color: "#fff", borderRadius: "7px",
+              padding: "4px 11px", fontSize: "11px", fontWeight: 800,
               fontFamily: F_UI, zIndex: 2,
-            }}>{product.badge}</div>
+              boxShadow: product.badge.startsWith("−") ? "0 2px 8px rgba(220,38,38,0.35)" : "none",
+            }}>{product.badge.startsWith("−") ? `Descuento ${product.badge.replace("− ", "")}` : product.badge}</div>
           )}
           <div style={{
             position: "absolute", bottom: 0, left: 0, right: 0,
@@ -3402,12 +3405,13 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
           {product.badge && (
             <span style={{
               display: "inline-block", width: "fit-content",
-              background: product.badge.startsWith("−") ? CORAL : "#1A1A1A",
+              background: product.badge.startsWith("−") ? "linear-gradient(135deg, #DC2626, #EF4444)" : "#1A1A1A",
               color: "#fff",
-              fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", fontWeight: 700,
+              fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", fontWeight: 800,
               padding: "5px 13px", borderRadius: "20px",
+              boxShadow: product.badge.startsWith("−") ? "0 2px 10px rgba(220,38,38,0.35)" : "none",
             }}>
-              {product.badge}
+              {product.badge.startsWith("−") ? `Descuento ${product.badge.replace("− ", "")}` : product.badge}
             </span>
           )}
 
