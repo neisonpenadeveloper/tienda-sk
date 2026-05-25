@@ -3756,16 +3756,6 @@ export default function App() {
     };
   }, []);
 
-  useEffect(() => {
-    const cards = document.querySelectorAll(".fade-in-up");
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("visible"); observer.unobserve(e.target); } });
-    }, { threshold: 0.06 });
-    cards.forEach(c => observer.observe(c));
-    return () => observer.disconnect();
-  }, [sortedProducts.length]);
-
-
   const handleLogin = () => setShowLoginModal(true);
 
   const handleLogout = async () => {
@@ -3816,6 +3806,15 @@ export default function App() {
     if (!a.created_at || !b.created_at) return 0;
     return new Date(b.created_at) - new Date(a.created_at);
   });
+
+  useEffect(() => {
+    const cards = document.querySelectorAll(".fade-in-up");
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("visible"); observer.unobserve(e.target); } });
+    }, { threshold: 0.06 });
+    cards.forEach(c => observer.observe(c));
+    return () => observer.disconnect();
+  }, [sortedProducts.length]);
 
   const heroStats = {
     products:   dbProducts.length,
