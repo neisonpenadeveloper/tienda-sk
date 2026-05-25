@@ -2621,15 +2621,17 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
 
   const buildDeliveryWhatsAppUrl = () => {
     const items = quickBuyProduct ? [{ ...quickBuyProduct, quantity: 1 }] : cart;
-    const orderTotal = quickBuyProduct ? quickBuyProduct.price : total;
+    const baseTotal = quickBuyProduct ? quickBuyProduct.price : subtotal;
+    const orderDiscount = appliedCoupon ? Math.round(baseTotal * appliedCoupon.pct / 100) : (quickBuyProduct ? 0 : discount);
+    const orderTotal = baseTotal - orderDiscount;
     const lines = items.map(item =>
       `  • ${item.quantity}x ${item.name} — ${fmtCOP(item.price * item.quantity)}`
     ).join("\n");
     let msg = `¡Hola! Tengo un pedido en *Tienda S&K* 🛒\n\n`;
     msg += `${SEP}\n🛒 *PRODUCTOS*\n${SEP}\n${lines}\n`;
-    if (!quickBuyProduct && appliedCoupon) {
+    if (appliedCoupon) {
       msg += `\n🏷 Cupón: *${appliedCoupon.code}* (-${appliedCoupon.pct}%)`;
-      msg += `\n💸 Descuento: -${fmtCOP(discount)}\n`;
+      msg += `\n💸 Descuento: -${fmtCOP(orderDiscount)}\n`;
     }
     msg += `\n💰 *Total: ${fmtCOP(orderTotal)}*`;
     msg += `\n✅ Pago: *Contra entrega*\n\n`;
@@ -2997,10 +2999,45 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
 
               <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "10px", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px", margin: "0 0 10px" }}>Notas del pedido</p>
 
-              <div style={{ marginBottom: "8px" }}>
+              <div style={{ marginBottom: "20px" }}>
                 <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Instrucciones especiales</label>
                 <textarea value={deliveryForm.notas} onChange={e => setDeliveryForm(f => ({ ...f, notas: cleanText(e.target.value, 500) }))} placeholder="Color preferido, empaque especial, etc." rows={3} maxLength={500} style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A", resize: "none" }} />
               </div>
+
+              {/* Cupón de descuento */}
+              <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "10px", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px", margin: "0 0 10px" }}>Cupón de descuento</p>
+              {appliedCoupon ? (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(5,150,105,0.08)", border: "1.5px solid rgba(5,150,105,0.25)", borderRadius: "14px", padding: "10px 14px", marginBottom: "8px" }}>
+                  <div>
+                    <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 800, color: "#059669" }}>🏷 {appliedCoupon.code}</span>
+                    <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#059669", marginLeft: "8px" }}>−{appliedCoupon.pct}% aplicado</span>
+                  </div>
+                  <button onClick={() => { setAppliedCoupon(null); setCouponInput(""); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#9B948E", padding: "2px" }}>
+                    <X size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div style={{ marginBottom: "8px" }}>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <input
+                      type="text"
+                      value={couponInput}
+                      onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError(""); }}
+                      onKeyDown={e => e.key === "Enter" && handleApplyCoupon()}
+                      placeholder="CÓDIGO DE CUPÓN"
+                      maxLength={30}
+                      style={{ flex: 1, padding: "10px 12px", border: `1.5px solid ${couponError ? "#EF4444" : "#E2E8F0"}`, borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", letterSpacing: "1px", outline: "none", background: "#FAFBFC", color: "#1A1A1A", textTransform: "uppercase", boxSizing: "border-box" }}
+                    />
+                    <button
+                      onClick={handleApplyCoupon}
+                      style={{ padding: "10px 16px", borderRadius: "10px", background: CORAL, color: "#fff", border: "none", fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
+                    >
+                      Aplicar
+                    </button>
+                  </div>
+                  {couponError && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#EF4444", margin: "4px 0 0" }}>{couponError}</p>}
+                </div>
+              )}
             </div>
 
             <div style={{ padding: "14px 20px 18px", borderTop: "1px solid #F1F5F9", flexShrink: 0 }}>
