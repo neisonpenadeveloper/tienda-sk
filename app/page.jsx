@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { createClient } from "@supabase/supabase-js";
 import { ShoppingBag, Search, Heart, Menu, X, Star, Home, Sparkles, Smile, ArrowRight, Package, Truck, PlusCircle, LogOut, LogIn, Upload, Trash2, Minus, Plus, ChevronDown, Share2, Check, Copy, Pencil, Wrench, Droplets, Tag, ChefHat, Shirt, Laptop, Activity, PawPrint, LayoutGrid, EyeOff } from "lucide-react";
 
@@ -1933,7 +1934,7 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
     >
       <div className="pc-img-wrap" style={{ background: product.images?.length > 0 ? "#F5F0EA" : (product.color || "#F5F0EA"), height: "210px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", fontSize: "64px", overflow: "hidden" }}>
         {product.images?.length > 0 ? (
-          <img src={product.images[0]} alt={product.name} className="pc-img" />
+          <Image src={product.images[0]} alt={product.name} fill className="pc-img" style={{ objectFit: "contain" }} sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 25vw" />
         ) : (
           <span style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.12))", transition: "transform 0.5s ease" }}>{product.emoji}</span>
         )}
