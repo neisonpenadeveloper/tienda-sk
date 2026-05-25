@@ -2957,6 +2957,8 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab]         = useState("descripcion");
   const [headerH, setHeaderH]             = useState(0);
+  const [stickyBuy, setStickyBuy]         = useState(false);
+  const modalScrollRef = useRef(null);
   const swipeStartX = useRef(null);
   const swipeStartY = useRef(null);
   const [dragX, setDragX]       = useState(0);
@@ -3054,7 +3056,9 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
       }}
     >
       <div
+        ref={modalScrollRef}
         className="modal-inner"
+        onScroll={e => isMobile && setStickyBuy(e.currentTarget.scrollTop > 180)}
         style={{
           background: "#fff",
           borderRadius: isMobile ? "20px 20px 0 0" : "24px",
@@ -3068,6 +3072,41 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
           boxShadow: "0 40px 100px rgba(0,0,0,0.28)",
         }}
       >
+        {/* ── Sticky buy bar (solo móvil, aparece al scrollear) ── */}
+        {isMobile && (
+          <div style={{
+            position: "sticky", top: 0, zIndex: 20,
+            background: "rgba(255,255,255,0.97)", backdropFilter: "blur(10px)",
+            borderBottom: stickyBuy ? "1px solid #EDE8E2" : "1px solid transparent",
+            padding: "10px 16px",
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
+            transform: stickyBuy ? "translateY(0)" : "translateY(-100%)",
+            opacity: stickyBuy ? 1 : 0,
+            transition: "transform 0.25s cubic-bezier(0.16,1,0.3,1), opacity 0.2s ease, border-color 0.2s ease",
+            pointerEvents: stickyBuy ? "auto" : "none",
+          }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700, color: "#1A1A1A", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {product.name}
+              </p>
+              <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", fontWeight: 800, color: CORAL, margin: 0 }}>
+                {fmt(product.price)}
+              </p>
+            </div>
+            <button
+              onClick={() => { onBuyNow?.(product); onClose(); }}
+              style={{
+                flexShrink: 0, padding: "9px 18px", borderRadius: "20px", border: "none",
+                background: "linear-gradient(135deg, #16A34A, #15803D)",
+                color: "#fff", fontFamily: "var(--font-roboto), sans-serif",
+                fontSize: "13px", fontWeight: 700, cursor: "pointer",
+                boxShadow: "0 4px 14px rgba(22,163,74,0.35)",
+              }}
+            >
+              Pagar
+            </button>
+          </div>
+        )}
         {/* Botón cerrar */}
         <button
           onClick={onClose}
@@ -3617,9 +3656,18 @@ function LoginModal({ isOpen, onClose }) {
 export default function App() {
   const [activeCategory, setActiveCategory]   = useState("all");
 
+  const handleCategoryChange = (id) => {
+    setGridFading(true);
+    setTimeout(() => { setActiveCategory(id); setGridFading(false); }, 120);
+  };
+
   const handleNavCategorySelect = (id) => {
-    setActiveCategory(id);
-    document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setGridFading(true);
+    setTimeout(() => {
+      setActiveCategory(id);
+      setGridFading(false);
+      document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
   };
   const [searchQuery, setSearchQuery]         = useState("");
   const [sortBy, setSortBy]                   = useState("newest");
@@ -3646,6 +3694,7 @@ export default function App() {
   const [cartBounce, setCartBounce]           = useState(false);
   const [cartToast, setCartToast]             = useState(null);
   const [showLoginModal, setShowLoginModal]   = useState(false);
+  const [gridFading, setGridFading]           = useState(false);
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -3922,7 +3971,7 @@ export default function App() {
         .pc-old-price { font-size: 12px; }
         .pc-add-btn { padding: 7px 14px; font-size: 12px; }
         @media (max-width: 480px) {
-          .pc-img-wrap { height: 190px !important; font-size: 52px !important; }
+          .pc-img-wrap { height: 220px !important; font-size: 52px !important; }
           .pc-body { padding: 10px !important; }
           .pc-price-row { flex-direction: column; align-items: flex-start; gap: 6px; }
           .pc-prices { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px; }
@@ -4106,6 +4155,12 @@ export default function App() {
           .cart-item-name     { font-size: 13px !important; }
         }
 
+        /* ── Cart pill — solo móvil ── */
+        .cart-pill-mobile { display: none !important; }
+        @media (max-width: 767px) {
+          .cart-pill-mobile { display: flex !important; }
+        }
+
         /* ── Category pill hover ── */
         .cat-pill { transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1); }
         .cat-pill:hover { transform: scale(1.05); }
@@ -4246,7 +4301,7 @@ export default function App() {
           </div>
 
           <div id="productos" style={{ marginBottom: "32px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
-            <CategoryPills active={activeCategory} onChange={setActiveCategory} isAdmin={isAdmin} />
+            <CategoryPills active={activeCategory} onChange={handleCategoryChange} isAdmin={isAdmin} />
             <div style={{ position: "relative", flexShrink: 0 }}>
               <select
                 value={sortBy}
@@ -4273,6 +4328,7 @@ export default function App() {
             </div>
           </div>
 
+          <div style={{ transition: "opacity 0.15s ease", opacity: gridFading ? 0 : 1 }}>
           {loadingProducts ? (
             <div className="grid-products">
               {Array.from({ length: 8 }).map((_, i) => (
@@ -4299,16 +4355,41 @@ export default function App() {
               ))}
             </div>
           )}
+          </div>
 
           <Banner onOferta={() => {
-            setActiveCategory("ofertas");
-            setTimeout(() => document.getElementById("productos")?.scrollIntoView({ behavior: "smooth" }), 50);
+            handleCategoryChange("ofertas");
+            setTimeout(() => document.getElementById("productos")?.scrollIntoView({ behavior: "smooth" }), 170);
           }} />
         </main>
 
         <Footer>
           <AnnouncementBar />
         </Footer>
+
+        {/* Pill flotante del carrito — solo móvil, cuando hay productos */}
+        {cartCount > 0 && !showCart && (
+          <button
+            className="cart-pill-mobile"
+            onClick={() => setShowCart(true)}
+            style={{
+              position: "fixed", bottom: "70px", left: "50%", transform: "translateX(-50%)",
+              zIndex: 850,
+              background: CORAL, color: "#fff",
+              border: "none", borderRadius: "28px",
+              padding: "11px 20px",
+              display: "flex", alignItems: "center", gap: "10px",
+              boxShadow: "0 6px 24px rgba(37,99,235,0.45)",
+              fontFamily: "var(--font-roboto), sans-serif", fontSize: "13.5px", fontWeight: 700,
+              cursor: "pointer", whiteSpace: "nowrap",
+              animation: "toastIn 0.35s cubic-bezier(0.34,1.56,0.64,1)",
+            }}
+          >
+            <ShoppingBag size={16} strokeWidth={2.5} />
+            {cartCount} {cartCount === 1 ? "producto" : "productos"} · {fmt(cart.reduce((s, i) => s + i.price * i.quantity, 0))}
+            <span style={{ opacity: 0.7, fontSize: "12px" }}>→</span>
+          </button>
+        )}
 
         {/* Toast "Añadido al carrito" */}
         {cartToast && (
