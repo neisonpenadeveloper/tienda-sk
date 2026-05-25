@@ -1295,6 +1295,79 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
 
 // ─── HERO ─────────────────────────────────────────────────────────────────────
 function Hero({ onShop, stats }) {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 767);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  if (isMobile) {
+    return (
+      <section style={{
+        background: "linear-gradient(145deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)",
+        padding: "32px 20px 36px",
+        position: "relative",
+        overflow: "hidden",
+      }}>
+        <div style={{ position: "absolute", top: "-80px", right: "-60px", width: "280px", height: "280px", borderRadius: "50%", background: "rgba(37,99,235,0.22)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: "-70px", left: "-50px", width: "200px", height: "200px", borderRadius: "50%", background: "rgba(255,255,255,0.04)", pointerEvents: "none" }} />
+
+        <div style={{ position: "relative", zIndex: 1 }}>
+          {/* Badge */}
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: "20px", padding: "5px 14px", marginBottom: "18px" }}>
+            <span className="pulse-dot" style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#4ADE80", display: "inline-block" }} />
+            <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.88)" }}>
+              🛵 Paga al recibir · A todo Colombia
+            </span>
+          </div>
+
+          {/* Título grande */}
+          <h1 style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "40px", fontWeight: 900, color: "#fff", letterSpacing: "-1.5px", lineHeight: 1.1, margin: "0 0 8px" }}>
+            Date ese{" "}
+            <span style={{ background: "linear-gradient(135deg, #93C5FD, #60A5FA)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              gusto
+            </span>
+          </h1>
+          <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "18px", fontWeight: 700, color: "rgba(255,255,255,0.75)", margin: "0 0 28px", letterSpacing: "-0.3px" }}>
+            que mereces
+          </p>
+
+          {/* CTA + stats */}
+          <div style={{ display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap" }}>
+            <button
+              onClick={onShop}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "8px",
+                background: "#fff", color: "#1E3A8A",
+                border: "none", borderRadius: "28px", padding: "13px 28px",
+                fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", fontWeight: 800,
+                cursor: "pointer", boxShadow: "0 8px 28px rgba(0,0,0,0.3)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <Sparkles size={15} color="#2563EB" />
+              Ver productos
+            </button>
+            {stats.products > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "20px", fontWeight: 900, color: "#fff", lineHeight: 1 }}>{stats.products}</div>
+                  <div style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "10px", color: "rgba(255,255,255,0.55)", fontWeight: 500, marginTop: "2px" }}>productos</div>
+                </div>
+                <div style={{ width: "1px", height: "32px", background: "rgba(255,255,255,0.2)" }} />
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "20px", fontWeight: 900, color: "#fff", lineHeight: 1 }}>5.0 ★</div>
+                  <div style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "10px", color: "rgba(255,255,255,0.55)", fontWeight: 500, marginTop: "2px" }}>calidad</div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="hero-section" style={{
@@ -2963,6 +3036,14 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const swipeStartY = useRef(null);
   const [dragX, setDragX]       = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [pinchScale, setPinchScale]   = useState(1);
+  const [pinchOffset, setPinchOffset] = useState({ x: 0, y: 0 });
+  const [zoomActive, setZoomActive]   = useState(false);
+  const pinchStartDist  = useRef(null);
+  const pinchStartScale = useRef(1);
+  const panStartPos     = useRef(null);
+  const panStartOffset  = useRef({ x: 0, y: 0 });
+  const lastTapTime     = useRef(0);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 640);
@@ -2994,11 +3075,49 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const savings = product.oldPrice ? product.oldPrice - product.price : 0;
 
   const handleImgTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[1].clientX - e.touches[0].clientX;
+      const dy = e.touches[1].clientY - e.touches[0].clientY;
+      pinchStartDist.current  = Math.hypot(dx, dy);
+      pinchStartScale.current = pinchScale;
+      setZoomActive(true);
+      return;
+    }
+    const now = Date.now();
+    if (now - lastTapTime.current < 280) {
+      setPinchScale(1); setPinchOffset({ x: 0, y: 0 });
+      lastTapTime.current = 0; return;
+    }
+    lastTapTime.current = now;
+    if (pinchScale > 1.05) {
+      panStartPos.current    = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      panStartOffset.current = { ...pinchOffset };
+      setZoomActive(true);
+      return;
+    }
     swipeStartX.current = e.touches[0].clientX;
     swipeStartY.current = e.touches[0].clientY;
     setDragging(true);
   };
   const handleImgTouchMove = (e) => {
+    if (e.touches.length === 2 && pinchStartDist.current !== null) {
+      const dx   = e.touches[1].clientX - e.touches[0].clientX;
+      const dy   = e.touches[1].clientY - e.touches[0].clientY;
+      const dist = Math.hypot(dx, dy);
+      const s    = Math.min(4, Math.max(0.8, pinchStartScale.current * (dist / pinchStartDist.current)));
+      setPinchScale(s);
+      return;
+    }
+    if (pinchScale > 1.05 && panStartPos.current) {
+      const dx  = e.touches[0].clientX - panStartPos.current.x;
+      const dy  = e.touches[0].clientY - panStartPos.current.y;
+      const lim = 130 * (pinchScale - 1);
+      setPinchOffset({
+        x: Math.max(-lim, Math.min(lim, panStartOffset.current.x + dx / pinchScale)),
+        y: Math.max(-lim, Math.min(lim, panStartOffset.current.y + dy / pinchScale)),
+      });
+      return;
+    }
     if (swipeStartX.current === null || !imgs || imgs.length < 2) return;
     const dx = e.touches[0].clientX - swipeStartX.current;
     const dy = Math.abs(e.touches[0].clientY - swipeStartY.current);
@@ -3007,8 +3126,16 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
     setDragX(atEdge ? dx / 3 : dx);
   };
   const handleImgTouchEnd = (e) => {
-    setDragging(false);
-    setDragX(0);
+    setZoomActive(false);
+    if (pinchStartDist.current !== null) {
+      pinchStartDist.current = null;
+      if (pinchScale < 1.1) { setPinchScale(1); setPinchOffset({ x: 0, y: 0 }); }
+      return;
+    }
+    if (pinchScale > 1.05 && panStartPos.current) {
+      panStartPos.current = null; return;
+    }
+    setDragging(false); setDragX(0);
     if (swipeStartX.current === null || !imgs || imgs.length < 2) {
       swipeStartX.current = null; swipeStartY.current = null; return;
     }
@@ -3017,9 +3144,9 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
     if (Math.abs(dx) > 50 && Math.abs(dx) > dy) {
       if (dx < 0) setSelectedImg(i => Math.min(i + 1, imgs.length - 1));
       else         setSelectedImg(i => Math.max(i - 1, 0));
+      setPinchScale(1); setPinchOffset({ x: 0, y: 0 });
     }
-    swipeStartX.current = null;
-    swipeStartY.current = null;
+    swipeStartX.current = null; swipeStartY.current = null;
   };
 
   const handleAdd = () => {
@@ -3145,31 +3272,45 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
               display: "flex", alignItems: "center", justifyContent: "center",
               background: imgs ? "#fff" : (product.color || "#F5F0EA"),
               fontSize: isMobile ? "80px" : "96px", border: "1px solid #EDE8E2",
-              touchAction: "pan-y",
+              touchAction: pinchScale > 1.05 ? "none" : "pan-y",
               userSelect: "none",
+              cursor: pinchScale > 1.05 ? "grab" : "default",
             }}
           >
             {imgs ? (
-              isMobile && imgs.length > 1 ? (
-                <div style={{
-                  position: "absolute", top: 0, left: 0,
-                  width: `${imgs.length * 100}%`, height: "100%",
-                  display: "flex",
-                  transform: `translateX(calc(-${(selectedImg / imgs.length) * 100}% + ${dragX}px))`,
-                  transition: dragging ? "none" : "transform 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-                  willChange: "transform",
-                }}>
-                  {imgs.map((src, i) => (
-                    <div key={i} style={{ width: `${100 / imgs.length}%`, height: "100%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <img src={src} alt={product.name} draggable={false} style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <img src={imgs[selectedImg]} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none" }} />
-              )
+              <div style={{
+                position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+                transform: `scale(${pinchScale}) translate(${pinchOffset.x}px, ${pinchOffset.y}px)`,
+                transition: zoomActive ? "none" : "transform 0.25s cubic-bezier(0.25,0.46,0.45,0.94)",
+                transformOrigin: "center",
+                willChange: "transform",
+              }}>
+                {isMobile && imgs.length > 1 ? (
+                  <div style={{
+                    position: "absolute", top: 0, left: 0,
+                    width: `${imgs.length * 100}%`, height: "100%",
+                    display: "flex",
+                    transform: `translateX(calc(-${(selectedImg / imgs.length) * 100}% + ${pinchScale > 1.05 ? 0 : dragX}px))`,
+                    transition: dragging ? "none" : "transform 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                    willChange: "transform",
+                  }}>
+                    {imgs.map((src, i) => (
+                      <div key={i} style={{ width: `${100 / imgs.length}%`, height: "100%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <img src={src} alt={product.name} draggable={false} style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <img src={imgs[selectedImg]} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none" }} />
+                )}
+              </div>
             ) : (
               <span style={{ filter: "drop-shadow(0 8px 20px rgba(0,0,0,0.14))" }}>{product.emoji}</span>
+            )}
+            {pinchScale > 1.05 && isMobile && (
+              <div style={{ position: "absolute", bottom: "8px", right: "8px", background: "rgba(0,0,0,0.55)", borderRadius: "8px", padding: "3px 8px", fontSize: "11px", fontWeight: 700, color: "#fff", pointerEvents: "none", fontFamily: "var(--font-roboto), sans-serif" }}>
+                {Math.round(pinchScale * 10) / 10}×
+              </div>
             )}
           </div>
 
