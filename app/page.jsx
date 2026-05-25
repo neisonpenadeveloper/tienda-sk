@@ -3655,6 +3655,7 @@ function LoginModal({ isOpen, onClose }) {
 // ─── APP ROOT ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [activeCategory, setActiveCategory]   = useState("all");
+  const [gridFading, setGridFading]           = useState(false);
 
   const handleCategoryChange = (id) => {
     setGridFading(true);
@@ -3694,7 +3695,6 @@ export default function App() {
   const [cartBounce, setCartBounce]           = useState(false);
   const [cartToast, setCartToast]             = useState(null);
   const [showLoginModal, setShowLoginModal]   = useState(false);
-  const [gridFading, setGridFading]           = useState(false);
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
