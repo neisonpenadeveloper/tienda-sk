@@ -872,6 +872,7 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
   const desktopInputRef = useRef(null);
   const mobileInputRef  = useRef(null);
   const [showNavAll, setShowNavAll] = useState(false);
+  const [scrolled, setScrolled]     = useState(false);
   const navDropRef = useRef(null);
 
   const focusSearch = () => {
@@ -889,8 +890,14 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
     return () => { document.body.style.overflow = ""; };
   }, [menuOpen]);
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <header style={{ borderBottom: "1px solid #EDE8E2", background: "#fff" }} className="sticky top-0 z-50">
+    <header style={{ borderBottom: scrolled ? "1px solid transparent" : "1px solid #EDE8E2", background: "#fff", boxShadow: scrolled ? "0 2px 24px rgba(0,0,0,0.09)" : "none", transition: "box-shadow 0.3s ease, border-color 0.3s ease" }} className="sticky top-0 z-50">
       <div className="px-4 md:px-8" style={{ maxWidth: "1600px", margin: "0 auto", boxSizing: "border-box" }}>
         <div style={{ display: "flex", alignItems: "center", height: "64px", gap: "8px" }}>
 
@@ -1963,6 +1970,17 @@ function EmptyState({ category, searchQuery }) {
   );
 }
 
+// ─── RIPPLE HELPER ────────────────────────────────────────────────────────────
+function createRipple(e) {
+  const btn = e.currentTarget;
+  const d   = Math.max(btn.offsetWidth, btn.offsetHeight);
+  const r   = btn.getBoundingClientRect();
+  const span = document.createElement("span");
+  span.style.cssText = `position:absolute;width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px;border-radius:50%;background:rgba(255,255,255,0.38);animation:ripple 0.55s ease-out forwards;pointer-events:none;`;
+  btn.appendChild(span);
+  span.addEventListener("animationend", () => span.remove());
+}
+
 // ─── PRODUCT CARD SKELETON ────────────────────────────────────────────────────
 function ProductCardSkeleton() {
   return (
@@ -2104,7 +2122,7 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
             )}
           </div>
           <button
-            onClick={handleAdd}
+            onClick={(e) => { createRipple(e); handleAdd(e); }}
             disabled={product.stock === 0}
             className="pc-add-btn"
             style={{
@@ -2114,6 +2132,7 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
               fontFamily: "var(--font-roboto), sans-serif", fontWeight: 700,
               cursor: product.stock === 0 ? "not-allowed" : "pointer",
               transition: "background 0.25s ease", whiteSpace: "nowrap",
+              position: "relative", overflow: "hidden",
             }}
           >
             {product.stock === 0 ? "Agotado" : added ? "✓ Añadido" : "+ Agregar"}
@@ -3455,7 +3474,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
 
           {/* ── Botón pagar contra entrega ── */}
           <button
-            onClick={() => { onBuyNow?.(product); onClose(); }}
+            onClick={(e) => { createRipple(e); onBuyNow?.(product); onClose(); }}
             style={{
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
               width: "100%", padding: "16px 20px", borderRadius: "16px", border: "none",
@@ -3463,6 +3482,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
               color: "#fff", cursor: "pointer", gap: "4px",
               boxShadow: "0 8px 24px rgba(22,163,74,0.35)",
               transition: "transform 0.15s, box-shadow 0.15s",
+              position: "relative", overflow: "hidden",
             }}
             onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 12px 28px rgba(22,163,74,0.45)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(22,163,74,0.35)"; }}
@@ -3582,7 +3602,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
               {shared ? <Check size={19} /> : <Share2 size={19} />}
             </button>
             <button
-              onClick={handleAdd}
+              onClick={(e) => { createRipple(e); handleAdd(e); }}
               style={{
                 flex: 1, padding: "15px",
                 background: added ? "#2D7A4F" : CORAL,
@@ -3591,6 +3611,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
                 cursor: "pointer", transition: "background 0.25s ease",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: "9px",
                 boxShadow: added ? "0 8px 24px rgba(45,122,79,0.35)" : "0 8px 24px rgba(37,99,235,0.35)",
+                position: "relative", overflow: "hidden",
               }}
             >
               <ShoppingBag size={18} />
@@ -4246,6 +4267,12 @@ export default function App() {
           transform: translateY(0);
         }
 
+        /* ── Ripple en botones ── */
+        @keyframes ripple {
+          from { transform: scale(0); opacity: 1; }
+          to   { transform: scale(3); opacity: 0; }
+        }
+
         /* ── Bottom nav (solo móvil) ── */
         .bottom-nav {
           display: none;
@@ -4536,8 +4563,8 @@ export default function App() {
             <EmptyState category={activeCategory} searchQuery={searchQuery} />
           ) : (
             <div className="grid-products">
-              {sortedProducts.map(product => (
-                <div key={product.id} className="fade-in-up">
+              {sortedProducts.map((product, idx) => (
+                <div key={product.id} className="fade-in-up" style={{ transitionDelay: `${Math.min(idx % 8 * 0.06, 0.36)}s` }}>
                   <ProductCard
                     product={product}
                     onAddToCart={handleAddToCart}
