@@ -1971,12 +1971,16 @@ function EmptyState({ category, searchQuery }) {
 }
 
 // ─── RIPPLE HELPER ────────────────────────────────────────────────────────────
+// Usar en onPointerDown (no onClick) — dispara al instante en táctil y mouse,
+// PointerEvent siempre trae clientX/clientY correctos para ambos.
 function createRipple(e) {
   const btn = e.currentTarget;
   const d   = Math.max(btn.offsetWidth, btn.offsetHeight);
   const r   = btn.getBoundingClientRect();
+  const x   = e.clientX !== undefined ? e.clientX : r.left + btn.offsetWidth  / 2;
+  const y   = e.clientY !== undefined ? e.clientY : r.top  + btn.offsetHeight / 2;
   const span = document.createElement("span");
-  span.style.cssText = `position:absolute;width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px;border-radius:50%;background:rgba(255,255,255,0.38);animation:ripple 0.55s ease-out forwards;pointer-events:none;`;
+  span.style.cssText = `position:absolute;width:${d}px;height:${d}px;left:${x - r.left - d / 2}px;top:${y - r.top - d / 2}px;border-radius:50%;background:rgba(255,255,255,0.38);animation:ripple 0.55s ease-out forwards;pointer-events:none;`;
   btn.appendChild(span);
   span.addEventListener("animationend", () => span.remove());
 }
@@ -2122,7 +2126,8 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
             )}
           </div>
           <button
-            onClick={(e) => { createRipple(e); handleAdd(e); }}
+            onPointerDown={createRipple}
+            onClick={handleAdd}
             disabled={product.stock === 0}
             className="pc-add-btn"
             style={{
@@ -3474,7 +3479,8 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
 
           {/* ── Botón pagar contra entrega ── */}
           <button
-            onClick={(e) => { createRipple(e); onBuyNow?.(product); onClose(); }}
+            onPointerDown={createRipple}
+            onClick={() => { onBuyNow?.(product); onClose(); }}
             style={{
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
               width: "100%", padding: "16px 20px", borderRadius: "16px", border: "none",
@@ -3602,7 +3608,8 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
               {shared ? <Check size={19} /> : <Share2 size={19} />}
             </button>
             <button
-              onClick={(e) => { createRipple(e); handleAdd(e); }}
+              onPointerDown={createRipple}
+              onClick={handleAdd}
               style={{
                 flex: 1, padding: "15px",
                 background: added ? "#2D7A4F" : CORAL,
