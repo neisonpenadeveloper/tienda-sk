@@ -3598,6 +3598,22 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
             </button>
           </div>
 
+          <button
+            onClick={onClose}
+            style={{
+              width: "100%", padding: "13px",
+              background: "transparent", color: "#6B6560",
+              border: "1.5px solid #E0D8CC", borderRadius: "28px",
+              fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", fontWeight: 600,
+              cursor: "pointer", transition: "border-color 0.2s, color 0.2s",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = CORAL; e.currentTarget.style.color = CORAL; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0D8CC"; e.currentTarget.style.color = "#6B6560"; }}
+          >
+            ← Seguir viendo
+          </button>
+
           <div style={{ borderTop: "1px solid #EDE8E2", paddingTop: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
             {[
               { icon: Truck,    text: "Envío gratis en compras mayores a $70.000" },
