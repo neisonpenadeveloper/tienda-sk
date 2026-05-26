@@ -906,8 +906,8 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
             <img src="/header-logo.png" alt="Tienda S&K" className="nav-logo" style={{ height: "42px", width: "auto" }} />
             <p className="nav-slogan" style={{
               fontFamily: "var(--font-poppins), sans-serif",
-              fontSize: "10px", fontWeight: 400,
-              color: "#9B948E", margin: "2px 0 0",
+              fontSize: "12.5px", fontWeight: 400,
+              color: "#9B948E", margin: "3px 0 0",
               whiteSpace: "nowrap", letterSpacing: "0.15px",
             }}>
               Date el gusto que mereces, nosotros te lo llevamos
@@ -1350,8 +1350,8 @@ function Hero({ onShop, stats }) {
           </p>
           <p style={{
             fontFamily: "var(--font-poppins), sans-serif",
-            fontSize: "13px", fontWeight: 400,
-            color: "rgba(255,255,255,0.55)", margin: "0 0 24px",
+            fontSize: "16px", fontWeight: 400,
+            color: "rgba(255,255,255,0.65)", margin: "0 0 24px",
             letterSpacing: "0.2px", lineHeight: 1.5,
           }}>
             nosotros te lo llevamos
@@ -1448,7 +1448,7 @@ function Hero({ onShop, stats }) {
           </h1>
           <p style={{
             fontFamily: "var(--font-poppins), sans-serif",
-            fontSize: "clamp(11px, 1.1vw, 13px)", fontWeight: 400,
+            fontSize: "clamp(13px, 1.4vw, 16px)", fontWeight: 400,
             color: "#9B948E", margin: 0, letterSpacing: "0.2px",
           }}>
             nosotros te lo llevamos
