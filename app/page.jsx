@@ -908,9 +908,11 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
               fontFamily: "var(--font-poppins), sans-serif",
               fontSize: "12.5px", fontWeight: 400,
               color: "#9B948E", margin: "3px 0 0",
-              whiteSpace: "nowrap", letterSpacing: "0.15px",
+              letterSpacing: "0.15px", whiteSpace: "nowrap",
+              overflow: "hidden", textOverflow: "ellipsis",
+              maxWidth: "220px",
             }}>
-              Date el gusto que mereces, nosotros te lo llevamos
+              nosotros te lo llevamos
             </p>
           </div>
 
