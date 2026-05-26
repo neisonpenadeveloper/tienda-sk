@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Roboto, Exo_2 } from "next/font/google";
+import { Roboto, Exo_2, Poppins } from "next/font/google";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -13,6 +13,13 @@ const exo2 = Exo_2({
   variable: "--font-azonix",
   subsets: ["latin"],
   weight: ["400", "600", "700", "800"],
+  display: "swap",
+});
+
+const poppins = Poppins({
+  variable: "--font-poppins",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
   display: "swap",
 });
 
@@ -54,7 +61,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${roboto.variable} ${exo2.variable} h-full antialiased`}
+      className={`${roboto.variable} ${exo2.variable} ${poppins.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

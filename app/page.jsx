@@ -901,9 +901,17 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
       <div className="px-4 md:px-8" style={{ maxWidth: "1600px", margin: "0 auto", boxSizing: "border-box" }}>
         <div style={{ display: "flex", alignItems: "center", height: "64px", gap: "8px" }}>
 
-          {/* Logo */}
-          <div className="nav-logo-wrap flex items-center flex-shrink-0" style={{ height: "52px" }}>
-            <img src="/header-logo.png" alt="Tienda S&K" className="nav-logo" style={{ height: "52px", width: "auto" }} />
+          {/* Logo + eslogan */}
+          <div className="nav-logo-wrap flex-shrink-0" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center" }}>
+            <img src="/header-logo.png" alt="Tienda S&K" className="nav-logo" style={{ height: "42px", width: "auto" }} />
+            <p className="nav-slogan" style={{
+              fontFamily: "var(--font-poppins), sans-serif",
+              fontSize: "10px", fontWeight: 400,
+              color: "#9B948E", margin: "2px 0 0",
+              whiteSpace: "nowrap", letterSpacing: "0.15px",
+            }}>
+              Date el gusto que mereces, nosotros te lo llevamos
+            </p>
           </div>
 
           {/* Buscador móvil — inline en la fila principal */}
@@ -1337,8 +1345,16 @@ function Hero({ onShop, stats }) {
               gusto
             </span>
           </h1>
-          <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "18px", fontWeight: 700, color: "rgba(255,255,255,0.75)", margin: "0 0 28px", letterSpacing: "-0.3px" }}>
+          <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "18px", fontWeight: 700, color: "rgba(255,255,255,0.75)", margin: "0 0 10px", letterSpacing: "-0.3px" }}>
             que mereces
+          </p>
+          <p style={{
+            fontFamily: "var(--font-poppins), sans-serif",
+            fontSize: "13px", fontWeight: 400,
+            color: "rgba(255,255,255,0.55)", margin: "0 0 24px",
+            letterSpacing: "0.2px", lineHeight: 1.5,
+          }}>
+            nosotros te lo llevamos
           </p>
 
           {/* CTA + stats */}
@@ -1418,7 +1434,7 @@ function Hero({ onShop, stats }) {
             fontFamily: "var(--font-roboto), sans-serif",
             fontSize: "clamp(22px, 3vw, 28px)",
             fontWeight: 800, color: "#111",
-            letterSpacing: "-0.5px", margin: 0,
+            letterSpacing: "-0.5px", margin: "0 0 4px",
           }}>
             Date ese{" "}
             <span style={{
@@ -1430,6 +1446,13 @@ function Hero({ onShop, stats }) {
             </span>
             {" "}que mereces
           </h1>
+          <p style={{
+            fontFamily: "var(--font-poppins), sans-serif",
+            fontSize: "clamp(11px, 1.1vw, 13px)", fontWeight: 400,
+            color: "#9B948E", margin: 0, letterSpacing: "0.2px",
+          }}>
+            nosotros te lo llevamos
+          </p>
         </div>
 
         {/* Derecha: stats + botón */}
@@ -4320,6 +4343,7 @@ export default function App() {
         @media (max-width: 767px) {
           .nav-logo      { height: 38px !important; max-width: 96px; object-fit: contain; }
           .nav-logo-wrap { height: 38px !important; }
+          .nav-slogan    { display: none; }
           .login-btn-pill { padding: 8px 10px !important; }
 
           /* Main catalog padding */
