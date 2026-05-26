@@ -901,19 +901,9 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
       <div className="px-4 md:px-8" style={{ maxWidth: "1600px", margin: "0 auto", boxSizing: "border-box" }}>
         <div style={{ display: "flex", alignItems: "center", height: "64px", gap: "8px" }}>
 
-          {/* Logo + eslogan */}
-          <div className="nav-logo-wrap flex-shrink-0" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center" }}>
-            <img src="/header-logo.png" alt="Tienda S&K" className="nav-logo" style={{ height: "42px", width: "auto" }} />
-            <p className="nav-slogan" style={{
-              fontFamily: "var(--font-poppins), sans-serif",
-              fontSize: "12.5px", fontWeight: 400,
-              color: "#9B948E", margin: "3px 0 0",
-              letterSpacing: "0.15px", whiteSpace: "nowrap",
-              overflow: "hidden", textOverflow: "ellipsis",
-              maxWidth: "220px",
-            }}>
-              nosotros te lo llevamos
-            </p>
+          {/* Logo */}
+          <div className="nav-logo-wrap flex items-center flex-shrink-0" style={{ height: "52px" }}>
+            <img src="/header-logo.png" alt="Tienda S&K" className="nav-logo" style={{ height: "52px", width: "auto" }} />
           </div>
 
           {/* Buscador móvil — inline en la fila principal */}
@@ -4345,7 +4335,6 @@ export default function App() {
         @media (max-width: 767px) {
           .nav-logo      { height: 38px !important; max-width: 96px; object-fit: contain; }
           .nav-logo-wrap { height: 38px !important; }
-          .nav-slogan    { display: none; }
           .login-btn-pill { padding: 8px 10px !important; }
 
           /* Main catalog padding */
