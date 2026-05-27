@@ -2018,7 +2018,9 @@ function ProductCardSkeleton() {
 function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, user, onDelete, onEdit }) {
   const [added, setAdded]             = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [longPressActive, setLongPressActive] = useState(false);
   const isOwner = !!user && ADMIN_EMAILS.has(user.email);
+  const longPressTimer = useRef(null);
 
   const handleAdd = (e) => {
     e.stopPropagation();
@@ -2027,11 +2029,31 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
     setTimeout(() => setAdded(false), 1800);
   };
 
+  const handleLongPressStart = () => {
+    longPressTimer.current = setTimeout(async () => {
+      if (navigator.vibrate) navigator.vibrate(60);
+      setLongPressActive(true);
+      const url  = window.location.href;
+      const text = `¡Mira este producto! *${product.name}* — ${fmt(product.price)} 🛍️`;
+      const payload = { title: product.name, text, url };
+      if (navigator.share && navigator.canShare?.(payload)) {
+        await navigator.share(payload).catch(() => {});
+      } else {
+        await navigator.clipboard.writeText(`${text}\n${url}`).catch(() => {});
+      }
+      setTimeout(() => setLongPressActive(false), 1000);
+    }, 500);
+  };
+  const handleLongPressEnd = () => { clearTimeout(longPressTimer.current); };
+
   return (
     <div
       onClick={() => onSelect(product)}
+      onTouchStart={handleLongPressStart}
+      onTouchEnd={handleLongPressEnd}
+      onTouchMove={handleLongPressEnd}
       className="product-card"
-      style={{ background: "#fff", borderRadius: "18px", overflow: "hidden", border: "1px solid #EDE8E2" }}
+      style={{ background: "#fff", borderRadius: "18px", overflow: "hidden", border: longPressActive ? `2px solid ${CORAL}` : "1px solid #EDE8E2", transition: "border 0.15s", transform: longPressActive ? "scale(0.97)" : "scale(1)" }}
     >
       <div className="pc-img-wrap" style={{ background: product.images?.length > 0 ? "#F5F0EA" : (product.color || "#F5F0EA"), height: "210px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", fontSize: "64px", overflow: "hidden" }}>
         {product.images?.length > 0 ? (
@@ -2467,8 +2489,37 @@ function Footer({ children }) {
 // ─── CART ITEM ────────────────────────────────────────────────────────────────
 function CartItem({ item, onRemove, onUpdateQty }) {
   const fmtItem = n => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+  const [swipeX, setSwipeX]     = useState(0);
+  const swipeStart              = useRef(null);
+  const THRESHOLD               = 80;
+
+  const onTouchStart = e => { swipeStart.current = e.touches[0].clientX; };
+  const onTouchMove  = e => {
+    if (swipeStart.current === null) return;
+    const dx = e.touches[0].clientX - swipeStart.current;
+    if (dx < 0) setSwipeX(Math.max(dx, -(THRESHOLD + 24)));
+  };
+  const onTouchEnd = () => {
+    if (swipeX < -THRESHOLD) {
+      if (navigator.vibrate) navigator.vibrate(30);
+      onRemove(item.id);
+    } else setSwipeX(0);
+    swipeStart.current = null;
+  };
+
   return (
-    <div className="cart-item" style={{ display: "flex", gap: "12px", padding: "12px", background: "#fff", borderRadius: "14px", border: "1px solid #EDE8E2" }}>
+    <div style={{ position: "relative", borderRadius: "14px", overflow: "hidden" }}>
+      {/* Fondo rojo con icono de basura */}
+      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: THRESHOLD + 24, background: "#EF4444", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "14px" }}>
+        <Trash2 size={20} color="#fff" />
+      </div>
+      <div
+        className="cart-item"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{ display: "flex", gap: "12px", padding: "12px", background: "#fff", borderRadius: "14px", border: "1px solid #EDE8E2", transform: `translateX(${swipeX}px)`, transition: swipeX === 0 ? "transform 0.25s ease" : "none", position: "relative", zIndex: 1 }}
+      >
       {/* Imagen */}
       <div className="cart-item-img" style={{
         width: "72px", height: "72px", borderRadius: "10px", overflow: "hidden",
@@ -2528,6 +2579,7 @@ function CartItem({ item, onRemove, onUpdateQty }) {
             {fmtItem(item.price * item.quantity)}
           </span>
         </div>
+      </div>
       </div>
     </div>
   );
@@ -2592,6 +2644,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
       setCouponError("Cupón inválido o expirado.");
       return;
     }
+    if (navigator.vibrate) navigator.vibrate(50);
     setAppliedCoupon({ code, pct });
     setCouponError("");
     setCouponInput("");
@@ -2691,6 +2744,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
     if (!deliveryForm.departamento.trim())                                          errors.departamento = "Departamento requerido";
     if (Object.keys(errors).length > 0) { setDeliveryErrors(errors); return; }
     setDeliveryErrors({});
+    if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
     window.open(buildDeliveryWhatsAppUrl(), "_blank");
     setShowDeliveryForm(false);
     setShowOrderSuccess(true);
@@ -3093,6 +3147,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
 function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, user, onDelete, onEdit, onToggleActive, onBuyNow }) {
   const [selectedImg, setSelectedImg]     = useState(0);
   const [imgLoaded, setImgLoaded]         = useState(false);
+  const [showFullscreen, setShowFullscreen] = useState(false);
   const [added, setAdded]                 = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shared, setShared]               = useState(false);
@@ -3240,6 +3295,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   };
 
   return (
+    <>
     <div
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       style={{
@@ -3385,6 +3441,15 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
               <div style={{ position: "absolute", bottom: "8px", right: "8px", background: "rgba(0,0,0,0.55)", borderRadius: "8px", padding: "3px 8px", fontSize: "11px", fontWeight: 700, color: "#fff", pointerEvents: "none", fontFamily: "var(--font-roboto), sans-serif" }}>
                 {Math.round(pinchScale * 10) / 10}×
               </div>
+            )}
+            {imgs && pinchScale <= 1.05 && (
+              <button
+                onClick={() => setShowFullscreen(true)}
+                style={{ position: "absolute", bottom: "8px", left: "8px", background: "rgba(0,0,0,0.45)", border: "none", borderRadius: "8px", padding: "5px 8px", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}
+                title="Ver en pantalla completa"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+              </button>
             )}
           </div>
 
@@ -3771,6 +3836,32 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
         </div>
       </div>
     </div>
+
+    {/* Fullscreen image overlay */}
+    {showFullscreen && imgs && (
+      <div
+        onClick={() => setShowFullscreen(false)}
+        style={{ position: "fixed", inset: 0, zIndex: 1100, background: "rgba(0,0,0,0.96)", display: "flex", alignItems: "center", justifyContent: "center" }}
+      >
+        <button onClick={() => setShowFullscreen(false)} style={{ position: "absolute", top: "16px", right: "16px", background: "rgba(255,255,255,0.12)", border: "none", borderRadius: "50%", width: "40px", height: "40px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1101 }}>
+          <X size={20} color="#fff" />
+        </button>
+        <img
+          src={imgs[selectedImg]}
+          alt={product.name}
+          onClick={e => e.stopPropagation()}
+          style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", padding: "16px", boxSizing: "border-box" }}
+        />
+        {imgs.length > 1 && (
+          <div style={{ position: "absolute", bottom: "20px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "6px" }}>
+            {imgs.map((_, i) => (
+              <button key={i} onClick={e => { e.stopPropagation(); setSelectedImg(i); }} style={{ width: i === selectedImg ? "20px" : "8px", height: "8px", borderRadius: "4px", background: i === selectedImg ? "#fff" : "rgba(255,255,255,0.4)", border: "none", padding: 0, cursor: "pointer", transition: "width 0.2s" }} />
+            ))}
+          </div>
+        )}
+      </div>
+    )}
+    </>
   );
 }
 
@@ -3932,6 +4023,10 @@ export default function App() {
   const [cartToast, setCartToast]             = useState(null);
   const [showLoginModal, setShowLoginModal]   = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [showSortSheet, setShowSortSheet]     = useState(false);
+  const [pullY, setPullY]                     = useState(0);
+  const [isRefreshing, setIsRefreshing]       = useState(false);
+  const pullStart                             = useRef(null);
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -4153,6 +4248,14 @@ export default function App() {
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(32px); }
           to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to   { transform: translateY(0); }
         }
         @keyframes marquee {
           from { transform: translateX(0); }
@@ -4534,7 +4637,47 @@ export default function App() {
           onSelect={p => setSelectedProduct(displayProducts.find(dp => dp.id === p.id) ?? p)}
         />
 
-        <main className="main-catalog" style={{ width: "100%", maxWidth: "1600px", margin: "0 auto", padding: "32px 32px 0", boxSizing: "border-box" }}>
+        {/* Indicador pull-to-refresh */}
+        {(pullY > 0 || isRefreshing) && (
+          <div style={{
+            position: "fixed", top: "72px", left: "50%", transform: `translateX(-50%) translateY(${isRefreshing ? 0 : pullY - 44}px)`,
+            zIndex: 800, background: "#fff", borderRadius: "50%",
+            width: "40px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+            transition: isRefreshing ? "none" : "transform 0.1s linear",
+          }}>
+            {isRefreshing ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={CORAL} strokeWidth="2.5" strokeLinecap="round" style={{ animation: "spin 0.8s linear infinite" }}>
+                <path d="M21 12a9 9 0 1 1-9-9"/>
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={pullY > 52 ? CORAL : "#9B948E"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: `rotate(${Math.min(pullY * 2.5, 180)}deg)`, transition: "stroke 0.15s" }}>
+                <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
+              </svg>
+            )}
+          </div>
+        )}
+
+        <main
+          className="main-catalog"
+          style={{ width: "100%", maxWidth: "1600px", margin: "0 auto", padding: "32px 32px 0", boxSizing: "border-box" }}
+          onTouchStart={e => { if (window.scrollY === 0) pullStart.current = e.touches[0].clientY; }}
+          onTouchMove={e => {
+            if (pullStart.current === null || window.scrollY > 0 || isRefreshing) return;
+            const dy = e.touches[0].clientY - pullStart.current;
+            if (dy > 0) setPullY(Math.min(dy * 0.45, 72));
+          }}
+          onTouchEnd={async () => {
+            if (pullY > 52) {
+              if (navigator.vibrate) navigator.vibrate(40);
+              setIsRefreshing(true);
+              await fetchProducts();
+              setIsRefreshing(false);
+            }
+            setPullY(0);
+            pullStart.current = null;
+          }}
+        >
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "20px" }}>
             <div>
               <p className="catalog-label" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#9B948E", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "4px" }}>
@@ -4556,31 +4699,55 @@ export default function App() {
 
           <div id="productos" style={{ marginBottom: "32px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
             <CategoryPills active={activeCategory} onChange={handleCategoryChange} isAdmin={isAdmin} />
-            <div style={{ position: "relative", flexShrink: 0 }}>
-              <select
-                value={sortBy}
-                onChange={e => setSortBy(e.target.value)}
-                style={{
-                  fontFamily: "var(--font-roboto), sans-serif",
-                  fontSize: "13px",
-                  color: "#4A4A4A",
-                  background: "#F5F0EA",
-                  border: "1.5px solid #EDE8E2",
-                  borderRadius: "20px",
-                  padding: "8px 36px 8px 14px",
-                  appearance: "none",
-                  WebkitAppearance: "none",
-                  cursor: "pointer",
-                  outline: "none",
-                }}
-              >
-                <option value="newest">Más recientes</option>
-                <option value="price_asc">Precio: menor a mayor</option>
-                <option value="price_desc">Precio: mayor a menor</option>
-              </select>
-              <ChevronDown size={14} color="#9B948E" style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
-            </div>
+            <button
+              onClick={() => setShowSortSheet(true)}
+              style={{
+                display: "flex", alignItems: "center", gap: "6px", flexShrink: 0,
+                background: "#F5F0EA", border: "1.5px solid #EDE8E2", borderRadius: "20px",
+                padding: "8px 14px", fontFamily: "var(--font-roboto), sans-serif",
+                fontSize: "13px", color: "#4A4A4A", cursor: "pointer",
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+              {{ newest: "Más recientes", price_asc: "Menor precio", price_desc: "Mayor precio" }[sortBy]}
+              <ChevronDown size={12} color="#9B948E" />
+            </button>
           </div>
+
+          {/* Bottom sheet — Ordenar */}
+          {showSortSheet && (
+            <>
+              <div onClick={() => setShowSortSheet(false)} style={{ position: "fixed", inset: 0, zIndex: 960, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(2px)" }} />
+              <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 961, background: "#fff", borderRadius: "20px 20px 0 0", padding: "8px 0 32px", boxShadow: "0 -8px 32px rgba(0,0,0,0.15)", animation: "slideUp 0.22s ease" }}>
+                <div style={{ width: "36px", height: "4px", borderRadius: "2px", background: "#D0C8BF", margin: "0 auto 16px" }} />
+                <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700, color: "#9B948E", textTransform: "uppercase", letterSpacing: "0.8px", padding: "0 20px 8px", margin: 0 }}>Ordenar por</p>
+                {[
+                  { id: "newest",     label: "Más recientes",        icon: "🕐" },
+                  { id: "price_asc",  label: "Precio: menor a mayor", icon: "↑" },
+                  { id: "price_desc", label: "Precio: mayor a menor", icon: "↓" },
+                ].map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => { setSortBy(opt.id); setShowSortSheet(false); }}
+                    style={{
+                      width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                      padding: "14px 20px", background: "none", border: "none", cursor: "pointer",
+                      fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px",
+                      color: sortBy === opt.id ? CORAL : "#1A1A1A",
+                      fontWeight: sortBy === opt.id ? 700 : 400,
+                      borderBottom: "1px solid #F5F0EA",
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <span style={{ width: "20px", textAlign: "center" }}>{opt.icon}</span>
+                      {opt.label}
+                    </span>
+                    {sortBy === opt.id && <Check size={16} color={CORAL} />}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
 
           <div style={{ transition: "opacity 0.15s ease", opacity: gridFading ? 0 : 1 }}>
           {loadingProducts ? (
