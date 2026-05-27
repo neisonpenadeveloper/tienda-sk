@@ -868,7 +868,7 @@ function AnnouncementBar() {
 }
 
 // ─── NAVBAR ───────────────────────────────────────────────────────────────────
-function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, setActiveCategory, user, isAdmin, onLogin, onLogout, onPublish, onUncategorized, onCouponManager, onCartOpen, searchQuery, setSearchQuery }) {
+function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, setActiveCategory, user, isAdmin, onLogin, onLogout, onPublish, onUncategorized, onCouponManager, onCartOpen, searchQuery, setSearchQuery, onOpenMobileSearch }) {
   const desktopInputRef = useRef(null);
   const mobileInputRef  = useRef(null);
   const [showNavAll, setShowNavAll] = useState(false);
@@ -906,39 +906,30 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
             <img src="/header-logo.png" alt="Tienda S&K" className="nav-logo" style={{ height: "52px", width: "auto" }} />
           </div>
 
-          {/* Buscador móvil — inline en la fila principal */}
-          <div className="flex md:hidden" style={{ flex: 1, minWidth: 0 }}>
-            <div
-              style={{
-                display: "flex", alignItems: "center", gap: "8px",
-                background: "#F0F4FF", borderRadius: "24px", padding: "8px 14px",
-                width: "100%", border: `1.5px solid ${searchQuery ? CORAL : "#E2E8F0"}`,
-                transition: "border-color 0.2s",
-              }}
-            >
-              <Search size={14} color={searchQuery ? CORAL : "#9B948E"} style={{ flexShrink: 0 }} />
-              <input
-                ref={mobileInputRef}
-                className="search-input"
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                onKeyDown={e => e.key === "Escape" && setSearchQuery("")}
-                placeholder="Buscar..."
-                autoComplete="off"
-                style={{
-                  flex: 1, background: "none", border: "none", outline: "none",
-                  fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: "#1A1A1A",
-                  minWidth: 0,
-                }}
-              />
-              {searchQuery && (
-                <button onClick={() => setSearchQuery("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
-                  <X size={13} color="#9B948E" />
-                </button>
-              )}
-            </div>
-          </div>
+          {/* Buscador móvil — abre overlay full-screen */}
+          <button
+            className="flex md:hidden"
+            onClick={onOpenMobileSearch}
+            style={{
+              flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: "8px",
+              background: "#F0F4FF", borderRadius: "24px", padding: "8px 14px",
+              border: `1.5px solid ${searchQuery ? CORAL : "#E2E8F0"}`,
+              cursor: "pointer", transition: "border-color 0.2s",
+            }}
+          >
+            <Search size={14} color={searchQuery ? CORAL : "#9B948E"} style={{ flexShrink: 0 }} />
+            <span style={{ flex: 1, fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: searchQuery ? "#1A1A1A" : "#9B948E", textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {searchQuery || "Buscar..."}
+            </span>
+            {searchQuery && (
+              <span
+                onClick={e => { e.stopPropagation(); setSearchQuery(""); }}
+                style={{ display: "flex", cursor: "pointer", padding: "2px" }}
+              >
+                <X size={13} color="#9B948E" />
+              </span>
+            )}
+          </button>
 
           {/* Desktop nav (categorías) */}
           <nav className="hidden md:flex items-center gap-1" style={{ flexShrink: 0 }}>
@@ -4465,6 +4456,7 @@ export default function App() {
           onCartOpen={() => setShowCart(true)}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
+          onOpenMobileSearch={() => setShowMobileSearch(true)}
         />
 
         <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
