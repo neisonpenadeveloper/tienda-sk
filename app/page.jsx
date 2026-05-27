@@ -3222,8 +3222,8 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
     const dx = e.changedTouches[0].clientX - swipeStartX.current;
     const dy = Math.abs(e.changedTouches[0].clientY - swipeStartY.current);
     if (Math.abs(dx) > 50 && Math.abs(dx) > dy) {
-      if (dx < 0) { setSelectedImg(i => Math.min(i + 1, imgs.length - 1)); setImgLoaded(false); }
-      else         { setSelectedImg(i => Math.max(i - 1, 0)); setImgLoaded(false); }
+      if (dx < 0) setSelectedImg(i => Math.min(i + 1, imgs.length - 1));
+      else         setSelectedImg(i => Math.max(i - 1, 0));
       setPinchScale(1); setPinchOffset({ x: 0, y: 0 });
     }
     swipeStartX.current = null; swipeStartY.current = null;
@@ -3404,7 +3404,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
                 {imgs.map((_, i) => (
                   <button
                     key={i}
-                    onClick={() => { setSelectedImg(i); setImgLoaded(false); }}
+                    onClick={() => setSelectedImg(i)}
                     style={{
                       width: selectedImg === i ? "20px" : "8px",
                       height: "8px",
