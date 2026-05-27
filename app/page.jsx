@@ -3148,16 +3148,21 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const [selectedImg, setSelectedImg]     = useState(0);
   const [imgLoaded, setImgLoaded]         = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
-  const [fsScale, setFsScale]             = useState(1);
+  const [fsScale, setFsScale]             = useState(1);   // estado "comprometido" (solo en touchend)
   const [fsOffset, setFsOffset]           = useState({ x: 0, y: 0 });
-  const [fsDragX, setFsDragX]             = useState(0);
-  const fsPinchDist   = useRef(null);
-  const fsPinchStart  = useRef(1);
-  const fsPanStart    = useRef(null);
-  const fsPanOffset   = useRef({ x: 0, y: 0 });
-  const fsSwipeStartX = useRef(null);
-  const fsSwipeStartY = useRef(null);
-  const fsLastTap     = useRef(0);
+  // Refs para DOM directo — no disparan re-renders durante el gesto
+  const fsStripRef      = useRef(null);
+  const fsImgRef        = useRef(null);
+  const fsLiveScale     = useRef(1);
+  const fsLiveOffset    = useRef({ x: 0, y: 0 });
+  const fsPinchDist     = useRef(null);
+  const fsPinchStart    = useRef(1);
+  const fsPanStart      = useRef(null);
+  const fsPanOffset     = useRef({ x: 0, y: 0 });
+  const fsSwipeStartX   = useRef(null);
+  const fsSwipeStartY   = useRef(null);
+  const fsLastTap       = useRef(0);
+  const fsSelectedRef   = useRef(0);
   const [added, setAdded]                 = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shared, setShared]               = useState(false);
@@ -3304,27 +3309,49 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
     }
   };
 
-  const resetFs = () => { setFsScale(1); setFsOffset({ x: 0, y: 0 }); setFsDragX(0); };
+  const applyImgTransform = (scale, offset, transition = "none") => {
+    if (!fsImgRef.current) return;
+    fsImgRef.current.style.transition = transition;
+    fsImgRef.current.style.transform  = scale <= 1 ? "none" : `scale(${scale}) translate(${offset.x}px, ${offset.y}px)`;
+  };
+
+  const applyStripTransform = (idx, dragX = 0, transition = "none") => {
+    if (!fsStripRef.current || !imgs) return;
+    fsStripRef.current.style.transition = transition;
+    fsStripRef.current.style.transform  = `translateX(calc(-${(idx / imgs.length) * 100}% + ${dragX / imgs.length}px))`;
+  };
+
+  const resetFs = (commit = true) => {
+    fsLiveScale.current  = 1;
+    fsLiveOffset.current = { x: 0, y: 0 };
+    applyImgTransform(1, { x: 0, y: 0 }, "transform 0.25s ease");
+    if (commit) { setFsScale(1); setFsOffset({ x: 0, y: 0 }); }
+  };
 
   const handleFsTouchStart = (e) => {
     if (e.touches.length === 2) {
       const dx = e.touches[1].clientX - e.touches[0].clientX;
       const dy = e.touches[1].clientY - e.touches[0].clientY;
       fsPinchDist.current  = Math.hypot(dx, dy);
-      fsPinchStart.current = fsScale;
+      fsPinchStart.current = fsLiveScale.current;
       return;
     }
     const now = Date.now();
     if (now - fsLastTap.current < 280) {
       fsLastTap.current = 0;
-      if (fsScale > 1.05) resetFs();
-      else { setFsScale(2.5); setFsOffset({ x: 0, y: 0 }); }
+      if (fsLiveScale.current > 1.05) resetFs();
+      else {
+        fsLiveScale.current  = 2.5;
+        fsLiveOffset.current = { x: 0, y: 0 };
+        applyImgTransform(2.5, { x: 0, y: 0 }, "transform 0.25s ease");
+        setFsScale(2.5); setFsOffset({ x: 0, y: 0 });
+      }
       return;
     }
     fsLastTap.current = now;
-    if (fsScale > 1.05) {
+    if (fsLiveScale.current > 1.05) {
       fsPanStart.current  = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      fsPanOffset.current = { ...fsOffset };
+      fsPanOffset.current = { ...fsLiveOffset.current };
     } else {
       fsSwipeStartX.current = e.touches[0].clientX;
       fsSwipeStartY.current = e.touches[0].clientY;
@@ -3336,41 +3363,56 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
       const dx   = e.touches[1].clientX - e.touches[0].clientX;
       const dy   = e.touches[1].clientY - e.touches[0].clientY;
       const dist = Math.hypot(dx, dy);
-      setFsScale(Math.min(5, Math.max(1, fsPinchStart.current * (dist / fsPinchDist.current))));
+      const s    = Math.min(5, Math.max(1, fsPinchStart.current * (dist / fsPinchDist.current)));
+      fsLiveScale.current = s;
+      applyImgTransform(s, fsLiveOffset.current);   // DOM directo — sin setState
       return;
     }
-    if (fsScale > 1.05 && fsPanStart.current) {
+    if (fsLiveScale.current > 1.05 && fsPanStart.current) {
       const dx  = e.touches[0].clientX - fsPanStart.current.x;
       const dy  = e.touches[0].clientY - fsPanStart.current.y;
-      const lim = 200 * (fsScale - 1);
-      setFsOffset({
-        x: Math.max(-lim, Math.min(lim, fsPanOffset.current.x + dx / fsScale)),
-        y: Math.max(-lim, Math.min(lim, fsPanOffset.current.y + dy / fsScale)),
-      });
+      const lim = 200 * (fsLiveScale.current - 1);
+      const newOffset = {
+        x: Math.max(-lim, Math.min(lim, fsPanOffset.current.x + dx / fsLiveScale.current)),
+        y: Math.max(-lim, Math.min(lim, fsPanOffset.current.y + dy / fsLiveScale.current)),
+      };
+      fsLiveOffset.current = newOffset;
+      applyImgTransform(fsLiveScale.current, newOffset);   // DOM directo — sin setState
       return;
     }
     if (fsSwipeStartX.current !== null && imgs && imgs.length > 1) {
-      const dx = e.touches[0].clientX - fsSwipeStartX.current;
-      const atEdge = (selectedImg === 0 && dx > 0) || (selectedImg === imgs.length - 1 && dx < 0);
-      setFsDragX(atEdge ? dx / 3 : dx);
+      const dx      = e.touches[0].clientX - fsSwipeStartX.current;
+      const cur     = fsSelectedRef.current;
+      const atEdge  = (cur === 0 && dx > 0) || (cur === imgs.length - 1 && dx < 0);
+      applyStripTransform(cur, atEdge ? dx / 3 : dx);   // DOM directo — sin setState
     }
   };
 
   const handleFsTouchEnd = (e) => {
     if (fsPinchDist.current !== null) {
       fsPinchDist.current = null;
-      if (fsScale < 1.15) resetFs();
+      if (fsLiveScale.current < 1.15) resetFs();
+      else {
+        setFsScale(fsLiveScale.current);
+        setFsOffset({ ...fsLiveOffset.current });
+      }
       return;
     }
-    if (fsScale > 1.05 && fsPanStart.current) { fsPanStart.current = null; return; }
-    setFsDragX(0);
-    if (fsSwipeStartX.current === null) return;
-    const dx = e.changedTouches[0].clientX - fsSwipeStartX.current;
-    const dy = Math.abs(e.changedTouches[0].clientY - (fsSwipeStartY.current ?? 0));
-    if (Math.abs(dx) > 50 && Math.abs(dx) > dy) {
-      if (dx < 0) setSelectedImg(i => Math.min(i + 1, imgs.length - 1));
-      else         setSelectedImg(i => Math.max(i - 1, 0));
+    if (fsLiveScale.current > 1.05 && fsPanStart.current) {
+      fsPanStart.current = null;
+      setFsScale(fsLiveScale.current);
+      setFsOffset({ ...fsLiveOffset.current });
+      return;
     }
+    if (fsSwipeStartX.current === null) return;
+    const dx  = e.changedTouches[0].clientX - fsSwipeStartX.current;
+    const dy  = Math.abs(e.changedTouches[0].clientY - (fsSwipeStartY.current ?? 0));
+    const cur = fsSelectedRef.current;
+    let next  = cur;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > dy) next = dx < 0 ? Math.min(cur + 1, imgs.length - 1) : Math.max(cur - 1, 0);
+    // Animar tira al índice final con transición
+    applyStripTransform(next, 0, "transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94)");
+    if (next !== cur) { resetFs(false); setSelectedImg(next); }
     fsSwipeStartX.current = null; fsSwipeStartY.current = null;
   };
 
@@ -3524,7 +3566,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
             )}
             {imgs && pinchScale <= 1.05 && (
               <button
-                onClick={() => setShowFullscreen(true)}
+                onClick={() => { fsLiveScale.current = 1; fsLiveOffset.current = { x: 0, y: 0 }; setFsScale(1); setFsOffset({ x: 0, y: 0 }); setShowFullscreen(true); }}
                 style={{ position: "absolute", bottom: "8px", left: "8px", background: "rgba(0,0,0,0.45)", border: "none", borderRadius: "8px", padding: "5px 8px", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}
                 title="Ver en pantalla completa"
               >
@@ -3947,31 +3989,44 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
           </div>
         )}
 
-        {/* Tira horizontal de imágenes */}
-        <div style={{
-          display: "flex",
-          width: `${imgs.length * 100}%`,
-          height: "100%",
-          transform: `translateX(calc(-${(selectedImg / imgs.length) * 100}% + ${fsDragX / imgs.length}px))`,
-          transition: fsDragX !== 0 ? "none" : "transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94)",
-          willChange: "transform",
-        }}>
-          {imgs.map((src, i) => (
-            <div key={i} style={{ width: `${100 / imgs.length}%`, height: "100%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-              <img
-                src={src}
-                alt={product.name}
-                draggable={false}
-                style={{
-                  maxWidth: "100%", maxHeight: "100%", objectFit: "contain",
-                  padding: "16px", boxSizing: "border-box", userSelect: "none",
-                  transform: i === selectedImg ? `scale(${fsScale}) translate(${fsOffset.x}px, ${fsOffset.y}px)` : "none",
-                  transition: fsPinchDist.current ? "none" : "transform 0.25s ease",
-                  transformOrigin: "center",
-                }}
-              />
-            </div>
-          ))}
+        {/* Tira horizontal de imágenes — transform controlado por DOM directo */}
+        <div
+          ref={el => {
+            fsStripRef.current = el;
+            if (el) el.style.transform = `translateX(-${(selectedImg / imgs.length) * 100}%)`;
+          }}
+          style={{
+            display: "flex",
+            width: `${imgs.length * 100}%`,
+            height: "100%",
+            willChange: "transform",
+          }}
+        >
+          {imgs.map((src, i) => {
+            const isActive = i === selectedImg;
+            return (
+              <div key={i} style={{ width: `${100 / imgs.length}%`, height: "100%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                <img
+                  ref={el => {
+                    if (isActive) {
+                      fsImgRef.current = el;
+                      fsSelectedRef.current = selectedImg;
+                      // Sincronizar transform al montar / cambiar imagen
+                      if (el) el.style.transform = fsScale > 1 ? `scale(${fsScale}) translate(${fsOffset.x}px, ${fsOffset.y}px)` : "none";
+                    }
+                  }}
+                  src={src}
+                  alt={product.name}
+                  draggable={false}
+                  style={{
+                    maxWidth: "100%", maxHeight: "100%", objectFit: "contain",
+                    padding: "16px", boxSizing: "border-box", userSelect: "none",
+                    transformOrigin: "center", willChange: "transform",
+                  }}
+                />
+              </div>
+            );
+          })}
         </div>
 
         {/* Dots */}
