@@ -871,6 +871,7 @@ function AnnouncementBar() {
 function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, setActiveCategory, user, isAdmin, onLogin, onLogout, onPublish, onUncategorized, onCouponManager, onCartOpen, searchQuery, setSearchQuery, onOpenMobileSearch }) {
   const desktopInputRef = useRef(null);
   const mobileInputRef  = useRef(null);
+  const menuSwipeX      = useRef(null);
   const [showNavAll, setShowNavAll] = useState(false);
   const [scrolled, setScrolled]     = useState(false);
   const navDropRef = useRef(null);
@@ -1202,6 +1203,13 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
         {menuOpen && (
           <div
             className="md:hidden"
+            onTouchStart={e => { menuSwipeX.current = e.touches[0].clientX; }}
+            onTouchEnd={e => {
+              if (menuSwipeX.current === null) return;
+              const dx = e.changedTouches[0].clientX - menuSwipeX.current;
+              if (dx < -60) setMenuOpen(false);
+              menuSwipeX.current = null;
+            }}
             style={{
               position: "fixed", top: "64px", left: 0, right: 0, bottom: 0,
               zIndex: 49, background: "#FAFAFA",
@@ -2560,19 +2568,19 @@ function CartItem({ item, onRemove, onUpdateQty }) {
           <div style={{ display: "flex", alignItems: "center", background: "#F5F0EA", borderRadius: "20px", overflow: "hidden" }}>
             <button
               onClick={() => onUpdateQty(item.id, item.quantity - 1)}
-              style={{ width: "28px", height: "28px", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6B6560" }}
+              style={{ width: "40px", height: "40px", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6B6560" }}
             >
-              <Minus size={11} />
+              <Minus size={13} />
             </button>
-            <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700, color: "#1A1A1A", minWidth: "20px", textAlign: "center" }}>
+            <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", fontWeight: 700, color: "#1A1A1A", minWidth: "22px", textAlign: "center" }}>
               {item.quantity}
             </span>
             <button
               onClick={() => onUpdateQty(item.id, item.quantity + 1)}
               disabled={item.stock != null && item.quantity >= item.stock}
-              style={{ width: "28px", height: "28px", background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", color: "#6B6560", cursor: item.stock != null && item.quantity >= item.stock ? "not-allowed" : "pointer", opacity: item.stock != null && item.quantity >= item.stock ? 0.3 : 1 }}
+              style={{ width: "40px", height: "40px", background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", color: "#6B6560", cursor: item.stock != null && item.quantity >= item.stock ? "not-allowed" : "pointer", opacity: item.stock != null && item.quantity >= item.stock ? 0.3 : 1 }}
             >
-              <Plus size={11} />
+              <Plus size={13} />
             </button>
           </div>
           <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", fontWeight: 800, color: "#1A1A1A" }}>
@@ -2603,6 +2611,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
   const [appliedCoupon, setAppliedCoupon]     = useState(null); // { code, pct }
   const [showPaymentModal, setShowPaymentModal]   = useState(false);
   const [showDeliveryForm, setShowDeliveryForm]   = useState(false);
+  const [deliveryStep, setDeliveryStep]           = useState(1);
   const [showOrderSuccess, setShowOrderSuccess]   = useState(false);
   const [headerH, setHeaderH] = useState(0);
   const cartSwipeStartX = useRef(null);
@@ -2747,7 +2756,28 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
     if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
     window.open(buildDeliveryWhatsAppUrl(), "_blank");
     setShowDeliveryForm(false);
+    setDeliveryStep(1);
     setShowOrderSuccess(true);
+  };
+
+  const handleStepNext = () => {
+    if (deliveryStep === 1) {
+      const errors = {};
+      if (!deliveryForm.nombre.trim() || deliveryForm.nombre.trim().length < 2) errors.nombre = "Ingresa el nombre completo (mínimo 2 caracteres)";
+      if (!deliveryForm.telefono.trim() || !isPhone(deliveryForm.telefono))      errors.telefono = "Número no válido (7 a 15 dígitos)";
+      if (deliveryForm.correo && !isEmail(deliveryForm.correo))                  errors.correo = "Correo electrónico no válido";
+      if (Object.keys(errors).length > 0) { setDeliveryErrors(errors); return; }
+      setDeliveryErrors({});
+      setDeliveryStep(2);
+    } else if (deliveryStep === 2) {
+      const errors = {};
+      if (!deliveryForm.direccion.trim() || deliveryForm.direccion.trim().length < 5) errors.direccion = "Ingresa una dirección válida (mínimo 5 caracteres)";
+      if (!deliveryForm.ciudad.trim())                                                errors.ciudad    = "Ciudad requerida";
+      if (!deliveryForm.departamento.trim())                                          errors.departamento = "Departamento requerido";
+      if (Object.keys(errors).length > 0) { setDeliveryErrors(errors); return; }
+      setDeliveryErrors({});
+      setDeliveryStep(3);
+    }
   };
 
   return (
@@ -3024,117 +3054,183 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
         {/* Modal: formulario de entrega */}
         {showPaymentModal && showDeliveryForm && (
           <div style={{ position: "absolute", inset: 0, zIndex: 20, background: "#fff", display: "flex", flexDirection: "column", colorScheme: "light" }}>
-            <div style={{ padding: "18px 20px 14px", borderBottom: "1px solid #F1F5F9", display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-              <button onClick={() => { setShowDeliveryForm(false); setDeliveryErrors({}); if (quickBuyProduct) { setShowPaymentModal(false); onClearQuickBuy?.(); onClose(); } }} style={{ background: "#F1F5F9", border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", color: "#475569", fontWeight: 600 }}>← Volver</button>
-              <div>
-                <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px", fontWeight: 800, color: "#1A1A1A", margin: 0 }}>Datos de entrega</p>
-                <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#059669", margin: 0, fontWeight: 600 }}>🛵 Pago contra entrega</p>
+            {/* Header */}
+            <div style={{ padding: "14px 20px 12px", borderBottom: "1px solid #F1F5F9", flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+                <button
+                  onClick={() => {
+                    if (deliveryStep > 1) { setDeliveryStep(s => s - 1); setDeliveryErrors({}); }
+                    else { setShowDeliveryForm(false); setDeliveryErrors({}); setDeliveryStep(1); if (quickBuyProduct) { setShowPaymentModal(false); onClearQuickBuy?.(); onClose(); } }
+                  }}
+                  style={{ background: "#F1F5F9", border: "none", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", color: "#475569", fontWeight: 600, flexShrink: 0 }}
+                >
+                  ← {deliveryStep > 1 ? "Anterior" : "Volver"}
+                </button>
+                <div>
+                  <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px", fontWeight: 800, color: "#1A1A1A", margin: 0 }}>Datos de entrega</p>
+                  <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#059669", margin: 0, fontWeight: 600 }}>🛵 Pago contra entrega</p>
+                </div>
+              </div>
+              {/* Step indicator */}
+              <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+                {[{ n: 1, label: "Contacto" }, { n: 2, label: "Dirección" }, { n: 3, label: "Confirmar" }].map(({ n, label }, i) => (
+                  <div key={n} style={{ display: "flex", alignItems: "center", flex: i < 2 ? 1 : "none" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+                      <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: deliveryStep >= n ? CORAL : "#E2E8F0", color: deliveryStep >= n ? "#fff" : "#94A3B8", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 800, transition: "background 0.25s" }}>
+                        {deliveryStep > n ? "✓" : n}
+                      </div>
+                      <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "9px", fontWeight: 600, color: deliveryStep >= n ? CORAL : "#94A3B8", letterSpacing: "0.3px", whiteSpace: "nowrap" }}>{label}</span>
+                    </div>
+                    {i < 2 && <div style={{ flex: 1, height: "2px", background: deliveryStep > n ? CORAL : "#E2E8F0", margin: "0 4px 14px", transition: "background 0.25s" }} />}
+                  </div>
+                ))}
               </div>
             </div>
 
             <div className="delivery-form" style={{ flex: 1, overflowY: "auto", padding: "16px 20px", WebkitOverflowScrolling: "touch" }}>
-              <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "10px", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px", margin: "0 0 10px" }}>Contacto</p>
+              {/* ── PASO 1: Contacto ── */}
+              {deliveryStep === 1 && <>
+                <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "10px", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px", margin: "0 0 14px" }}>¿Quién recibe el pedido?</p>
 
-              <div style={{ marginBottom: "12px" }}>
-                <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Nombre de quien recibe *</label>
-                <input value={deliveryForm.nombre} onChange={e => setDeliveryForm(f => ({ ...f, nombre: cleanName(e.target.value) }))} placeholder="Ej: Juan García" maxLength={80} autoComplete="name" style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${deliveryErrors.nombre ? "#EF4444" : "#E2E8F0"}`, borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
-                {deliveryErrors.nombre && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#EF4444", margin: "3px 0 0" }}>{deliveryErrors.nombre}</p>}
-              </div>
-
-              <div style={{ marginBottom: "12px" }}>
-                <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Teléfono *</label>
-                <input value={deliveryForm.telefono} onChange={e => setDeliveryForm(f => ({ ...f, telefono: cleanPhone(e.target.value) }))} placeholder="Ej: 3001234567" type="tel" maxLength={15} autoComplete="tel" style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${deliveryErrors.telefono ? "#EF4444" : "#E2E8F0"}`, borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
-                {deliveryErrors.telefono && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#EF4444", margin: "3px 0 0" }}>{deliveryErrors.telefono}</p>}
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Correo electrónico</label>
-                <input value={deliveryForm.correo} onChange={e => setDeliveryForm(f => ({ ...f, correo: cleanEmail(e.target.value) }))} placeholder="Ej: correo@email.com" type="email" maxLength={100} autoComplete="email" style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${deliveryErrors.correo ? "#EF4444" : "#E2E8F0"}`, borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
-                {deliveryErrors.correo && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#EF4444", margin: "3px 0 0" }}>{deliveryErrors.correo}</p>}
-              </div>
-
-              <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "10px", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px", margin: "0 0 10px" }}>Dirección de entrega</p>
-
-              <div style={{ marginBottom: "12px" }}>
-                <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Dirección completa *</label>
-                <input value={deliveryForm.direccion} onChange={e => setDeliveryForm(f => ({ ...f, direccion: cleanText(e.target.value, 200) }))} placeholder="Ej: Calle 80 #45-32, Apto 201" maxLength={200} autoComplete="street-address" style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${deliveryErrors.direccion ? "#EF4444" : "#E2E8F0"}`, borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
-                {deliveryErrors.direccion && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#EF4444", margin: "3px 0 0" }}>{deliveryErrors.direccion}</p>}
-              </div>
-
-              <div style={{ marginBottom: "12px" }}>
-                <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Punto de referencia</label>
-                <input value={deliveryForm.referencia} onChange={e => setDeliveryForm(f => ({ ...f, referencia: cleanText(e.target.value, 150) }))} placeholder="Ej: Cerca al Éxito de la 80" maxLength={150} style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "12px" }}>
-                <div>
-                  <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Ciudad *</label>
-                  <input value={deliveryForm.ciudad} onChange={e => setDeliveryForm(f => ({ ...f, ciudad: cleanCity(e.target.value) }))} maxLength={60} autoComplete="address-level2" style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${deliveryErrors.ciudad ? "#EF4444" : "#E2E8F0"}`, borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
-                  {deliveryErrors.ciudad && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#EF4444", margin: "3px 0 0" }}>{deliveryErrors.ciudad}</p>}
+                <div style={{ marginBottom: "14px" }}>
+                  <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Nombre completo *</label>
+                  <input value={deliveryForm.nombre} onChange={e => setDeliveryForm(f => ({ ...f, nombre: cleanName(e.target.value) }))} placeholder="Ej: Juan García" maxLength={80} autoComplete="name" inputMode="text" enterKeyHint="next" style={{ width: "100%", padding: "12px 14px", border: `1.5px solid ${deliveryErrors.nombre ? "#EF4444" : "#E2E8F0"}`, borderRadius: "12px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
+                  {deliveryErrors.nombre && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#EF4444", margin: "3px 0 0" }}>{deliveryErrors.nombre}</p>}
                 </div>
-                <div>
-                  <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Departamento *</label>
-                  <input value={deliveryForm.departamento} onChange={e => setDeliveryForm(f => ({ ...f, departamento: cleanCity(e.target.value) }))} maxLength={60} autoComplete="address-level1" style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${deliveryErrors.departamento ? "#EF4444" : "#E2E8F0"}`, borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
-                  {deliveryErrors.departamento && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#EF4444", margin: "3px 0 0" }}>{deliveryErrors.departamento}</p>}
+
+                <div style={{ marginBottom: "14px" }}>
+                  <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Teléfono *</label>
+                  <input value={deliveryForm.telefono} onChange={e => setDeliveryForm(f => ({ ...f, telefono: cleanPhone(e.target.value) }))} placeholder="Ej: 3001234567" type="tel" maxLength={15} autoComplete="tel" inputMode="tel" enterKeyHint="next" style={{ width: "100%", padding: "12px 14px", border: `1.5px solid ${deliveryErrors.telefono ? "#EF4444" : "#E2E8F0"}`, borderRadius: "12px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
+                  {deliveryErrors.telefono && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#EF4444", margin: "3px 0 0" }}>{deliveryErrors.telefono}</p>}
                 </div>
-              </div>
 
-              <div style={{ marginBottom: "20px" }}>
-                <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Información adicional</label>
-                <input value={deliveryForm.adicional} onChange={e => setDeliveryForm(f => ({ ...f, adicional: cleanText(e.target.value, 200) }))} placeholder="Ej: Llamar antes de llegar" maxLength={200} style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
-              </div>
-
-              <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "10px", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px", margin: "0 0 10px" }}>Notas del pedido</p>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Instrucciones especiales</label>
-                <textarea value={deliveryForm.notas} onChange={e => setDeliveryForm(f => ({ ...f, notas: cleanText(e.target.value, 500) }))} placeholder="Color preferido, empaque especial, etc." rows={3} maxLength={500} style={{ width: "100%", padding: "10px 12px", border: "1.5px solid #E2E8F0", borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A", resize: "none" }} />
-              </div>
-
-              {/* Cupón de descuento */}
-              <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "10px", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px", margin: "0 0 10px" }}>Cupón de descuento</p>
-              {appliedCoupon ? (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(5,150,105,0.08)", border: "1.5px solid rgba(5,150,105,0.25)", borderRadius: "14px", padding: "10px 14px", marginBottom: "8px" }}>
-                  <div>
-                    <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 800, color: "#059669" }}>🏷 {appliedCoupon.code}</span>
-                    <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#059669", marginLeft: "8px" }}>−{appliedCoupon.pct}% aplicado</span>
-                  </div>
-                  <button onClick={() => { setAppliedCoupon(null); setCouponInput(""); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#9B948E", padding: "2px" }}>
-                    <X size={16} />
-                  </button>
-                </div>
-              ) : (
                 <div style={{ marginBottom: "8px" }}>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <input
-                      type="text"
-                      value={couponInput}
-                      onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError(""); }}
-                      onKeyDown={e => e.key === "Enter" && handleApplyCoupon()}
-                      placeholder="CÓDIGO DE CUPÓN"
-                      maxLength={30}
-                      style={{ flex: 1, padding: "10px 12px", border: `1.5px solid ${couponError ? "#EF4444" : "#E2E8F0"}`, borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", letterSpacing: "1px", outline: "none", background: "#FAFBFC", color: "#1A1A1A", textTransform: "uppercase", boxSizing: "border-box" }}
-                    />
-                    <button
-                      onClick={handleApplyCoupon}
-                      style={{ padding: "10px 16px", borderRadius: "10px", background: CORAL, color: "#fff", border: "none", fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
-                    >
-                      Aplicar
+                  <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Correo electrónico <span style={{ fontWeight: 400, color: "#94A3B8" }}>(opcional)</span></label>
+                  <input value={deliveryForm.correo} onChange={e => setDeliveryForm(f => ({ ...f, correo: cleanEmail(e.target.value) }))} placeholder="Ej: correo@email.com" type="email" maxLength={100} autoComplete="email" inputMode="email" enterKeyHint="done" style={{ width: "100%", padding: "12px 14px", border: `1.5px solid ${deliveryErrors.correo ? "#EF4444" : "#E2E8F0"}`, borderRadius: "12px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
+                  {deliveryErrors.correo && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#EF4444", margin: "3px 0 0" }}>{deliveryErrors.correo}</p>}
+                </div>
+              </>}
+
+              {/* ── PASO 2: Dirección ── */}
+              {deliveryStep === 2 && <>
+                <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "10px", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px", margin: "0 0 14px" }}>¿A dónde enviamos?</p>
+
+                <div style={{ marginBottom: "14px" }}>
+                  <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Dirección completa *</label>
+                  <input value={deliveryForm.direccion} onChange={e => setDeliveryForm(f => ({ ...f, direccion: cleanText(e.target.value, 200) }))} placeholder="Ej: Calle 80 #45-32, Apto 201" maxLength={200} autoComplete="street-address" inputMode="text" enterKeyHint="next" style={{ width: "100%", padding: "12px 14px", border: `1.5px solid ${deliveryErrors.direccion ? "#EF4444" : "#E2E8F0"}`, borderRadius: "12px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
+                  {deliveryErrors.direccion && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#EF4444", margin: "3px 0 0" }}>{deliveryErrors.direccion}</p>}
+                </div>
+
+                <div style={{ marginBottom: "14px" }}>
+                  <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Punto de referencia <span style={{ fontWeight: 400, color: "#94A3B8" }}>(opcional)</span></label>
+                  <input value={deliveryForm.referencia} onChange={e => setDeliveryForm(f => ({ ...f, referencia: cleanText(e.target.value, 150) }))} placeholder="Ej: Cerca al Éxito de la 80" maxLength={150} inputMode="text" enterKeyHint="next" style={{ width: "100%", padding: "12px 14px", border: "1.5px solid #E2E8F0", borderRadius: "12px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "14px" }}>
+                  <div>
+                    <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Ciudad *</label>
+                    <input value={deliveryForm.ciudad} onChange={e => setDeliveryForm(f => ({ ...f, ciudad: cleanCity(e.target.value) }))} maxLength={60} autoComplete="address-level2" inputMode="text" enterKeyHint="next" style={{ width: "100%", padding: "12px 14px", border: `1.5px solid ${deliveryErrors.ciudad ? "#EF4444" : "#E2E8F0"}`, borderRadius: "12px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
+                    {deliveryErrors.ciudad && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#EF4444", margin: "3px 0 0" }}>{deliveryErrors.ciudad}</p>}
+                  </div>
+                  <div>
+                    <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Departamento *</label>
+                    <input value={deliveryForm.departamento} onChange={e => setDeliveryForm(f => ({ ...f, departamento: cleanCity(e.target.value) }))} maxLength={60} autoComplete="address-level1" inputMode="text" enterKeyHint="done" style={{ width: "100%", padding: "12px 14px", border: `1.5px solid ${deliveryErrors.departamento ? "#EF4444" : "#E2E8F0"}`, borderRadius: "12px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
+                    {deliveryErrors.departamento && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#EF4444", margin: "3px 0 0" }}>{deliveryErrors.departamento}</p>}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: "8px" }}>
+                  <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Información adicional <span style={{ fontWeight: 400, color: "#94A3B8" }}>(opcional)</span></label>
+                  <input value={deliveryForm.adicional} onChange={e => setDeliveryForm(f => ({ ...f, adicional: cleanText(e.target.value, 200) }))} placeholder="Ej: Llamar antes de llegar" maxLength={200} inputMode="text" enterKeyHint="done" style={{ width: "100%", padding: "12px 14px", border: "1.5px solid #E2E8F0", borderRadius: "12px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A" }} />
+                </div>
+              </>}
+
+              {/* ── PASO 3: Confirmar ── */}
+              {deliveryStep === 3 && <>
+                <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "10px", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px", margin: "0 0 14px" }}>Resumen y notas</p>
+
+                {/* Resumen datos */}
+                <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "14px", marginBottom: "16px" }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", marginBottom: "6px" }}>
+                    <span style={{ fontSize: "14px" }}>👤</span>
+                    <div>
+                      <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700, color: "#1A1A1A", margin: 0 }}>{deliveryForm.nombre}</p>
+                      <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#475569", margin: 0 }}>{deliveryForm.telefono}{deliveryForm.correo ? ` · ${deliveryForm.correo}` : ""}</p>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                    <span style={{ fontSize: "14px" }}>📍</span>
+                    <div>
+                      <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700, color: "#1A1A1A", margin: 0 }}>{deliveryForm.ciudad}, {deliveryForm.departamento}</p>
+                      <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#475569", margin: 0 }}>{deliveryForm.direccion}</p>
+                      {deliveryForm.referencia && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#94A3B8", margin: 0 }}>{deliveryForm.referencia}</p>}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: "16px" }}>
+                  <label style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Instrucciones especiales <span style={{ fontWeight: 400, color: "#94A3B8" }}>(opcional)</span></label>
+                  <textarea value={deliveryForm.notas} onChange={e => setDeliveryForm(f => ({ ...f, notas: cleanText(e.target.value, 500) }))} placeholder="Color preferido, empaque especial, etc." rows={3} maxLength={500} inputMode="text" style={{ width: "100%", padding: "12px 14px", border: "1.5px solid #E2E8F0", borderRadius: "12px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", outline: "none", boxSizing: "border-box", background: "#FAFBFC", color: "#1A1A1A", resize: "none" }} />
+                </div>
+
+                {/* Cupón de descuento */}
+                <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "10px", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px", margin: "0 0 10px" }}>Cupón de descuento</p>
+                {appliedCoupon ? (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(5,150,105,0.08)", border: "1.5px solid rgba(5,150,105,0.25)", borderRadius: "14px", padding: "10px 14px", marginBottom: "8px" }}>
+                    <div>
+                      <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 800, color: "#059669" }}>🏷 {appliedCoupon.code}</span>
+                      <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: "#059669", marginLeft: "8px" }}>−{appliedCoupon.pct}% aplicado</span>
+                    </div>
+                    <button onClick={() => { setAppliedCoupon(null); setCouponInput(""); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#9B948E", padding: "2px" }}>
+                      <X size={16} />
                     </button>
                   </div>
-                  {couponError && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#EF4444", margin: "4px 0 0" }}>{couponError}</p>}
-                </div>
-              )}
+                ) : (
+                  <div style={{ marginBottom: "8px" }}>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <input
+                        type="text"
+                        value={couponInput}
+                        onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError(""); }}
+                        onKeyDown={e => e.key === "Enter" && handleApplyCoupon()}
+                        placeholder="CÓDIGO DE CUPÓN"
+                        maxLength={30}
+                        inputMode="text"
+                        enterKeyHint="done"
+                        style={{ flex: 1, padding: "10px 12px", border: `1.5px solid ${couponError ? "#EF4444" : "#E2E8F0"}`, borderRadius: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", letterSpacing: "1px", outline: "none", background: "#FAFBFC", color: "#1A1A1A", textTransform: "uppercase", boxSizing: "border-box" }}
+                      />
+                      <button
+                        onClick={handleApplyCoupon}
+                        style={{ padding: "10px 16px", borderRadius: "10px", background: CORAL, color: "#fff", border: "none", fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
+                      >
+                        Aplicar
+                      </button>
+                    </div>
+                    {couponError && <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#EF4444", margin: "4px 0 0" }}>{couponError}</p>}
+                  </div>
+                )}
+              </>}
             </div>
 
             <div style={{ padding: "14px 20px 18px", borderTop: "1px solid #F1F5F9", flexShrink: 0 }}>
-              <button
-                onClick={handleDeliverySubmit}
-                style={{ width: "100%", padding: "15px", background: "linear-gradient(135deg,#059669,#10b981)", color: "#fff", border: "none", borderRadius: "28px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", boxShadow: "0 6px 20px rgba(16,185,129,0.35)" }}
-              >
-                🛵 Confirmar pedido por WhatsApp
-              </button>
-              <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#94A3B8", textAlign: "center", margin: "8px 0 0" }}>Te enviaremos a WhatsApp para confirmar</p>
+              {deliveryStep < 3 ? (
+                <button
+                  onClick={handleStepNext}
+                  style={{ width: "100%", padding: "15px", background: `linear-gradient(135deg,${CORAL},#3b82f6)`, color: "#fff", border: "none", borderRadius: "28px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", boxShadow: `0 6px 20px rgba(37,99,235,0.3)` }}
+                >
+                  Siguiente →
+                </button>
+              ) : (
+                <button
+                  onClick={handleDeliverySubmit}
+                  style={{ width: "100%", padding: "15px", background: "linear-gradient(135deg,#059669,#10b981)", color: "#fff", border: "none", borderRadius: "28px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", boxShadow: "0 6px 20px rgba(16,185,129,0.35)" }}
+                >
+                  🛵 Confirmar pedido por WhatsApp
+                </button>
+              )}
+              <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#94A3B8", textAlign: "center", margin: "8px 0 0" }}>
+                {deliveryStep < 3 ? `Paso ${deliveryStep} de 3` : "Te enviaremos a WhatsApp para confirmar"}
+              </p>
             </div>
           </div>
         )}
@@ -3172,7 +3268,8 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const [activeTab, setActiveTab]         = useState("descripcion");
   const [headerH, setHeaderH]             = useState(0);
   const [stickyBuy, setStickyBuy]         = useState(false);
-  const modalScrollRef = useRef(null);
+  const modalScrollRef   = useRef(null);
+  const modalSwipeY      = useRef(null);
   const swipeStartX = useRef(null);
   const swipeStartY = useRef(null);
   const [dragX, setDragX]       = useState(0);
@@ -3210,6 +3307,23 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
   }, []);
+
+  // Swipe hacia abajo para cerrar (solo móvil, solo cuando scrollTop === 0)
+  useEffect(() => {
+    const el = modalScrollRef.current;
+    if (!el || !isMobile) return;
+    const onMove = (e) => {
+      if (el.scrollTop > 0 || modalSwipeY.current === null) return;
+      const dy = e.touches[0].clientY - modalSwipeY.current;
+      if (dy > 0) {
+        e.preventDefault();
+        el.style.transition = "none";
+        el.style.transform  = `translateY(${Math.min(dy * 0.45, 140)}px)`;
+      }
+    };
+    el.addEventListener("touchmove", onMove, { passive: false });
+    return () => el.removeEventListener("touchmove", onMove);
+  }, [isMobile]);
 
   const isOwner = !!user && ADMIN_EMAILS.has(user.email);
   const imgs    = product.images?.length > 0 ? product.images : null;
@@ -3435,6 +3549,22 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
         ref={modalScrollRef}
         className="modal-inner"
         onScroll={e => isMobile && setStickyBuy(e.currentTarget.scrollTop > 180)}
+        onTouchStart={e => {
+          if (isMobile && modalScrollRef.current?.scrollTop === 0)
+            modalSwipeY.current = e.touches[0].clientY;
+        }}
+        onTouchEnd={e => {
+          if (modalSwipeY.current === null) return;
+          const dy = e.changedTouches[0].clientY - modalSwipeY.current;
+          const el = modalScrollRef.current;
+          if (dy > 90) {
+            onClose();
+          } else if (el) {
+            el.style.transition = "transform 0.28s ease";
+            el.style.transform  = "translateY(0)";
+          }
+          modalSwipeY.current = null;
+        }}
         style={{
           background: "#fff",
           borderRadius: isMobile ? "20px 20px 0 0" : "24px",
@@ -3448,6 +3578,13 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
           boxShadow: "0 40px 100px rgba(0,0,0,0.28)",
         }}
       >
+        {/* ── Drag handle (solo móvil) ── */}
+        {isMobile && (
+          <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 2px", flexShrink: 0 }}>
+            <div style={{ width: "36px", height: "4px", borderRadius: "2px", background: "#D0C8BF" }} />
+          </div>
+        )}
+
         {/* ── Sticky buy bar (solo móvil, aparece al scrollear) ── */}
         {isMobile && (
           <div style={{
@@ -4208,7 +4345,17 @@ export default function App() {
   const [showSortSheet, setShowSortSheet]     = useState(false);
   const [pullY, setPullY]                     = useState(0);
   const [isRefreshing, setIsRefreshing]       = useState(false);
+  const [isOnline, setIsOnline]               = useState(true);
   const pullStart                             = useRef(null);
+
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const goOnline  = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener("online",  goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => { window.removeEventListener("online", goOnline); window.removeEventListener("offline", goOffline); };
+  }, []);
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -4818,6 +4965,14 @@ export default function App() {
           products={dbProducts.map(p => ({ id: p.id, name: p.name, badge: p.badge, images: p.images ?? [], color: null, emoji: p.emoji }))}
           onSelect={p => setSelectedProduct(displayProducts.find(dp => dp.id === p.id) ?? p)}
         />
+
+        {/* Banner sin conexión */}
+        {!isOnline && (
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 900, background: "#1A1A1A", color: "#fff", padding: "8px 16px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 600 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>
+            Sin conexión — algunos productos podrían no cargar
+          </div>
+        )}
 
         {/* Indicador pull-to-refresh */}
         {(pullY > 0 || isRefreshing) && (
