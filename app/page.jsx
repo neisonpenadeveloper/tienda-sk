@@ -2904,7 +2904,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
               Proceder al pago
             </button>
 
-            {/* Botón seguir viendo — oculto en móvil */}
+            {/* Botón seguir viendo */}
             <button
               onClick={onClose}
               className="cart-continue-btn"
@@ -4394,7 +4394,7 @@ export default function App() {
           .cart-total-price   { font-size: 16px !important; }
           .cart-total-label   { font-size: 13px !important; }
           .cart-checkout-btn  { padding: 13px !important; font-size: 14px !important; margin-top: 2px !important; }
-          .cart-continue-btn  { display: none !important; }
+          .cart-continue-btn  { padding: 9px !important; font-size: 12px !important; }
           .cart-security-text { display: none !important; }
           .cart-item          { padding: 10px !important; gap: 10px !important; }
           .cart-item-img      { width: 60px !important; height: 60px !important; }
