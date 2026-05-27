@@ -3148,6 +3148,16 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const [selectedImg, setSelectedImg]     = useState(0);
   const [imgLoaded, setImgLoaded]         = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
+  const [fsScale, setFsScale]             = useState(1);
+  const [fsOffset, setFsOffset]           = useState({ x: 0, y: 0 });
+  const [fsDragX, setFsDragX]             = useState(0);
+  const fsPinchDist   = useRef(null);
+  const fsPinchStart  = useRef(1);
+  const fsPanStart    = useRef(null);
+  const fsPanOffset   = useRef({ x: 0, y: 0 });
+  const fsSwipeStartX = useRef(null);
+  const fsSwipeStartY = useRef(null);
+  const fsLastTap     = useRef(0);
   const [added, setAdded]                 = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shared, setShared]               = useState(false);
@@ -3292,6 +3302,76 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
       setShared(true);
       setTimeout(() => setShared(false), 2200);
     }
+  };
+
+  const resetFs = () => { setFsScale(1); setFsOffset({ x: 0, y: 0 }); setFsDragX(0); };
+
+  const handleFsTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[1].clientX - e.touches[0].clientX;
+      const dy = e.touches[1].clientY - e.touches[0].clientY;
+      fsPinchDist.current  = Math.hypot(dx, dy);
+      fsPinchStart.current = fsScale;
+      return;
+    }
+    const now = Date.now();
+    if (now - fsLastTap.current < 280) {
+      fsLastTap.current = 0;
+      if (fsScale > 1.05) resetFs();
+      else { setFsScale(2.5); setFsOffset({ x: 0, y: 0 }); }
+      return;
+    }
+    fsLastTap.current = now;
+    if (fsScale > 1.05) {
+      fsPanStart.current  = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      fsPanOffset.current = { ...fsOffset };
+    } else {
+      fsSwipeStartX.current = e.touches[0].clientX;
+      fsSwipeStartY.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleFsTouchMove = (e) => {
+    if (e.touches.length === 2 && fsPinchDist.current !== null) {
+      const dx   = e.touches[1].clientX - e.touches[0].clientX;
+      const dy   = e.touches[1].clientY - e.touches[0].clientY;
+      const dist = Math.hypot(dx, dy);
+      setFsScale(Math.min(5, Math.max(1, fsPinchStart.current * (dist / fsPinchDist.current))));
+      return;
+    }
+    if (fsScale > 1.05 && fsPanStart.current) {
+      const dx  = e.touches[0].clientX - fsPanStart.current.x;
+      const dy  = e.touches[0].clientY - fsPanStart.current.y;
+      const lim = 200 * (fsScale - 1);
+      setFsOffset({
+        x: Math.max(-lim, Math.min(lim, fsPanOffset.current.x + dx / fsScale)),
+        y: Math.max(-lim, Math.min(lim, fsPanOffset.current.y + dy / fsScale)),
+      });
+      return;
+    }
+    if (fsSwipeStartX.current !== null && imgs && imgs.length > 1) {
+      const dx = e.touches[0].clientX - fsSwipeStartX.current;
+      const atEdge = (selectedImg === 0 && dx > 0) || (selectedImg === imgs.length - 1 && dx < 0);
+      setFsDragX(atEdge ? dx / 3 : dx);
+    }
+  };
+
+  const handleFsTouchEnd = (e) => {
+    if (fsPinchDist.current !== null) {
+      fsPinchDist.current = null;
+      if (fsScale < 1.15) resetFs();
+      return;
+    }
+    if (fsScale > 1.05 && fsPanStart.current) { fsPanStart.current = null; return; }
+    setFsDragX(0);
+    if (fsSwipeStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - fsSwipeStartX.current;
+    const dy = Math.abs(e.changedTouches[0].clientY - (fsSwipeStartY.current ?? 0));
+    if (Math.abs(dx) > 50 && Math.abs(dx) > dy) {
+      if (dx < 0) setSelectedImg(i => Math.min(i + 1, imgs.length - 1));
+      else         setSelectedImg(i => Math.max(i - 1, 0));
+    }
+    fsSwipeStartX.current = null; fsSwipeStartY.current = null;
   };
 
   return (
@@ -3840,22 +3920,69 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
     {/* Fullscreen image overlay */}
     {showFullscreen && imgs && (
       <div
-        onClick={() => setShowFullscreen(false)}
-        style={{ position: "fixed", inset: 0, zIndex: 1100, background: "rgba(0,0,0,0.96)", display: "flex", alignItems: "center", justifyContent: "center" }}
+        onTouchStart={handleFsTouchStart}
+        onTouchMove={handleFsTouchMove}
+        onTouchEnd={handleFsTouchEnd}
+        style={{ position: "fixed", inset: 0, zIndex: 1100, background: "#000", overflow: "hidden", touchAction: "none" }}
       >
-        <button onClick={() => setShowFullscreen(false)} style={{ position: "absolute", top: "16px", right: "16px", background: "rgba(255,255,255,0.12)", border: "none", borderRadius: "50%", width: "40px", height: "40px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1101 }}>
+        {/* Botón cerrar */}
+        <button
+          onClick={() => { setShowFullscreen(false); resetFs(); }}
+          style={{ position: "absolute", top: "16px", right: "16px", background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "50%", width: "44px", height: "44px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10 }}
+        >
           <X size={20} color="#fff" />
         </button>
-        <img
-          src={imgs[selectedImg]}
-          alt={product.name}
-          onClick={e => e.stopPropagation()}
-          style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", padding: "16px", boxSizing: "border-box" }}
-        />
+
+        {/* Indicador de zoom */}
+        {fsScale > 1.05 && (
+          <div style={{ position: "absolute", top: "18px", left: "18px", background: "rgba(0,0,0,0.55)", borderRadius: "8px", padding: "4px 10px", fontSize: "12px", fontWeight: 700, color: "#fff", zIndex: 10, fontFamily: "var(--font-roboto), sans-serif" }}>
+            {Math.round(fsScale * 10) / 10}×
+          </div>
+        )}
+
+        {/* Hint doble tap */}
+        {fsScale <= 1.05 && (
+          <div style={{ position: "absolute", bottom: "56px", left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.45)", borderRadius: "20px", padding: "5px 14px", fontSize: "11px", color: "rgba(255,255,255,0.7)", zIndex: 10, fontFamily: "var(--font-roboto), sans-serif", whiteSpace: "nowrap" }}>
+            Doble tap para zoom · Desliza para cambiar
+          </div>
+        )}
+
+        {/* Tira horizontal de imágenes */}
+        <div style={{
+          display: "flex",
+          width: `${imgs.length * 100}%`,
+          height: "100%",
+          transform: `translateX(calc(-${(selectedImg / imgs.length) * 100}% + ${fsDragX / imgs.length}px))`,
+          transition: fsDragX !== 0 ? "none" : "transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94)",
+          willChange: "transform",
+        }}>
+          {imgs.map((src, i) => (
+            <div key={i} style={{ width: `${100 / imgs.length}%`, height: "100%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+              <img
+                src={src}
+                alt={product.name}
+                draggable={false}
+                style={{
+                  maxWidth: "100%", maxHeight: "100%", objectFit: "contain",
+                  padding: "16px", boxSizing: "border-box", userSelect: "none",
+                  transform: i === selectedImg ? `scale(${fsScale}) translate(${fsOffset.x}px, ${fsOffset.y}px)` : "none",
+                  transition: fsPinchDist.current ? "none" : "transform 0.25s ease",
+                  transformOrigin: "center",
+                }}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Dots */}
         {imgs.length > 1 && (
-          <div style={{ position: "absolute", bottom: "20px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "6px" }}>
+          <div style={{ position: "absolute", bottom: "20px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "6px", zIndex: 10 }}>
             {imgs.map((_, i) => (
-              <button key={i} onClick={e => { e.stopPropagation(); setSelectedImg(i); }} style={{ width: i === selectedImg ? "20px" : "8px", height: "8px", borderRadius: "4px", background: i === selectedImg ? "#fff" : "rgba(255,255,255,0.4)", border: "none", padding: 0, cursor: "pointer", transition: "width 0.2s" }} />
+              <button
+                key={i}
+                onClick={() => { setSelectedImg(i); resetFs(); }}
+                style={{ width: i === selectedImg ? "20px" : "8px", height: "8px", borderRadius: "4px", background: i === selectedImg ? "#fff" : "rgba(255,255,255,0.4)", border: "none", padding: 0, cursor: "pointer", transition: "width 0.2s, background 0.2s" }}
+              />
             ))}
           </div>
         )}
