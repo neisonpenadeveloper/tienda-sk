@@ -2041,7 +2041,7 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
     longPressTimer.current = setTimeout(async () => {
       if (navigator.vibrate) navigator.vibrate(60);
       setLongPressActive(true);
-      const url  = `${window.location.origin}/?p=${product.id}`;
+      const url  = `${window.location.origin}/producto/${product.id}`;
       const text = `¡Mira este producto! *${product.name}* — ${fmt(product.price)} 🛍️`;
       const payload = { title: product.name, text, url };
       if (navigator.share && navigator.canShare?.(payload)) {
@@ -3411,7 +3411,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   };
 
   const handleShare = async () => {
-    const url     = `${window.location.origin}/?p=${product.id}`;
+    const url     = `${window.location.origin}/producto/${product.id}`;
     const text    = `¡Mira este producto! *${product.name}* — ${fmt(product.price)} 🛍️`;
     const payload = { title: product.name, text, url };
     if (navigator.share && navigator.canShare?.(payload)) {
