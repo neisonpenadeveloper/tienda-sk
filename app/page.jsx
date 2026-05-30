@@ -3259,6 +3259,9 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const fsSwipeStartY   = useRef(null);
   const fsLastTap       = useRef(0);
   const fsSelectedRef   = useRef(0);
+  const fsMouseStart    = useRef(null);
+  const fsMouseDragging = useRef(false);
+  const fsOverlayRef    = useRef(null);
   const [added, setAdded]                 = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shared, setShared]               = useState(false);
@@ -3440,6 +3443,64 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
     fsLiveOffset.current = { x: 0, y: 0 };
     applyImgTransform(1, { x: 0, y: 0 }, "transform 0.25s ease");
     if (commit) { setFsScale(1); setFsOffset({ x: 0, y: 0 }); }
+  };
+
+  const fsNavigate = (dir) => {
+    if (!imgs || imgs.length <= 1) return;
+    const cur  = fsSelectedRef.current;
+    const next = Math.max(0, Math.min(imgs.length - 1, cur + dir));
+    if (next === cur) return;
+    applyStripTransform(next, 0, "transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94)");
+    resetFs(false);
+    setSelectedImg(next);
+  };
+
+  // Teclado: ←/→ navegan, Escape cierra
+  useEffect(() => {
+    if (!showFullscreen) return;
+    const onKey = (e) => {
+      if (e.key === "ArrowRight") fsNavigate(1);
+      else if (e.key === "ArrowLeft") fsNavigate(-1);
+      else if (e.key === "Escape") { setShowFullscreen(false); resetFs(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showFullscreen, imgs]);  // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handlers mouse drag (desktop)
+  const handleFsMouseDown = (e) => {
+    if (fsLiveScale.current > 1.05) return;
+    e.preventDefault();
+    fsMouseStart.current    = e.clientX;
+    fsMouseDragging.current = false;
+    if (fsOverlayRef.current) fsOverlayRef.current.style.cursor = "grabbing";
+  };
+
+  const handleFsMouseMove = (e) => {
+    if (fsMouseStart.current === null || fsLiveScale.current > 1.05) return;
+    const dx = e.clientX - fsMouseStart.current;
+    if (!fsMouseDragging.current && Math.abs(dx) > 5) fsMouseDragging.current = true;
+    if (!fsMouseDragging.current) return;
+    const cur    = fsSelectedRef.current;
+    const atEdge = (cur === 0 && dx > 0) || (cur === imgs.length - 1 && dx < 0);
+    applyStripTransform(cur, atEdge ? dx / 3 : dx);
+  };
+
+  const handleFsMouseUp = (e) => {
+    if (fsOverlayRef.current) fsOverlayRef.current.style.cursor = imgs?.length > 1 ? "grab" : "default";
+    if (fsMouseStart.current === null) return;
+    const dx      = e.clientX - fsMouseStart.current;
+    const dragged = fsMouseDragging.current;
+    fsMouseStart.current    = null;
+    fsMouseDragging.current = false;
+    if (!dragged) return;
+    const cur  = fsSelectedRef.current;
+    const next = Math.abs(dx) > 60
+      ? (dx < 0 ? Math.min(cur + 1, imgs.length - 1) : Math.max(cur - 1, 0))
+      : cur;
+    applyStripTransform(next, 0, "transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94)");
+    if (next !== cur) { resetFs(false); setSelectedImg(next); }
+    else applyStripTransform(cur, 0, "transform 0.3s ease");
   };
 
   const handleFsTouchStart = (e) => {
@@ -4099,10 +4160,15 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
     {/* Fullscreen image overlay */}
     {showFullscreen && imgs && (
       <div
+        ref={fsOverlayRef}
         onTouchStart={handleFsTouchStart}
         onTouchMove={handleFsTouchMove}
         onTouchEnd={handleFsTouchEnd}
-        style={{ position: "fixed", inset: 0, zIndex: 1100, background: "#000", overflow: "hidden", touchAction: "none" }}
+        onMouseDown={handleFsMouseDown}
+        onMouseMove={handleFsMouseMove}
+        onMouseUp={handleFsMouseUp}
+        onMouseLeave={handleFsMouseUp}
+        style={{ position: "fixed", inset: 0, zIndex: 1100, background: "#000", overflow: "hidden", touchAction: "none", cursor: imgs.length > 1 ? "grab" : "default" }}
       >
         {/* Botón cerrar */}
         <button
@@ -4122,7 +4188,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
         {/* Hint doble tap */}
         {fsScale <= 1.05 && (
           <div style={{ position: "absolute", bottom: "56px", left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.45)", borderRadius: "20px", padding: "5px 14px", fontSize: "11px", color: "rgba(255,255,255,0.7)", zIndex: 10, fontFamily: "var(--font-roboto), sans-serif", whiteSpace: "nowrap" }}>
-            Doble tap para zoom · Desliza para cambiar
+            {isMobile ? "Doble tap para zoom · Desliza para cambiar" : "← → para navegar · Arrastra para cambiar"}
           </div>
         )}
 
