@@ -1062,6 +1062,7 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
               <Search size={15} color={searchQuery ? CORAL : "#9B948E"} style={{ flexShrink: 0 }} />
               <input
                 ref={desktopInputRef}
+                id="main-search-input"
                 type="text"
                 value={searchQuery}
                 onChange={e => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
@@ -1069,7 +1070,7 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
                 onKeyDown={e => {
                   if (e.key === "Escape") { setSearchQuery(""); setShowSuggestions(false); }
                 }}
-                placeholder="Buscar productos..."
+                placeholder="Buscar...  /"
                 autoComplete="off"
                 style={{
                   flex: 1, background: "none", border: "none", outline: "none",
@@ -1834,7 +1835,7 @@ function UncategorizedPanel({ onClose, onCategoryChanged }) {
 }
 
 // ─── CATEGORY PILLS ───────────────────────────────────────────────────────────
-function CategoryPills({ active, onChange, isAdmin }) {
+function CategoryPills({ active, onChange, isAdmin, counts = {} }) {
   const [showAll, setShowAll] = useState(false);
   const dropRef  = useRef(null);
   const scrollRef = useRef(null);
@@ -1940,10 +1941,17 @@ function CategoryPills({ active, onChange, isAdmin }) {
       <div className="hidden md:flex items-center gap-3 flex-wrap" style={{ flexWrap: "wrap" }}>
         {CATEGORIES.map((cat) => {
           const Icon = cat.icon;
+          const isActive = active === cat.id;
+          const n = counts[cat.id];
           return (
-            <button key={cat.id} onClick={() => onChange(cat.id)} className="cat-pill" style={pillStyle(active === cat.id)}>
+            <button key={cat.id} onClick={() => onChange(cat.id)} className="cat-pill" style={pillStyle(isActive)}>
               <Icon size={14} />
               {cat.label}
+              {n != null && (
+                <span style={{ fontSize: "10px", fontWeight: 700, background: isActive ? "rgba(255,255,255,0.22)" : "rgba(37,99,235,0.10)", color: isActive ? "#fff" : CORAL, borderRadius: "10px", padding: "1px 6px", marginLeft: "2px" }}>
+                  {n}
+                </span>
+              )}
             </button>
           );
         })}
@@ -1971,6 +1979,7 @@ function CategoryPills({ active, onChange, isAdmin }) {
               {EXTRA_CATEGORIES.map(cat => {
                 const Icon = cat.icon;
                 const isActive = active === cat.id;
+                const n = counts[cat.id];
                 return (
                   <button
                     key={cat.id}
@@ -1983,12 +1992,20 @@ function CategoryPills({ active, onChange, isAdmin }) {
                       fontFamily: "var(--font-roboto), sans-serif",
                       fontSize: "13px", fontWeight: isActive ? 700 : 500,
                       cursor: "pointer", textAlign: "left", transition: "background 0.15s",
+                      justifyContent: "space-between",
                     }}
                     onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "#EEF2FF"; }}
                     onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "#F8FAFC"; }}
                   >
-                    <Icon size={15} />
-                    {cat.label}
+                    <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <Icon size={15} />
+                      {cat.label}
+                    </span>
+                    {n != null && (
+                      <span style={{ fontSize: "10px", fontWeight: 700, background: isActive ? "rgba(255,255,255,0.22)" : "#E8E4DF", color: isActive ? "#fff" : "#6B6560", borderRadius: "8px", padding: "1px 6px" }}>
+                        {n}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -3459,6 +3476,8 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const [activeTab, setActiveTab]         = useState("descripcion");
   const [headerH, setHeaderH]             = useState(0);
   const [stickyBuy, setStickyBuy]         = useState(false);
+  const [zoomPos, setZoomPos]             = useState(null); // {x,y} en % para lupa desktop
+  const imgZoomRef                        = useRef(null);
   const modalScrollRef   = useRef(null);
   const modalSwipeY      = useRef(null);
   const swipeStartX = useRef(null);
@@ -3896,9 +3915,16 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
           }}
         >
           <div
+            ref={imgZoomRef}
             onTouchStart={handleImgTouchStart}
             onTouchMove={handleImgTouchMove}
             onTouchEnd={handleImgTouchEnd}
+            onMouseMove={!isMobile && imgs ? (e) => {
+              const rect = imgZoomRef.current?.getBoundingClientRect();
+              if (!rect) return;
+              setZoomPos({ x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 });
+            } : undefined}
+            onMouseLeave={!isMobile ? () => setZoomPos(null) : undefined}
             style={{
               borderRadius: "16px", overflow: "hidden",
               height: isMobile ? 260 : 340,
@@ -3909,7 +3935,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
               fontSize: isMobile ? "80px" : "96px", border: "1px solid #EDE8E2",
               touchAction: pinchScale > 1.05 ? "none" : "pan-y",
               userSelect: "none",
-              cursor: pinchScale > 1.05 ? "grab" : "default",
+              cursor: !isMobile && imgs ? "crosshair" : pinchScale > 1.05 ? "grab" : "default",
             }}
           >
             {imgs ? (
@@ -3949,6 +3975,28 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
               <div style={{ position: "absolute", bottom: "8px", right: "8px", background: "rgba(0,0,0,0.55)", borderRadius: "8px", padding: "3px 8px", fontSize: "11px", fontWeight: 700, color: "#fff", pointerEvents: "none", fontFamily: "var(--font-roboto), sans-serif" }}>
                 {Math.round(pinchScale * 10) / 10}×
               </div>
+            )}
+            {/* Lupa de zoom — solo desktop */}
+            {zoomPos && !isMobile && imgs && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: `${zoomPos.x}%`,
+                  top: `${zoomPos.y}%`,
+                  transform: "translate(-50%, -50%)",
+                  width: "130px", height: "130px",
+                  borderRadius: "50%",
+                  border: "2.5px solid rgba(255,255,255,0.85)",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
+                  pointerEvents: "none",
+                  backgroundImage: `url(${imgs[selectedImg]})`,
+                  backgroundSize: "350%",
+                  backgroundPosition: `${zoomPos.x}% ${zoomPos.y}%`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundColor: "#fff",
+                  zIndex: 6,
+                }}
+              />
             )}
             {imgs && pinchScale <= 1.05 && (
               <button
@@ -4744,6 +4792,36 @@ export default function App() {
     }
   }, [displayProducts.length]);
 
+  // Atajos de teclado globales
+  useEffect(() => {
+    const handler = (e) => {
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      const isTyping = tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
+      if (e.key === "/" && !isTyping) {
+        e.preventDefault();
+        document.getElementById("main-search-input")?.focus();
+      }
+      if (e.key === "Escape") {
+        if (selectedProduct) { setSelectedProduct(null); return; }
+        if (showCart) { setShowCart(false); return; }
+        if (searchQuery) { setSearchQuery(""); return; }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [selectedProduct, showCart, searchQuery]);
+
+  // Guarda producto en "vistos recientemente" cuando se abre el modal
+  useEffect(() => {
+    if (!selectedProduct) return;
+    try {
+      const raw  = localStorage.getItem("sk_rv");
+      const prev = raw ? JSON.parse(raw) : [];
+      const next = [selectedProduct.id, ...prev.filter(id => id !== selectedProduct.id)].slice(0, 8);
+      localStorage.setItem("sk_rv", JSON.stringify(next));
+    } catch {}
+  }, [selectedProduct?.id]);
+
   const heroStats = {
     products:   dbProducts.length,
     categories: new Set(dbProducts.map(p => p.category)).size,
@@ -5332,7 +5410,16 @@ export default function App() {
           </div>
 
           <div id="productos" style={{ marginBottom: "32px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
-            <CategoryPills active={activeCategory} onChange={handleCategoryChange} isAdmin={isAdmin} />
+            <CategoryPills
+              active={activeCategory}
+              onChange={handleCategoryChange}
+              isAdmin={isAdmin}
+              counts={displayProducts.filter(p => p.is_active !== false).reduce((acc, p) => {
+                if (p.category) acc[p.category] = (acc[p.category] || 0) + 1;
+                acc["all"] = (acc["all"] || 0) + 1;
+                return acc;
+              }, {})}
+            />
             <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
               {/* Toggle vista grilla/lista — solo desktop */}
               <div className="view-toggle-wrap" style={{ display: "flex", background: "#F5F0EA", border: "1.5px solid #EDE8E2", borderRadius: "20px", overflow: "hidden" }}>
@@ -5450,6 +5537,46 @@ export default function App() {
             setTimeout(() => document.getElementById("productos")?.scrollIntoView({ behavior: "smooth" }), 170);
           }} />
         </main>
+
+        {/* Vistos recientemente */}
+        {(() => {
+          try {
+            const ids = JSON.parse(localStorage.getItem("sk_rv") || "[]");
+            const items = ids.map(id => displayProducts.find(p => p.id === id)).filter(Boolean).slice(0, 6);
+            if (items.length < 2) return null;
+            return (
+              <div style={{ width: "100%", maxWidth: "1600px", margin: "0 auto", padding: "0 32px 0", boxSizing: "border-box" }}>
+                <div style={{ borderTop: "1px solid #EDE8E2", paddingTop: "32px", paddingBottom: "8px" }}>
+                  <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#9B948E", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "12px" }}>
+                    Vistos recientemente
+                  </p>
+                  <div style={{ display: "flex", gap: "12px", overflowX: "auto", paddingBottom: "12px" }} className="cat-scroll">
+                    {items.map(p => (
+                      <div
+                        key={p.id}
+                        onClick={() => setSelectedProduct(p)}
+                        style={{ flexShrink: 0, width: "120px", cursor: "pointer", borderRadius: "14px", overflow: "hidden", background: "#fff", border: "1px solid #EDE8E2", transition: "box-shadow 0.2s, transform 0.2s" }}
+                        onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.10)"; e.currentTarget.style.transform = "translateY(-3px)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; }}
+                      >
+                        <div style={{ height: "90px", background: "#F5F0EA", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                          {p.images?.length > 0
+                            ? <img src={p.images[0]} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "6px", boxSizing: "border-box" }} />
+                            : <span style={{ fontSize: "36px" }}>{p.emoji}</span>
+                          }
+                        </div>
+                        <div style={{ padding: "8px" }}>
+                          <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", fontWeight: 600, color: "#1A1A1A", margin: "0 0 3px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
+                          <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", fontWeight: 800, color: CORAL, margin: 0 }}>{fmt(p.price)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          } catch { return null; }
+        })()}
 
         <Footer>
           <AnnouncementBar />
