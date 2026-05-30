@@ -2284,27 +2284,13 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
     longPressTimer.current = setTimeout(async () => {
       if (navigator.vibrate) navigator.vibrate(60);
       setLongPressActive(true);
-      const url    = `${window.location.origin}/producto/${product.id}`;
-      const text   = `¡Mira este producto! *${product.name}* — ${fmt(product.price)} 🛍️`;
-      const imgUrl = product.images?.[0];
-      let shared   = false;
-      if (navigator.share) {
-        if (imgUrl && navigator.canShare) {
-          try {
-            const res  = await fetch(imgUrl);
-            const blob = await res.blob();
-            const ext  = blob.type === "image/png" ? "png" : "jpg";
-            const file = new File([blob], `producto.${ext}`, { type: blob.type });
-            const fp   = { files: [file], text: `${text}\n${url}` };
-            if (navigator.canShare(fp)) { await navigator.share(fp).catch(() => {}); shared = true; }
-          } catch { /* continúa */ }
-        }
-        if (!shared) {
-          const payload = { title: product.name, text, url };
-          if (navigator.canShare?.(payload)) { await navigator.share(payload).catch(() => {}); shared = true; }
-        }
+      const url  = `${window.location.origin}/producto/${product.id}`;
+      const text = `¡Mira este producto! *${product.name}* — ${fmt(product.price)} 🛍️\n${url}`;
+      if (navigator.share && navigator.canShare?.({ text })) {
+        await navigator.share({ title: product.name, text }).catch(() => {});
+      } else {
+        await navigator.clipboard.writeText(text).catch(() => {});
       }
-      if (!shared) await navigator.clipboard.writeText(`${text}\n${url}`).catch(() => {});
       setTimeout(() => setLongPressActive(false), 1000);
     }, 500);
   };
@@ -3634,7 +3620,6 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const [added, setAdded]                 = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shared, setShared]               = useState(false);
-  const [shareMsg, setShareMsg]           = useState("");
   const [showQtyPicker, setShowQtyPicker] = useState(false);
   const [qtyPick, setQtyPick]             = useState(1);
   const [toggleLoading, setToggleLoading] = useState(false);
@@ -3791,34 +3776,15 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
 
   const handleShare = async () => {
     const url  = `${window.location.origin}/producto/${product.id}`;
-    const text = `¡Mira este producto! *${product.name}* — ${fmt(product.price)} 🛍️`;
+    const text = `¡Mira este producto! *${product.name}* — ${fmt(product.price)} 🛍️\n${url}`;
 
-    if (navigator.share) {
-      const imgUrl = imgs?.[selectedImg] ?? imgs?.[0];
-      if (imgUrl && navigator.canShare) {
-        try {
-          const res  = await fetch(imgUrl);
-          const blob = await res.blob();
-          const ext  = blob.type === "image/png" ? "png" : "jpg";
-          const file = new File([blob], `producto.${ext}`, { type: blob.type });
-          const fp   = { files: [file], text: `${text}\n${url}` };
-          if (navigator.canShare(fp)) {
-            await navigator.share(fp).catch(() => {});
-            await navigator.clipboard.writeText(url).catch(() => {});
-            setShareMsg("Link copiado 📋 · Pégalo en el mensaje");
-            setTimeout(() => setShareMsg(""), 3500);
-            return;
-          }
-        } catch { /* CORS o red — continúa */ }
-      }
-      const payload = { title: product.name, text, url };
-      if (navigator.canShare?.(payload)) {
-        await navigator.share(payload).catch(() => {});
-        return;
-      }
+    if (navigator.share && navigator.canShare?.({ text })) {
+      await navigator.share({ title: product.name, text }).catch(() => {});
+      return;
     }
 
-    await navigator.clipboard.writeText(`${text}\n${url}`).catch(() => {});
+    // Fallback: copiar al portapapeles
+    await navigator.clipboard.writeText(text).catch(() => {});
     setShared(true);
     setTimeout(() => setShared(false), 2200);
   };
@@ -4043,12 +4009,6 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
           </div>
         )}
 
-        {/* ── Toast "link copiado" tras compartir imagen ── */}
-        {shareMsg && (
-          <div style={{ position: "absolute", top: isMobile ? "52px" : "16px", left: "50%", transform: "translateX(-50%)", zIndex: 30, background: "rgba(15,23,42,0.92)", color: "#fff", padding: "8px 18px", borderRadius: "20px", fontSize: "13px", fontWeight: 600, fontFamily: "var(--font-roboto), sans-serif", whiteSpace: "nowrap", pointerEvents: "none", animation: "toastIn 0.25s ease" }}>
-            {shareMsg}
-          </div>
-        )}
 
         {/* ── Sticky buy bar (solo móvil, aparece al scrollear) ── */}
         {isMobile && (
