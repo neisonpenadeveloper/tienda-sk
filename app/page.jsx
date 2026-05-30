@@ -3617,7 +3617,6 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shared, setShared]               = useState(false);
   const [shareToast, setShareToast]       = useState(false);
-  const [shareDbg, setShareDbg]           = useState("");
   const [showQtyPicker, setShowQtyPicker] = useState(false);
   const [qtyPick, setQtyPick]             = useState(1);
   const [toggleLoading, setToggleLoading] = useState(false);
@@ -3779,10 +3778,8 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
 
     if (imgUrl && navigator.share) {
       try {
-        setShareDbg("1-fetch");
         const proxyUrl = `${window.location.origin}/api/og-img/${product.id}?_t=${Date.now()}`;
         const imgBlob  = await fetch(proxyUrl).then(r => { if (!r.ok) throw new Error("fetch-" + r.status); return r.blob(); });
-        setShareDbg("2-blob:" + imgBlob.size + "/" + imgBlob.type);
 
         const blobUrl = URL.createObjectURL(imgBlob);
         const canvas  = document.createElement("canvas");
@@ -3792,11 +3789,9 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
         ctx.fillStyle = "#0F172A";
         ctx.fillRect(0, 0, 1080, 1350);
 
-        setShareDbg("3-img");
         const img = new Image();
         await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = blobUrl; });
         URL.revokeObjectURL(blobUrl);
-        setShareDbg("4-draw:" + img.width + "x" + img.height);
 
         const sz = Math.min(img.width, img.height);
         if (sz === 0) throw new Error("img-zero-size");
@@ -3814,19 +3809,14 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
         ctx.font = "24px sans-serif";
         ctx.fillText("tiendasyk.store  ·  " + url.replace("https://", ""), 40, 1308);
 
-        setShareDbg("5-toBlob");
         const jpeg = await new Promise(res => canvas.toBlob(res, "image/jpeg", 0.88));
-        setShareDbg("6-jpeg:" + (jpeg?.size ?? "null"));
         if (!jpeg) throw new Error("toBlob-null");
 
         const file = new File([jpeg], "producto.jpg", { type: "image/jpeg" });
-        setShareDbg("7-sharing");
         await navigator.share({ files: [file] });
-        setShareDbg("");
         return;
       } catch (e) {
-        if (e?.name === "AbortError") { setShareDbg(""); return; }
-        setShareDbg("ERR:" + (e?.message || e?.name || "?"));
+        if (e?.name === "AbortError") return;
       }
     }
 
@@ -4051,13 +4041,6 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
         {isMobile && (
           <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 2px", flexShrink: 0 }}>
             <div style={{ width: "36px", height: "4px", borderRadius: "2px", background: "#D0C8BF" }} />
-          </div>
-        )}
-
-        {/* ── DEBUG share (temporal) ── */}
-        {shareDbg && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999, background: shareDbg.startsWith("ERR") ? "#DC2626" : "#1D4ED8", color: "#fff", padding: "10px 16px", fontSize: "13px", fontFamily: "monospace", textAlign: "center" }}>
-            {shareDbg}
           </div>
         )}
 
