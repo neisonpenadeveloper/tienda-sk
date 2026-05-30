@@ -941,6 +941,7 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
+                  className="nav-cat-btn"
                   style={{
                     display: "flex", alignItems: "center", gap: "6px",
                     fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px",
@@ -966,6 +967,7 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
                   <>
                     <button
                       onClick={() => setShowNavAll(v => !v)}
+                      className="nav-cat-btn"
                       style={{
                         display: "flex", alignItems: "center", gap: "6px",
                         fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px",
@@ -1025,8 +1027,9 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
           </nav>
 
           {/* Buscador siempre visible */}
-          <div className="hidden md:flex" style={{ flex: 1, padding: "0 12px" }}>
+          <div className="hidden md:flex" style={{ flex: 1, padding: "0 8px" }}>
             <div
+              className="nav-search"
               style={{
                 display: "flex", alignItems: "center", gap: "10px",
                 background: "#F0F4FF", borderRadius: "28px", padding: "9px 18px",
@@ -4621,7 +4624,8 @@ export default function App() {
           gap: 20px;
           width: 100%;
         }
-        @media (max-width: 1200px) {
+        /* Laptop y monitor medio: 3 columnas hasta 1440px */
+        @media (max-width: 1440px) {
           .grid-products { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         }
         @media (max-width: 800px) {
@@ -4751,7 +4755,7 @@ export default function App() {
           .pc-overlay { display: none !important; }
         }
 
-        /* ── Botones flotantes: barra inferior en móvil y laptops pequeños ── */
+        /* ── Botones flotantes: barra inferior en laptop y tablet ── */
         @media (max-width: 1380px) {
           .floating-btns {
             position: fixed !important;
@@ -4774,7 +4778,23 @@ export default function App() {
             height: 48px !important;
             flex-shrink: 0 !important;
           }
-          footer { padding-bottom: 0 !important; }
+        }
+
+        /* ── Laptop (768-1380px): espacio para la barra flotante inferior ── */
+        @media (min-width: 768px) and (max-width: 1380px) {
+          .main-catalog  { padding-bottom: 90px !important; }
+          footer         { padding-bottom: 90px !important; }
+        }
+
+        /* ── Laptop: imágenes de tarjeta más altas (tarjetas más anchas) ── */
+        @media (min-width: 801px) and (max-width: 1440px) {
+          .pc-img-wrap { height: 240px !important; }
+        }
+
+        /* ── Laptop: navbar más compacta a 768-1180px ── */
+        @media (min-width: 768px) and (max-width: 1180px) {
+          .nav-cat-btn { padding: 6px 10px !important; font-size: 13px !important; }
+          .nav-search  { padding: 7px 14px !important; }
         }
 
         /* ── Carousel ── */
@@ -4836,6 +4856,12 @@ export default function App() {
         .delivery-form input,
         .delivery-form textarea {
           font-size: 16px !important;
+        }
+
+        /* ── Laptop: hero más compacto ── */
+        @media (min-width: 768px) and (max-width: 1380px) {
+          .hero-section  { padding: 20px 24px !important; }
+          .catalog-title { font-size: 26px !important; }
         }
 
         /* ── Header móvil ── */
