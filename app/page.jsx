@@ -868,13 +868,34 @@ function AnnouncementBar() {
 }
 
 // ─── NAVBAR ───────────────────────────────────────────────────────────────────
-function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, setActiveCategory, user, isAdmin, onLogin, onLogout, onPublish, onUncategorized, onCouponManager, onCartOpen, searchQuery, setSearchQuery, onOpenMobileSearch }) {
+function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, setActiveCategory, user, isAdmin, onLogin, onLogout, onPublish, onUncategorized, onCouponManager, onCartOpen, searchQuery, setSearchQuery, onOpenMobileSearch, products, onSelectProduct }) {
   const desktopInputRef = useRef(null);
   const mobileInputRef  = useRef(null);
   const menuSwipeX      = useRef(null);
-  const [showNavAll, setShowNavAll] = useState(false);
-  const [scrolled, setScrolled]     = useState(false);
-  const navDropRef = useRef(null);
+  const [showNavAll, setShowNavAll]         = useState(false);
+  const [scrolled, setScrolled]             = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const navDropRef     = useRef(null);
+  const searchWrapRef  = useRef(null);
+
+  const suggestions = searchQuery.trim().length >= 2 && products
+    ? products.filter(p =>
+        p.is_active !== false && (
+          p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.category?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      ).slice(0, 5)
+    : [];
+
+  useEffect(() => {
+    const handler = e => {
+      if (searchWrapRef.current && !searchWrapRef.current.contains(e.target))
+        setShowSuggestions(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const focusSearch = () => {
     desktopInputRef.current?.focus() || mobileInputRef.current?.focus();
@@ -1027,25 +1048,27 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
           </nav>
 
           {/* Buscador siempre visible */}
-          <div className="hidden md:flex" style={{ flex: 1, padding: "0 8px" }}>
+          <div className="hidden md:flex" ref={searchWrapRef} style={{ flex: 1, padding: "0 8px", position: "relative" }}>
             <div
               className="nav-search"
               style={{
                 display: "flex", alignItems: "center", gap: "10px",
-                background: "#F0F4FF", borderRadius: "28px", padding: "9px 18px",
+                background: "#F0F4FF", borderRadius: showSuggestions && suggestions.length > 0 ? "14px 14px 0 0" : "28px", padding: "9px 18px",
                 width: "100%", border: `1.5px solid ${searchQuery ? CORAL : "#E2E8F0"}`,
+                borderBottom: showSuggestions && suggestions.length > 0 ? "1.5px solid transparent" : undefined,
                 transition: "border-color 0.2s, box-shadow 0.2s",
               }}
-              onFocus={e => e.currentTarget.style.boxShadow = "0 0 0 3px rgba(37,99,235,0.10)"}
-              onBlur={e => e.currentTarget.style.boxShadow = "none"}
             >
               <Search size={15} color={searchQuery ? CORAL : "#9B948E"} style={{ flexShrink: 0 }} />
               <input
                 ref={desktopInputRef}
                 type="text"
                 value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                onKeyDown={e => e.key === "Escape" && setSearchQuery("")}
+                onChange={e => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
+                onFocus={() => setShowSuggestions(true)}
+                onKeyDown={e => {
+                  if (e.key === "Escape") { setSearchQuery(""); setShowSuggestions(false); }
+                }}
                 placeholder="Buscar productos..."
                 autoComplete="off"
                 style={{
@@ -1055,7 +1078,7 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
               />
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery("")}
+                  onClick={() => { setSearchQuery(""); setShowSuggestions(false); }}
                   title="Borrar búsqueda"
                   style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }}
                 >
@@ -1063,6 +1086,46 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
                 </button>
               )}
             </div>
+            {/* Dropdown sugerencias */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div style={{
+                position: "absolute", top: "100%", left: "8px", right: "8px", zIndex: 400,
+                background: "#fff", border: `1.5px solid ${CORAL}`, borderTop: "none",
+                borderRadius: "0 0 16px 16px",
+                boxShadow: "0 12px 32px rgba(0,0,0,0.12)",
+                overflow: "hidden",
+              }}>
+                {suggestions.map((p, i) => (
+                  <div
+                    key={p.id}
+                    onClick={() => { onSelectProduct(p); setShowSuggestions(false); }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "12px", padding: "10px 16px",
+                      cursor: "pointer", borderTop: i > 0 ? "1px solid #F5F0EA" : "none",
+                      transition: "background 0.15s",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = "#F8F5F1"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                  >
+                    <div style={{ width: "44px", height: "44px", borderRadius: "10px", background: "#F5F0EA", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {p.images?.length > 0
+                        ? <img src={p.images[0]} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "4px", boxSizing: "border-box" }} />
+                        : <span style={{ fontSize: "22px" }}>{p.emoji}</span>
+                      }
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 600, color: "#1A1A1A", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
+                      <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", color: CORAL, margin: 0, fontWeight: 700 }}>{fmt(p.price)}</p>
+                    </div>
+                    {p.badge && (
+                      <span style={{ fontSize: "9px", fontWeight: 800, background: p.badge.startsWith("−") ? "#EF4444" : "#1A1A1A", color: "#fff", padding: "3px 8px", borderRadius: "8px", flexShrink: 0 }}>
+                        {p.badge.startsWith("−") ? p.badge.replace("− ", "") : p.badge}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Actions */}
@@ -2025,6 +2088,101 @@ function ProductCardSkeleton() {
   );
 }
 
+// ─── PRODUCT LIST ROW (vista lista desktop) ───────────────────────────────────
+function ProductListRow({ product, onAddToCart, wishlisted, onWishlist, onSelect }) {
+  const [added, setAdded] = useState(false);
+  const [hovered, setHovered] = useState(false);
+
+  const handleAdd = (e) => {
+    e.stopPropagation();
+    if (product.stock === 0) return;
+    onAddToCart(product);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1800);
+  };
+
+  return (
+    <div
+      onClick={() => onSelect(product)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex", gap: "20px", alignItems: "center",
+        background: "#fff", borderRadius: "16px",
+        border: hovered ? `1.5px solid ${CORAL}` : "1px solid #EDE8E2",
+        padding: "16px", cursor: "pointer",
+        transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+        boxShadow: hovered ? "0 8px 32px rgba(37,99,235,0.10)" : "0 1px 4px rgba(0,0,0,0.04)",
+      }}
+    >
+      {/* Imagen */}
+      <div style={{ width: "130px", height: "130px", flexShrink: 0, borderRadius: "12px", overflow: "hidden", background: "#F5F0EA", position: "relative" }}>
+        {product.images?.length > 0 ? (
+          <img src={product.images[0]} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: "8px", boxSizing: "border-box", transition: "transform 0.3s ease", transform: hovered ? "scale(1.06)" : "scale(1)" }} />
+        ) : (
+          <span style={{ fontSize: "52px", display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>{product.emoji}</span>
+        )}
+        {product.badge && (
+          <span style={{ position: "absolute", top: "8px", left: "8px", background: product.badge.startsWith("−") ? "linear-gradient(135deg, #DC2626, #EF4444)" : "#1A1A1A", color: "#fff", fontSize: "9px", fontWeight: 800, padding: "3px 8px", borderRadius: "10px" }}>
+            {product.badge.startsWith("−") ? `Descuento ${product.badge.replace("− ", "")}` : product.badge}
+          </span>
+        )}
+      </div>
+
+      {/* Info */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <h3 style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "16px", fontWeight: 700, color: "#1A1A1A", margin: "0 0 6px", lineHeight: 1.3 }}>
+          {product.name}
+        </h3>
+        {product.description && (
+          <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", color: "#6B6560", margin: "0 0 10px", lineHeight: 1.55, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+            {product.description}
+          </p>
+        )}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "18px", fontWeight: 800, color: product.oldPrice ? CORAL : "#1A1A1A" }}>
+            {fmt(product.price)}
+          </span>
+          {product.oldPrice && (
+            <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", color: "#9B948E", textDecoration: "line-through" }}>{fmt(product.oldPrice)}</span>
+          )}
+          {product.stock === 0 && (
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "#9B948E", background: "#F5F5F5", padding: "3px 9px", borderRadius: "8px" }}>Agotado</span>
+          )}
+          {product.stock != null && product.stock >= 1 && product.stock <= 5 && (
+            <span style={{ fontSize: "11px", fontWeight: 700, color: CORAL, background: "#FFF0EE", padding: "3px 9px", borderRadius: "8px" }}>¡Solo {product.stock} disponible{product.stock > 1 ? "s" : ""}!</span>
+          )}
+        </div>
+      </div>
+
+      {/* Acciones */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+        <button
+          onClick={handleAdd}
+          disabled={product.stock === 0}
+          style={{
+            background: product.stock === 0 ? "#E0DAD3" : added ? "#2D7A4F" : CORAL,
+            color: product.stock === 0 ? "#9B948E" : "#fff",
+            border: "none", borderRadius: "20px", padding: "10px 20px",
+            fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700,
+            cursor: product.stock === 0 ? "not-allowed" : "pointer",
+            transition: "background 0.2s", whiteSpace: "nowrap", minWidth: "140px",
+          }}
+        >
+          {added ? "✓ Añadido" : product.stock === 0 ? "Agotado" : "Agregar al carrito"}
+        </button>
+        <button
+          onClick={e => { e.stopPropagation(); onWishlist(product.id); }}
+          style={{ background: "none", border: `1.5px solid ${wishlisted ? CORAL : "#EDE8E2"}`, borderRadius: "20px", padding: "8px 16px", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "13px", fontFamily: "var(--font-roboto), sans-serif", color: wishlisted ? CORAL : "#9B948E", transition: "all 0.18s", minWidth: "140px", justifyContent: "center" }}
+        >
+          <Heart size={13} fill={wishlisted ? CORAL : "none"} />
+          {wishlisted ? "En favoritos" : "Favoritos"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── PRODUCT CARD ─────────────────────────────────────────────────────────────
 function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, user, onDelete, onEdit }) {
   const [added, setAdded]             = useState(false);
@@ -2072,10 +2230,37 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
         ) : (
           <span style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.12))", transition: "transform 0.5s ease" }}>{product.emoji}</span>
         )}
-        {/* Overlay "Ver producto" */}
-        <div className="pc-overlay">
-          <Search size={14} color="#fff" />
-          <span style={{ color: "#fff", fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700 }}>Ver producto</span>
+        {/* Quick View overlay — desktop */}
+        <div className="pc-overlay" onClick={e => e.stopPropagation()}>
+          <button
+            onPointerDown={createRipple}
+            onClick={e => { e.stopPropagation(); handleAdd(); }}
+            disabled={product.stock === 0}
+            style={{
+              background: product.stock === 0 ? "rgba(255,255,255,0.3)" : added ? "rgba(45,122,79,0.9)" : "rgba(255,255,255,0.92)",
+              color: product.stock === 0 ? "rgba(255,255,255,0.5)" : added ? "#fff" : CORAL,
+              border: "none", borderRadius: "20px", padding: "8px 16px",
+              fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 700,
+              cursor: product.stock === 0 ? "not-allowed" : "pointer",
+              display: "flex", alignItems: "center", gap: "5px",
+              backdropFilter: "blur(4px)", transition: "background 0.2s",
+              position: "relative", overflow: "hidden",
+            }}
+          >
+            <ShoppingBag size={12} />
+            {added ? "✓ Añadido" : "Añadir"}
+          </button>
+          <button
+            onClick={e => { e.stopPropagation(); onWishlist(product.id); }}
+            style={{
+              background: wishlisted ? "rgba(37,99,235,0.85)" : "rgba(255,255,255,0.18)",
+              border: "none", borderRadius: "50%", width: "34px", height: "34px",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", backdropFilter: "blur(4px)", transition: "background 0.2s",
+            }}
+          >
+            <Heart size={13} color="#fff" fill={wishlisted ? "#fff" : "none"} />
+          </button>
         </div>
         {product.badge && (
           <span style={{
@@ -3632,7 +3817,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
         style={{
           background: "#fff",
           borderRadius: isMobile ? "20px 20px 0 0" : "24px",
-          width: "100%", maxWidth: "880px",
+          width: "100%", maxWidth: isMobile ? "100%" : "1040px",
           maxHeight: isMobile ? "100%" : "92vh",
           overflowY: "auto",
           WebkitOverflowScrolling: "touch",
@@ -4387,6 +4572,7 @@ export default function App() {
   };
   const [searchQuery, setSearchQuery]         = useState("");
   const [sortBy, setSortBy]                   = useState("newest");
+  const [viewMode, setViewMode]               = useState("grid"); // "grid" | "list"
   const [cart, setCart]                       = useState(() => {
     try {
       const saved = localStorage.getItem("sk_cart");
@@ -4958,6 +5144,11 @@ export default function App() {
         .cat-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         .cat-scroll::-webkit-scrollbar { display: none; }
 
+        /* ── Vista toggle — ocultar en móvil ── */
+        @media (max-width: 767px) {
+          .view-toggle-wrap { display: none !important; }
+        }
+
         /* ── Stat card ── */
         .stat-card {
           transition: transform 0.22s ease, box-shadow 0.22s ease;
@@ -4993,6 +5184,8 @@ export default function App() {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onOpenMobileSearch={() => setShowMobileSearch(true)}
+          products={displayProducts}
+          onSelectProduct={p => { setSelectedProduct(p); setSearchQuery(""); }}
         />
 
         <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
@@ -5140,19 +5333,38 @@ export default function App() {
 
           <div id="productos" style={{ marginBottom: "32px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
             <CategoryPills active={activeCategory} onChange={handleCategoryChange} isAdmin={isAdmin} />
-            <button
-              onClick={() => setShowSortSheet(true)}
-              style={{
-                display: "flex", alignItems: "center", gap: "6px", flexShrink: 0,
-                background: "#F5F0EA", border: "1.5px solid #EDE8E2", borderRadius: "20px",
-                padding: "8px 14px", fontFamily: "var(--font-roboto), sans-serif",
-                fontSize: "13px", color: "#4A4A4A", cursor: "pointer",
-              }}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
-              {{ newest: "Más recientes", price_asc: "Menor precio", price_desc: "Mayor precio" }[sortBy]}
-              <ChevronDown size={12} color="#9B948E" />
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+              {/* Toggle vista grilla/lista — solo desktop */}
+              <div className="view-toggle-wrap" style={{ display: "flex", background: "#F5F0EA", border: "1.5px solid #EDE8E2", borderRadius: "20px", overflow: "hidden" }}>
+                <button
+                  onClick={() => setViewMode("grid")}
+                  title="Vista grilla"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "7px 12px", border: "none", cursor: "pointer", background: viewMode === "grid" ? CORAL : "transparent", color: viewMode === "grid" ? "#fff" : "#9B948E", transition: "all 0.18s ease" }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  title="Vista lista"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "7px 12px", border: "none", cursor: "pointer", background: viewMode === "list" ? CORAL : "transparent", color: viewMode === "list" ? "#fff" : "#9B948E", transition: "all 0.18s ease" }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+              </div>
+              <button
+                onClick={() => setShowSortSheet(true)}
+                style={{
+                  display: "flex", alignItems: "center", gap: "6px",
+                  background: "#F5F0EA", border: "1.5px solid #EDE8E2", borderRadius: "20px",
+                  padding: "8px 14px", fontFamily: "var(--font-roboto), sans-serif",
+                  fontSize: "13px", color: "#4A4A4A", cursor: "pointer",
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+                {{ newest: "Más recientes", price_asc: "Menor precio", price_desc: "Mayor precio" }[sortBy]}
+                <ChevronDown size={12} color="#9B948E" />
+              </button>
+            </div>
           </div>
 
           {/* Bottom sheet — Ordenar */}
@@ -5199,6 +5411,20 @@ export default function App() {
             </div>
           ) : sortedProducts.length === 0 ? (
             <EmptyState category={activeCategory} searchQuery={searchQuery} />
+          ) : viewMode === "list" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {sortedProducts.map((product, idx) => (
+                <div key={product.id} className="fade-in-up" style={{ transitionDelay: `${Math.min(idx % 8 * 0.04, 0.24)}s` }}>
+                  <ProductListRow
+                    product={product}
+                    onAddToCart={handleAddToCart}
+                    wishlisted={wishlist.includes(product.id)}
+                    onWishlist={toggleWishlist}
+                    onSelect={setSelectedProduct}
+                  />
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="grid-products">
               {sortedProducts.map((product, idx) => (
