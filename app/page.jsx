@@ -518,7 +518,14 @@ function EditModal({ product, user, onClose, onSaved }) {
     setNewPreviews(valid.map(f => URL.createObjectURL(f)));
   };
 
-  const removeExisting = (idx) => setExistingImgs(prev => prev.filter((_, i) => i !== idx));
+  const removeExisting  = (idx) => setExistingImgs(prev => prev.filter((_, i) => i !== idx));
+  const moveExisting    = (idx, dir) => setExistingImgs(prev => {
+    const arr = [...prev];
+    const target = idx + dir;
+    if (target < 0 || target >= arr.length) return prev;
+    [arr[idx], arr[target]] = [arr[target], arr[idx]];
+    return arr;
+  });
   const removeNew      = (idx) => {
     setNewImages(prev    => prev.filter((_, i) => i !== idx));
     setNewPreviews(prev  => prev.filter((_, i) => i !== idx));
@@ -754,20 +761,22 @@ function EditModal({ product, user, onClose, onSaved }) {
             {/* Fotos existentes */}
             {existingImgs.length > 0 && (
               <div>
-                <label style={labelStyle}>Fotos actuales</label>
+                <label style={labelStyle}>Fotos actuales <span style={{ fontWeight: 400, color: "#9B948E", textTransform: "none", letterSpacing: 0 }}>— arrastra ← → para reordenar</span></label>
                 <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                   {existingImgs.map((url, i) => (
-                    <div key={i} style={{ position: "relative", width: "80px", height: "80px", borderRadius: "10px", overflow: "hidden", border: "1.5px solid #E0D8CC" }}>
-                      <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      <button
-                        onClick={() => removeExisting(i)}
-                        style={{
-                          position: "absolute", top: "4px", right: "4px",
-                          background: "rgba(0,0,0,0.6)", border: "none",
-                          borderRadius: "50%", width: "22px", height: "22px",
-                          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                        }}
-                      ><X size={11} color="#fff" /></button>
+                    <div key={url + i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                      <div style={{ position: "relative", width: "80px", height: "80px", borderRadius: "10px", overflow: "hidden", border: i === 0 ? `2px solid ${CORAL}` : "1.5px solid #E0D8CC" }}>
+                        {i === 0 && <span style={{ position: "absolute", top: "3px", left: "3px", zIndex: 2, background: CORAL, color: "#fff", fontSize: "9px", fontWeight: 800, borderRadius: "6px", padding: "1px 5px" }}>PORTADA</span>}
+                        <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <button
+                          onClick={() => removeExisting(i)}
+                          style={{ position: "absolute", top: "4px", right: "4px", background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", width: "22px", height: "22px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        ><X size={11} color="#fff" /></button>
+                      </div>
+                      <div style={{ display: "flex", gap: "2px" }}>
+                        <button onClick={() => moveExisting(i, -1)} disabled={i === 0} style={{ background: i === 0 ? "#F5F0EA" : "#EDE8E2", border: "none", borderRadius: "5px", width: "24px", height: "20px", cursor: i === 0 ? "default" : "pointer", fontSize: "10px", color: i === 0 ? "#C0B8B0" : "#4A4A4A" }}>←</button>
+                        <button onClick={() => moveExisting(i, 1)}  disabled={i === existingImgs.length - 1} style={{ background: i === existingImgs.length - 1 ? "#F5F0EA" : "#EDE8E2", border: "none", borderRadius: "5px", width: "24px", height: "20px", cursor: i === existingImgs.length - 1 ? "default" : "pointer", fontSize: "10px", color: i === existingImgs.length - 1 ? "#C0B8B0" : "#4A4A4A" }}>→</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -868,7 +877,7 @@ function AnnouncementBar() {
 }
 
 // ─── NAVBAR ───────────────────────────────────────────────────────────────────
-function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, setActiveCategory, user, isAdmin, onLogin, onLogout, onPublish, onUncategorized, onCouponManager, onCartOpen, searchQuery, setSearchQuery, onOpenMobileSearch, products, onSelectProduct }) {
+function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, setActiveCategory, user, isAdmin, onLogin, onLogout, onPublish, onUncategorized, onCouponManager, onOrders, onCartOpen, searchQuery, setSearchQuery, onOpenMobileSearch, products, onSelectProduct }) {
   const desktopInputRef = useRef(null);
   const mobileInputRef  = useRef(null);
   const menuSwipeX      = useRef(null);
@@ -1208,6 +1217,22 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
                   >
                     <Tag size={14} />
                     <span className="hidden sm:inline">Cupones</span>
+                  </button>
+                  <button
+                    onClick={onOrders}
+                    title="Historial de pedidos"
+                    style={{
+                      display: "flex", alignItems: "center", gap: "7px",
+                      background: "#EFF6FF", color: "#1D4ED8", border: "1.5px solid #BFDBFE",
+                      borderRadius: "24px", padding: "7px 14px",
+                      fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700,
+                      cursor: "pointer", transition: "opacity 0.15s",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
+                    onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                  >
+                    <Package size={14} />
+                    <span className="hidden sm:inline">Pedidos</span>
                   </button>
                   <button
                     onClick={onPublish}
@@ -1555,11 +1580,12 @@ function Hero({ onShop, stats }) {
 }
 
 // ─── ADMIN STATS BAR ─────────────────────────────────────────────────────────
-function AdminStatsBar({ dbProducts }) {
-  const active   = dbProducts.filter(p => p.is_active !== false).length;
-  const inactive = dbProducts.filter(p => p.is_active === false).length;
-  const noStock  = dbProducts.filter(p => p.is_active !== false && (p.stock === 0 || p.stock == null)).length;
-  const noCat    = dbProducts.filter(p => !p.category || !REAL_CATS.find(c => c.id === p.category)).length;
+function AdminStatsBar({ dbProducts, onOrders }) {
+  const active    = dbProducts.filter(p => p.is_active !== false).length;
+  const inactive  = dbProducts.filter(p => p.is_active === false).length;
+  const noStock   = dbProducts.filter(p => p.is_active !== false && (p.stock === 0 || p.stock == null)).length;
+  const lowStock  = dbProducts.filter(p => p.is_active !== false && p.stock != null && p.stock >= 1 && p.stock <= 5).length;
+  const noCat     = dbProducts.filter(p => !p.category || !REAL_CATS.find(c => c.id === p.category)).length;
 
   const Stat = ({ label, value, color }) => (
     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1580,7 +1606,14 @@ function AdminStatsBar({ dbProducts }) {
       <span style={{ color: "#334155" }}>·</span>
       <Stat label="sin stock"    value={noStock}  color={noStock  > 0 ? "#F87171" : "#4ADE80"} />
       <span style={{ color: "#334155" }}>·</span>
+      <Stat label="stock bajo"   value={lowStock} color={lowStock > 0 ? "#FBBF24" : "#4ADE80"} />
+      <span style={{ color: "#334155" }}>·</span>
       <Stat label="sin categoría" value={noCat}   color={noCat    > 0 ? "#FBBF24" : "#4ADE80"} />
+      {onOrders && (
+        <button onClick={onOrders} style={{ marginLeft: "auto", fontFamily: F_UI, fontSize: "11px", fontWeight: 700, color: CORAL, background: "rgba(37,99,235,0.12)", border: "none", borderRadius: "12px", padding: "3px 10px", cursor: "pointer" }}>
+          📋 Pedidos
+        </button>
+      )}
     </div>
   );
 }
@@ -2202,15 +2235,24 @@ function ProductListRow({ product, onAddToCart, wishlisted, onWishlist, onSelect
 }
 
 // ─── PRODUCT CARD ─────────────────────────────────────────────────────────────
-function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, user, onDelete, onEdit, onContextMenu }) {
+function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, user, onDelete, onEdit, onContextMenu, multiSelectMode, isSelected, onToggleSelect, onQuickSave }) {
   const [added, setAdded]             = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [longPressActive, setLongPressActive] = useState(false);
   const [heartFlash, setHeartFlash]   = useState(false);
   const [imgLoaded, setImgLoaded]     = useState(false);
+  const [qeField, setQeField]         = useState(null); // 'price' | 'stock'
+  const [qeValue, setQeValue]         = useState("");
   const isOwner = !!user && ADMIN_EMAILS.has(user.email);
   const longPressTimer = useRef(null);
   const lastTapRef = useRef(0);
+
+  const handleQuickEditSave = async () => {
+    const val = parseFloat(qeValue);
+    if (isNaN(val) || val < 0) { setQeField(null); return; }
+    await onQuickSave?.(product.id, { [qeField]: Math.round(val) });
+    setQeField(null);
+  };
 
   const handleAdd = (e) => {
     e.stopPropagation();
@@ -2250,7 +2292,7 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
 
   return (
     <div
-      onClick={() => onSelect(product)}
+      onClick={() => multiSelectMode ? onToggleSelect?.(product.id) : onSelect(product)}
       onTouchStart={handleLongPressStart}
       onTouchEnd={handleCardTouchEnd}
       onTouchMove={handleLongPressEnd}
@@ -2339,6 +2381,11 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
         <div className="pc-zoom-icon">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={CORAL} strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
         </div>
+        {multiSelectMode && isOwner && (
+          <div style={{ position: "absolute", top: "8px", left: "8px", zIndex: 5, width: "26px", height: "26px", borderRadius: "8px", border: `2.5px solid ${isSelected ? CORAL : "#fff"}`, background: isSelected ? CORAL : "rgba(255,255,255,0.92)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(0,0,0,0.15)", transition: "all 0.15s" }}>
+            {isSelected && <Check size={14} color="#fff" strokeWidth={3} />}
+          </div>
+        )}
       </div>
 
       <div className="pc-body" style={{ padding: "16px" }}>
@@ -2382,9 +2429,27 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
 
         <div className="pc-price-row">
           <div className="pc-prices">
-            <span className="pc-price" style={{ fontFamily: "var(--font-roboto), sans-serif", fontWeight: 800, color: product.oldPrice ? CORAL : "#1A1A1A" }}>
-              {fmt(product.price)}
-            </span>
+            {isOwner && qeField === "price" ? (
+              <input
+                autoFocus
+                type="number"
+                value={qeValue}
+                onChange={e => setQeValue(e.target.value)}
+                onBlur={handleQuickEditSave}
+                onKeyDown={e => { if (e.key === "Enter") handleQuickEditSave(); if (e.key === "Escape") setQeField(null); }}
+                onClick={e => e.stopPropagation()}
+                style={{ width: "90px", fontFamily: F_UI, fontSize: "14px", fontWeight: 800, color: CORAL, border: `1.5px solid ${CORAL}`, borderRadius: "8px", padding: "3px 6px", outline: "none" }}
+              />
+            ) : (
+              <span
+                className="pc-price"
+                style={{ fontFamily: "var(--font-roboto), sans-serif", fontWeight: 800, color: product.oldPrice ? CORAL : "#1A1A1A", cursor: isOwner ? "text" : "default" }}
+                onDoubleClick={isOwner ? (e) => { e.stopPropagation(); setQeField("price"); setQeValue(String(product.price)); } : undefined}
+                title={isOwner ? "Doble clic para editar precio" : undefined}
+              >
+                {fmt(product.price)}
+              </span>
+            )}
             {product.oldPrice && (
               <span className="pc-old-price" style={{ fontFamily: "var(--font-roboto), sans-serif", color: "#9B948E", textDecoration: "line-through", marginLeft: "6px" }}>
                 {fmt(product.oldPrice)}
@@ -3507,6 +3572,8 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const [added, setAdded]                 = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shared, setShared]               = useState(false);
+  const [showQtyPicker, setShowQtyPicker] = useState(false);
+  const [qtyPick, setQtyPick]             = useState(1);
   const [toggleLoading, setToggleLoading] = useState(false);
   const [toggleError, setToggleError]     = useState("");
   const [isMobile, setIsMobile] = useState(false);
@@ -3652,8 +3719,10 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   };
 
   const handleAdd = () => {
-    onAddToCart(product);
+    if (isMobile && !showQtyPicker) { setShowQtyPicker(true); setQtyPick(1); return; }
+    for (let i = 0; i < qtyPick; i++) onAddToCart(product);
     setAdded(true);
+    setShowQtyPicker(false);
     setTimeout(() => setAdded(false), 2200);
   };
 
@@ -3911,6 +3980,12 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
                 {fmt(product.price)}
               </p>
             </div>
+            <button
+              onClick={handleShare}
+              style={{ flexShrink: 0, width: "36px", height: "36px", borderRadius: "50%", border: `1.5px solid ${shared ? "#2D7A4F" : "#E0D8CC"}`, background: shared ? "rgba(45,122,79,0.10)" : "#fff", color: shared ? "#2D7A4F" : "#9B948E", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+            >
+              {shared ? <Check size={15} /> : <Share2 size={15} />}
+            </button>
             <button
               onClick={() => { onBuyNow?.(product); onClose(); }}
               style={{
@@ -4275,23 +4350,35 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
             >
               {shared ? <Check size={19} /> : <Share2 size={19} />}
             </button>
-            <button
-              onPointerDown={createRipple}
-              onClick={handleAdd}
-              style={{
-                flex: 1, padding: "15px",
-                background: added ? "#2D7A4F" : CORAL,
-                color: "#fff", border: "none", borderRadius: "28px",
-                fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px", fontWeight: 700,
-                cursor: "pointer", transition: "background 0.25s ease",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: "9px",
-                boxShadow: added ? "0 8px 24px rgba(45,122,79,0.35)" : "0 8px 24px rgba(37,99,235,0.35)",
-                position: "relative", overflow: "hidden",
-              }}
-            >
-              <ShoppingBag size={18} />
-              {added ? "✓ Añadido al carrito" : "Agregar al carrito"}
-            </button>
+            {showQtyPicker && isMobile ? (
+              <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "8px", background: "#F0F4FF", borderRadius: "28px", padding: "8px 14px" }}>
+                <button onClick={() => setQtyPick(q => Math.max(1, q - 1))} style={{ width: "34px", height: "34px", borderRadius: "50%", border: "none", background: qtyPick > 1 ? CORAL : "#E0DAD3", color: "#fff", fontSize: "18px", cursor: qtyPick > 1 ? "pointer" : "default", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                <span style={{ flex: 1, textAlign: "center", fontFamily: F_UI, fontSize: "18px", fontWeight: 800, color: "#1A1A1A" }}>{qtyPick}</span>
+                <button onClick={() => setQtyPick(q => product.stock != null ? Math.min(q + 1, product.stock) : q + 1)} style={{ width: "34px", height: "34px", borderRadius: "50%", border: "none", background: CORAL, color: "#fff", fontSize: "18px", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                <button onPointerDown={createRipple} onClick={handleAdd} style={{ flexShrink: 0, padding: "9px 16px", background: "#2D7A4F", color: "#fff", border: "none", borderRadius: "20px", fontFamily: F_UI, fontSize: "13px", fontWeight: 700, cursor: "pointer", position: "relative", overflow: "hidden" }}>
+                  <ShoppingBag size={14} style={{ display: "inline", verticalAlign: "middle", marginRight: "5px" }} />
+                  Añadir {qtyPick > 1 ? `(${qtyPick})` : ""}
+                </button>
+              </div>
+            ) : (
+              <button
+                onPointerDown={createRipple}
+                onClick={handleAdd}
+                style={{
+                  flex: 1, padding: "15px",
+                  background: added ? "#2D7A4F" : CORAL,
+                  color: "#fff", border: "none", borderRadius: "28px",
+                  fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px", fontWeight: 700,
+                  cursor: "pointer", transition: "background 0.25s ease",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "9px",
+                  boxShadow: added ? "0 8px 24px rgba(45,122,79,0.35)" : "0 8px 24px rgba(37,99,235,0.35)",
+                  position: "relative", overflow: "hidden",
+                }}
+              >
+                <ShoppingBag size={18} />
+                {added ? "✓ Añadido al carrito" : "Agregar al carrito"}
+              </button>
+            )}
           </div>
 
           <button
@@ -4637,6 +4724,64 @@ function LoginModal({ isOpen, onClose }) {
   );
 }
 
+// ─── ORDER HISTORY ────────────────────────────────────────────────────────────
+function OrderHistory({ onClose }) {
+  const [orders, setOrders]     = useState([]);
+  const [loading, setLoading]   = useState(true);
+
+  useEffect(() => {
+    supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(50)
+      .then(({ data }) => { setOrders(data ?? []); setLoading(false); });
+  }, []);
+
+  const fmt2 = n => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+  const statusColor = { pending: "#F59E0B", completed: "#16A34A", failed: "#EF4444" };
+  const statusLabel = { pending: "Pendiente", completed: "Completado", failed: "Fallido" };
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 1100, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }} />
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 1101, background: "#fff", borderRadius: "20px", width: "min(680px, 95vw)", maxHeight: "82vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 64px rgba(0,0,0,0.22)", animation: "shortcutsIn 0.2s ease" }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid #EDE8E2", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#EFF6FF", borderRadius: "20px 20px 0 0" }}>
+          <div>
+            <h2 style={{ fontFamily: F_UI, fontSize: "17px", fontWeight: 800, color: "#1A1A1A", margin: 0 }}>📋 Historial de pedidos</h2>
+            <p style={{ fontFamily: F_UI, fontSize: "12px", color: "#6B6560", margin: "3px 0 0" }}>{orders.length} pedido{orders.length !== 1 ? "s" : ""} registrado{orders.length !== 1 ? "s" : ""}</p>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer" }}><X size={20} color="#6B6560" /></button>
+        </div>
+        <div style={{ overflowY: "auto", flex: 1 }}>
+          {loading ? (
+            <div style={{ padding: "40px", textAlign: "center", fontFamily: F_UI, color: "#9B948E" }}>Cargando pedidos…</div>
+          ) : orders.length === 0 ? (
+            <div style={{ padding: "40px", textAlign: "center", fontFamily: F_UI, color: "#9B948E" }}>No hay pedidos aún</div>
+          ) : orders.map(o => {
+            const items = Array.isArray(o.items) ? o.items : [];
+            const date  = o.created_at ? new Date(o.created_at).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+            return (
+              <div key={o.id || o.reference} style={{ padding: "16px 24px", borderBottom: "1px solid #F5F0EA" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
+                      <span style={{ fontFamily: F_UI, fontSize: "12px", fontWeight: 700, color: "#1A1A1A", fontVariantNumeric: "tabular-nums" }}>{o.reference ?? "—"}</span>
+                      {o.status && <span style={{ fontSize: "10px", fontWeight: 700, background: statusColor[o.status] + "20", color: statusColor[o.status], borderRadius: "8px", padding: "2px 7px" }}>{statusLabel[o.status] ?? o.status}</span>}
+                      <span style={{ fontFamily: F_UI, fontSize: "11px", color: "#9B948E" }}>{date}</span>
+                    </div>
+                    <p style={{ fontFamily: F_UI, fontSize: "12px", color: "#6B6560", margin: 0 }}>
+                      {items.map(i => `${i.quantity ?? 1}× ${i.name}`).join(" · ").slice(0, 80) || "Sin detalle"}
+                    </p>
+                    {o.user_email && <p style={{ fontFamily: F_UI, fontSize: "11px", color: "#9B948E", margin: "2px 0 0" }}>{o.user_email}</p>}
+                  </div>
+                  <span style={{ fontFamily: F_UI, fontSize: "14px", fontWeight: 800, color: "#1A1A1A", flexShrink: 0 }}>{fmt2(o.total_amount ?? 0)}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ─── APP ROOT ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [activeCategory, setActiveCategory]   = useState("all");
@@ -4701,6 +4846,12 @@ export default function App() {
   const [showShortcuts, setShowShortcuts]     = useState(false);
   const [contextMenu, setContextMenu]         = useState(null);
   const [flyCart, setFlyCart]                 = useState(null);
+  const [showPriceSheet, setShowPriceSheet]   = useState(false);
+  const [sheetPriceMin, setSheetPriceMin]     = useState("");
+  const [sheetPriceMax, setSheetPriceMax]     = useState("");
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds]         = useState([]);
+  const [showOrders, setShowOrders]           = useState(false);
   const sortedProductsRef                     = useRef([]);
 
   useEffect(() => {
@@ -4997,6 +5148,36 @@ export default function App() {
     }
   };
 
+  const handleDuplicate = async (product) => {
+    const { name, category, price, old_price, stock, badge, images, description, specifications, emoji } = product;
+    const { error } = await supabase.from("products").insert({
+      name: name + " (copia)", category, price, old_price: old_price ?? null,
+      stock: stock ?? 0, badge: badge ?? null, images: images ?? [],
+      description: description ?? "", specifications: specifications ?? null,
+      emoji: emoji ?? null, is_active: false, user_id: user?.id,
+    });
+    if (!error) { setTimeout(fetchProducts, 600); }
+  };
+
+  const handleQuickSave = async (productId, fields) => {
+    await supabase.from("products").update(fields).eq("id", productId);
+    fetchProducts();
+  };
+
+  const handleBulkAction = async (action) => {
+    if (selectedIds.length === 0) return;
+    if (action === "delete") {
+      if (!window.confirm(`¿Eliminar ${selectedIds.length} producto(s)?`)) return;
+      for (const id of selectedIds) await supabase.from("products").delete().eq("id", id);
+    } else {
+      const newState = action === "activate";
+      for (const id of selectedIds) await supabase.rpc("toggle_product_active", { product_id: id, new_state: newState });
+    }
+    setSelectedIds([]);
+    setMultiSelectMode(false);
+    fetchProducts();
+  };
+
   const handleRemoveFromCart = (productId) =>
     setCart(prev => prev.filter(item => item.id !== productId));
 
@@ -5080,6 +5261,16 @@ export default function App() {
         @keyframes shimmer-btn {
           0%   { background-position: -200% center; }
           100% { background-position:  200% center; }
+        }
+        @keyframes progressBar {
+          0%   { width: 0%; opacity: 1; }
+          80%  { width: 75%; opacity: 1; }
+          100% { width: 75%; opacity: 1; }
+        }
+        @keyframes progressDone {
+          0%   { width: 75%; opacity: 1; }
+          80%  { width: 100%; opacity: 1; }
+          100% { width: 100%; opacity: 0; }
         }
         @keyframes heartFlash {
           0%   { opacity: 0; transform: scale(0.3); }
@@ -5419,6 +5610,12 @@ export default function App() {
       `}</style>
 
       <div style={{ minHeight: "100vh", background: "#FAF7F4" }}>
+        {/* Progress bar de carga */}
+        {loadingProducts && (
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: "3px", zIndex: 2100, background: "#E2E8F0" }}>
+            <div style={{ height: "100%", background: `linear-gradient(90deg, ${CORAL}, #60A5FA)`, animation: "progressBar 3s ease forwards", borderRadius: "0 3px 3px 0" }} />
+          </div>
+        )}
         <Navbar
           cartCount={cartCount}
           cartBounce={cartBounce}
@@ -5433,6 +5630,7 @@ export default function App() {
           onPublish={() => setShowPublish(true)}
           onUncategorized={() => setShowUncategorized(true)}
           onCouponManager={() => setShowCouponManager(true)}
+          onOrders={() => setShowOrders(true)}
           onCartOpen={() => setShowCart(true)}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -5498,7 +5696,7 @@ export default function App() {
           />
         )}
 
-        {isAdmin && <AdminStatsBar dbProducts={dbProducts} />}
+        {isAdmin && <AdminStatsBar dbProducts={dbProducts} onOrders={() => setShowOrders(true)} />}
 
         {editingProduct && (
           <EditModal
@@ -5669,6 +5867,28 @@ export default function App() {
                 <ChevronDown size={12} color="#9B948E" />
               </button>
 
+              {/* Filtro precio — solo móvil */}
+              <button
+                onClick={() => { setSheetPriceMin(priceMin); setSheetPriceMax(priceMax); setShowPriceSheet(true); }}
+                className="flex md:hidden"
+                style={{ alignItems: "center", gap: "5px", background: (priceMin || priceMax) ? CORAL : "#F5F0EA", border: `1.5px solid ${(priceMin || priceMax) ? CORAL : "#EDE8E2"}`, borderRadius: "20px", padding: "8px 14px", fontFamily: F_UI, fontSize: "13px", color: (priceMin || priceMax) ? "#fff" : "#4A4A4A", cursor: "pointer" }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Precio{(priceMin || priceMax) ? " ✓" : ""}
+              </button>
+
+              {/* Multi-select admin */}
+              {isAdmin && (
+                <button
+                  onClick={() => { setMultiSelectMode(v => !v); setSelectedIds([]); }}
+                  title="Selección múltiple"
+                  style={{ display: "flex", alignItems: "center", gap: "5px", background: multiSelectMode ? "#FFF3E0" : "#F5F0EA", border: `1.5px solid ${multiSelectMode ? "#FFCC80" : "#EDE8E2"}`, borderRadius: "20px", padding: "8px 12px", fontFamily: F_UI, fontSize: "13px", color: multiSelectMode ? "#E65100" : "#4A4A4A", cursor: "pointer", fontWeight: multiSelectMode ? 700 : 400 }}
+                >
+                  {multiSelectMode ? <Check size={13} /> : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>}
+                  {multiSelectMode ? `${selectedIds.length} sel.` : "Seleccionar"}
+                </button>
+              )}
+
               {/* Atajos de teclado — solo desktop */}
               <button
                 onClick={() => setShowShortcuts(true)}
@@ -5778,6 +5998,10 @@ export default function App() {
                     onDelete={handleDeleteProduct}
                     onEdit={setEditingProduct}
                     onContextMenu={isAdmin ? (e, p) => setContextMenu({ x: e.clientX, y: e.clientY, product: p }) : undefined}
+                    multiSelectMode={multiSelectMode && isAdmin}
+                    isSelected={selectedIds.includes(product.id)}
+                    onToggleSelect={(id) => setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
+                    onQuickSave={isAdmin ? handleQuickSave : undefined}
                   />
                 </div>
               ))}
@@ -5973,6 +6197,45 @@ export default function App() {
           </>
         )}
 
+        {/* Historial de pedidos */}
+        {showOrders && <OrderHistory onClose={() => setShowOrders(false)} />}
+
+        {/* Bottom sheet — Filtro de precio (móvil) */}
+        {showPriceSheet && (
+          <>
+            <div onClick={() => setShowPriceSheet(false)} style={{ position: "fixed", inset: 0, zIndex: 960, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(2px)" }} />
+            <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 961, background: "#fff", borderRadius: "20px 20px 0 0", padding: "8px 0 32px", boxShadow: "0 -8px 32px rgba(0,0,0,0.15)", animation: "slideUp 0.22s ease" }}>
+              <div style={{ width: "36px", height: "4px", borderRadius: "2px", background: "#D0C8BF", margin: "0 auto 16px" }} />
+              <p style={{ fontFamily: F_UI, fontSize: "13px", fontWeight: 700, color: "#9B948E", textTransform: "uppercase", letterSpacing: "0.8px", padding: "0 20px 12px", margin: 0 }}>Filtrar por precio</p>
+              <div style={{ display: "flex", gap: "12px", padding: "0 20px 16px" }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontFamily: F_UI, fontSize: "11px", fontWeight: 700, color: "#9B948E", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>Mínimo (COP)</label>
+                  <input type="number" placeholder="0" value={sheetPriceMin} onChange={e => setSheetPriceMin(e.target.value)} style={{ width: "100%", padding: "12px 14px", border: "1.5px solid #E0D8CC", borderRadius: "12px", fontFamily: F_UI, fontSize: "16px", outline: "none", boxSizing: "border-box" }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontFamily: F_UI, fontSize: "11px", fontWeight: 700, color: "#9B948E", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>Máximo (COP)</label>
+                  <input type="number" placeholder="Sin límite" value={sheetPriceMax} onChange={e => setSheetPriceMax(e.target.value)} style={{ width: "100%", padding: "12px 14px", border: "1.5px solid #E0D8CC", borderRadius: "12px", fontFamily: F_UI, fontSize: "16px", outline: "none", boxSizing: "border-box" }} />
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: "10px", padding: "0 20px" }}>
+                <button onClick={() => { setPriceMin(""); setPriceMax(""); setShowPriceSheet(false); }} style={{ flex: 1, padding: "13px", background: "#F5F0EA", border: "none", borderRadius: "16px", fontFamily: F_UI, fontSize: "14px", fontWeight: 600, color: "#4A4A4A", cursor: "pointer" }}>Limpiar</button>
+                <button onClick={() => { setPriceMin(sheetPriceMin); setPriceMax(sheetPriceMax); setShowPriceSheet(false); }} style={{ flex: 1, padding: "13px", background: CORAL, border: "none", borderRadius: "16px", fontFamily: F_UI, fontSize: "14px", fontWeight: 700, color: "#fff", cursor: "pointer" }}>Aplicar</button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Barra de acción masiva (multi-select admin) */}
+        {multiSelectMode && isAdmin && selectedIds.length > 0 && (
+          <div style={{ position: "fixed", bottom: "80px", left: "50%", transform: "translateX(-50%)", zIndex: 1200, background: "#1A1A1A", borderRadius: "20px", padding: "12px 16px", display: "flex", alignItems: "center", gap: "8px", boxShadow: "0 8px 32px rgba(0,0,0,0.3)", animation: "toastIn 0.25s ease", whiteSpace: "nowrap" }}>
+            <span style={{ fontFamily: F_UI, fontSize: "13px", fontWeight: 700, color: "#fff" }}>{selectedIds.length} seleccionados</span>
+            <span style={{ color: "#4A4A4A" }}>·</span>
+            <button onClick={() => handleBulkAction("activate")}   style={{ fontFamily: F_UI, fontSize: "12px", fontWeight: 700, color: "#4ADE80", background: "none", border: "none", cursor: "pointer", padding: "4px 8px" }}>▶ Activar</button>
+            <button onClick={() => handleBulkAction("deactivate")} style={{ fontFamily: F_UI, fontSize: "12px", fontWeight: 700, color: "#FB923C", background: "none", border: "none", cursor: "pointer", padding: "4px 8px" }}>⏸ Desactivar</button>
+            <button onClick={() => handleBulkAction("delete")}     style={{ fontFamily: F_UI, fontSize: "12px", fontWeight: 700, color: "#F87171", background: "none", border: "none", cursor: "pointer", padding: "4px 8px" }}>🗑 Eliminar</button>
+          </div>
+        )}
+
         {/* Modal de atajos de teclado */}
         {showShortcuts && (
           <>
@@ -6024,6 +6287,7 @@ export default function App() {
               {[
                 { label: "Editar", icon: "✏️", action: () => { setEditingProduct(contextMenu.product); setContextMenu(null); } },
                 { label: contextMenu.product.is_active ? "Desactivar" : "Activar", icon: contextMenu.product.is_active ? "⏸" : "▶", action: () => { handleToggleActive(contextMenu.product.id, contextMenu.product.is_active); setContextMenu(null); } },
+                { label: "Duplicar", icon: "📋", action: () => { handleDuplicate(contextMenu.product); setContextMenu(null); } },
                 { label: "Eliminar", icon: "🗑", action: () => { if (window.confirm(`¿Eliminar "${contextMenu.product.name}"?`)) { handleDeleteProduct(contextMenu.product.id); } setContextMenu(null); }, danger: true },
               ].map(item => (
                 <button
