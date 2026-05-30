@@ -45,12 +45,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const price = formatCOP(product.price);
-  const image: string | undefined = Array.isArray(product.images) ? product.images[0] : undefined;
   const description = product.description
     ? `${product.description.slice(0, 120)} — ${price}`
     : `${product.name} — ${price}`;
-
-  const ogImg = image ? `${APP_URL}/api/og-img/${id}` : undefined;
 
   return {
     title: product.name,
@@ -62,13 +59,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: `${APP_URL}/producto/${id}`,
       type: "website",
       locale: "es_CO",
-      images: ogImg ? [{ url: ogImg, alt: product.name }] : [],
     },
     twitter: {
       card: "summary_large_image",
       title: `${product.name} — ${price}`,
       description,
-      images: ogImg ? [ogImg] : [],
     },
   };
 }
