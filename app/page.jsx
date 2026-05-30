@@ -1868,6 +1868,24 @@ function UncategorizedPanel({ onClose, onCategoryChanged }) {
   );
 }
 
+// ─── COLORES POR CATEGORÍA ────────────────────────────────────────────────────
+const CATEGORY_COLORS = {
+  all:          ["#2563EB", "#1d4ed8"],
+  hogar:        ["#D97706", "#B45309"],
+  personal:     ["#7C3AED", "#6D28D9"],
+  juguetes:     ["#DC2626", "#B91C1C"],
+  favoritos:    ["#DB2777", "#BE185D"],
+  herramientas: ["#475569", "#334155"],
+  aseo:         ["#0891B2", "#0E7490"],
+  accesorios:   ["#059669", "#047857"],
+  cocina:       ["#EA580C", "#C2410C"],
+  moda:         ["#9333EA", "#7E22CE"],
+  tecnologia:   ["#0284C7", "#0369A1"],
+  salud:        ["#16A34A", "#15803D"],
+  mascotas:     ["#B45309", "#92400E"],
+  ofertas:      ["#DC2626", "#B91C1C"],
+};
+
 // ─── CATEGORY PILLS ───────────────────────────────────────────────────────────
 function CategoryPills({ active, onChange, isAdmin, counts = {} }) {
   const [showAll, setShowAll] = useState(false);
@@ -1917,6 +1935,7 @@ function CategoryPills({ active, onChange, isAdmin, counts = {} }) {
           {ALL_CATEGORIES.map((cat) => {
             const Icon = cat.icon;
             const isActive = active === cat.id;
+            const [c1, c2] = CATEGORY_COLORS[cat.id] ?? [CORAL, "#1d4ed8"];
             return (
               <button
                 key={cat.id}
@@ -1926,12 +1945,12 @@ function CategoryPills({ active, onChange, isAdmin, counts = {} }) {
                   display: "flex", flexDirection: "column", alignItems: "center", gap: "6px",
                   padding: "14px 18px", borderRadius: "18px", flexShrink: 0,
                   border: isActive ? "none" : "1.5px solid #E0D8CC",
-                  background: isActive ? `linear-gradient(135deg, ${CORAL}, #1d4ed8)` : "#fff",
+                  background: isActive ? `linear-gradient(135deg, ${c1}, ${c2})` : "#fff",
                   color: isActive ? "#fff" : "#4A4A4A",
                   fontFamily: "var(--font-roboto), sans-serif",
                   fontSize: "11.5px", fontWeight: isActive ? 700 : 500,
                   cursor: "pointer", whiteSpace: "nowrap",
-                  boxShadow: isActive ? "0 6px 20px rgba(37,99,235,0.35)" : "0 1px 4px rgba(0,0,0,0.07)",
+                  boxShadow: isActive ? `0 6px 20px ${c1}55` : "0 1px 4px rgba(0,0,0,0.07)",
                   transition: "all 0.18s ease",
                   minWidth: "68px",
                   scrollSnapAlign: "start",
@@ -2846,6 +2865,16 @@ function CartItem({ item, onRemove, onUpdateQty }) {
             <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11.5px", color: "#9B948E", margin: "2px 0 0" }}>
               {fmtItem(item.price)} c/u
             </p>
+            {item.stock != null && item.stock > 0 && item.stock <= 3 && (
+              <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "10.5px", fontWeight: 700, color: "#D97706", margin: "3px 0 0", display: "flex", alignItems: "center", gap: "3px" }}>
+                ⚠️ Solo {item.stock} en stock
+              </p>
+            )}
+            {item.stock === 0 && (
+              <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "10.5px", fontWeight: 700, color: "#EF4444", margin: "3px 0 0" }}>
+                ✕ Agotado
+              </p>
+            )}
           </div>
           <button
             onClick={() => onRemove(item.id)}
@@ -2908,6 +2937,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
   const [showDeliveryForm, setShowDeliveryForm]   = useState(false);
   const [deliveryStep, setDeliveryStep]           = useState(1);
   const [showOrderSuccess, setShowOrderSuccess]   = useState(false);
+  const [confetti, setConfetti]                   = useState(false);
   const [headerH, setHeaderH] = useState(0);
   const cartSwipeStartX = useRef(null);
 
@@ -3063,6 +3093,8 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
     setShowDeliveryForm(false);
     setDeliveryStep(1);
     setShowOrderSuccess(true);
+    setConfetti(true);
+    setTimeout(() => setConfetti(false), 3200);
     try { localStorage.removeItem("sk_delivery"); } catch {}
     setDeliveryForm(DELIVERY_DEFAULT);
   };
@@ -3342,6 +3374,23 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
         )}
 
         {/* Pantalla de éxito */}
+        {confetti && (
+          <div style={{ position: "absolute", inset: 0, zIndex: 25, pointerEvents: "none", overflow: "hidden" }}>
+            {Array.from({ length: 48 }).map((_, i) => {
+              const colors = ["#2563EB","#F59E0B","#EF4444","#16A34A","#7C3AED","#DB2777","#0891B2","#EA580C"];
+              const col = colors[i % colors.length];
+              const left = `${Math.random() * 100}%`;
+              const delay = `${Math.random() * 0.8}s`;
+              const dur = `${1.8 + Math.random() * 1.2}s`;
+              const size = 6 + Math.floor(Math.random() * 8);
+              const isRect = i % 3 !== 0;
+              return (
+                <div key={i} style={{ position: "absolute", top: "-20px", left, width: isRect ? size : size * 0.7, height: isRect ? size * 0.5 : size, borderRadius: isRect ? "2px" : "50%", background: col, animation: `confettiFall ${dur} ${delay} ease-in forwards` }} />
+              );
+            })}
+          </div>
+        )}
+
         {showOrderSuccess && (
           <div style={{ position: "absolute", inset: 0, zIndex: 20, background: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 24px", textAlign: "center", animation: "fadeInUp 0.3s ease" }}>
             <div style={{ fontSize: "64px", marginBottom: "20px" }}>🎉</div>
@@ -4788,6 +4837,12 @@ export default function App() {
   const [gridFading, setGridFading]           = useState(false);
 
   const handleCategoryChange = (id) => {
+    if (id !== activeCategory) {
+      const cat = ALL_CATEGORIES.find(c => c.id === id) ?? { label: id };
+      setCategoryToast(cat.label);
+      setTimeout(() => setCategoryToast(null), 1300);
+      document.querySelectorAll(".fade-in-up").forEach(el => el.classList.remove("visible"));
+    }
     setGridFading(true);
     setTimeout(() => { setActiveCategory(id); setGridFading(false); }, 120);
   };
@@ -4852,6 +4907,11 @@ export default function App() {
   const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [selectedIds, setSelectedIds]         = useState([]);
   const [showOrders, setShowOrders]           = useState(false);
+  const [darkMode, setDarkMode]               = useState(() => { try { return localStorage.getItem("sk_dark") === "1"; } catch { return false; } });
+  const [categoryToast, setCategoryToast]     = useState(null);
+  const [cartReminder, setCartReminder]       = useState(false);
+  const [isListening, setIsListening]         = useState(false);
+  const cartBtnTouchY                         = useRef(null);
   const sortedProductsRef                     = useRef([]);
 
   useEffect(() => {
@@ -4862,6 +4922,36 @@ export default function App() {
     window.addEventListener("offline", goOffline);
     return () => { window.removeEventListener("online", goOnline); window.removeEventListener("offline", goOffline); };
   }, []);
+
+  // Dark mode — persistir preferencia
+  useEffect(() => {
+    try { localStorage.setItem("sk_dark", darkMode ? "1" : "0"); } catch {}
+  }, [darkMode]);
+
+  // Recordatorio carrito abandonado
+  useEffect(() => {
+    if (cart.length > 0) {
+      try { localStorage.setItem("sk_cart_ts", String(Date.now())); } catch {}
+    }
+  }, [cart.length]);
+
+  useEffect(() => {
+    const checkReminder = () => {
+      if (cart.length === 0) return;
+      try {
+        const ts = parseInt(localStorage.getItem("sk_cart_ts") ?? "0", 10);
+        const shown = localStorage.getItem("sk_cart_remind");
+        if (!shown && Date.now() - ts > 15 * 60 * 1000) {
+          setCartReminder(true);
+          localStorage.setItem("sk_cart_remind", "1");
+          setTimeout(() => setCartReminder(false), 6000);
+        }
+      } catch {}
+    };
+    const handler = () => { if (document.visibilityState === "visible") checkReminder(); };
+    document.addEventListener("visibilitychange", handler);
+    return () => document.removeEventListener("visibilitychange", handler);
+  }, [cart.length]);
 
   // Back button cierra modales en móvil
   useEffect(() => {
@@ -4904,6 +4994,18 @@ export default function App() {
     observer.observe(el);
     return () => observer.disconnect();
   }, [visibleCount]);
+
+  const handleVoiceSearch = () => {
+    const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    if (!SR) return;
+    const rec = new SR();
+    rec.lang = "es-CO"; rec.interimResults = false; rec.maxAlternatives = 1;
+    setIsListening(true);
+    rec.start();
+    rec.onresult = (e) => { setSearchQuery(e.results[0][0].transcript); setIsListening(false); };
+    rec.onerror  = () => setIsListening(false);
+    rec.onend    = () => setIsListening(false);
+  };
 
   // Reset visibleCount y focusedCardIdx al cambiar filtros
   useEffect(() => { setVisibleCount(12); setFocusedCardIdx(-1); }, [activeCategory, searchQuery, sortBy, priceMin, priceMax]);
@@ -5032,7 +5134,7 @@ export default function App() {
     }, { threshold: 0.06 });
     cards.forEach(c => observer.observe(c));
     return () => observer.disconnect();
-  }, [sortedProducts.length]);
+  }, [sortedProducts.length, activeCategory, searchQuery]);
 
   useEffect(() => {
     if (displayProducts.length === 0) return;
@@ -5262,6 +5364,16 @@ export default function App() {
           0%   { background-position: -200% center; }
           100% { background-position:  200% center; }
         }
+        @keyframes confettiFall {
+          0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+          80%  { opacity: 1; }
+          100% { transform: translateY(520px) rotate(540deg); opacity: 0; }
+        }
+        /* ── Dark mode — inversión de color ── */
+        .dark { filter: invert(1) hue-rotate(180deg); }
+        .dark img,
+        .dark [class*="next-image"],
+        .dark video { filter: invert(1) hue-rotate(180deg); }
         @keyframes progressBar {
           0%   { width: 0%; opacity: 1; }
           80%  { width: 75%; opacity: 1; }
@@ -5609,7 +5721,26 @@ export default function App() {
         }
       `}</style>
 
-      <div style={{ minHeight: "100vh", background: "#FAF7F4" }}>
+      <div className={darkMode ? "dark" : ""} style={{ minHeight: "100vh", background: "#FAF7F4" }}>
+        {/* Toast de categoría activa */}
+        {categoryToast && (
+          <div style={{ position: "fixed", top: "72px", left: "50%", transform: "translateX(-50%)", zIndex: 1400, background: "rgba(15,23,42,0.88)", color: "#fff", padding: "7px 18px", borderRadius: "24px", fontFamily: F_UI, fontSize: "13px", fontWeight: 700, pointerEvents: "none", animation: "toastIn 0.2s ease", whiteSpace: "nowrap", backdropFilter: "blur(6px)" }}>
+            {categoryToast}
+          </div>
+        )}
+
+        {/* Recordatorio carrito abandonado */}
+        {cartReminder && (
+          <div style={{ position: "fixed", bottom: "88px", left: "12px", right: "12px", zIndex: 1300, background: "#1A1A1A", color: "#fff", borderRadius: "18px", padding: "14px 18px", display: "flex", alignItems: "center", gap: "12px", boxShadow: "0 8px 32px rgba(0,0,0,0.28)", animation: "slideUp 0.3s ease" }}>
+            <span style={{ fontSize: "24px" }}>🛒</span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontFamily: F_UI, fontSize: "13px", fontWeight: 700, margin: 0 }}>Tienes {cartCount} {cartCount === 1 ? "producto" : "productos"} en el carrito</p>
+              <p style={{ fontFamily: F_UI, fontSize: "11px", color: "#9B948E", margin: "2px 0 0" }}>¡No olvides completar tu pedido!</p>
+            </div>
+            <button onClick={() => { setShowCart(true); setCartReminder(false); }} style={{ background: CORAL, border: "none", borderRadius: "12px", padding: "8px 14px", fontFamily: F_UI, fontSize: "12px", fontWeight: 700, color: "#fff", cursor: "pointer", flexShrink: 0 }}>Ver →</button>
+          </div>
+        )}
+
         {/* Progress bar de carga */}
         {loadingProducts && (
           <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: "3px", zIndex: 2100, background: "#E2E8F0" }}>
@@ -5889,6 +6020,18 @@ export default function App() {
                 </button>
               )}
 
+              {/* Toggle dark mode */}
+              <button
+                onClick={() => setDarkMode(v => !v)}
+                title={darkMode ? "Modo claro" : "Modo oscuro"}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", background: darkMode ? "#1E293B" : "#F5F0EA", border: `1.5px solid ${darkMode ? "#334155" : "#EDE8E2"}`, borderRadius: "50%", width: "34px", height: "34px", cursor: "pointer", color: darkMode ? "#F59E0B" : "#9B948E", flexShrink: 0, transition: "all 0.2s" }}
+              >
+                {darkMode
+                  ? <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                  : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                }
+              </button>
+
               {/* Atajos de teclado — solo desktop */}
               <button
                 onClick={() => setShowShortcuts(true)}
@@ -6011,6 +6154,11 @@ export default function App() {
             <div ref={loadMoreRef} style={{ display: "flex", justifyContent: "center", padding: "20px 0 4px" }}>
               <div className="skeleton" style={{ width: "140px", height: "18px", borderRadius: "10px" }} />
             </div>
+          )}
+          {!loadingProducts && sortedProducts.length > 0 && (
+            <p style={{ textAlign: "center", padding: "10px 0 2px", fontFamily: F_UI, fontSize: "12px", color: "#C0B8B0" }}>
+              Viendo {Math.min(visibleCount, sortedProducts.length)} de {sortedProducts.length} {sortedProducts.length === 1 ? "producto" : "productos"}
+            </p>
           )}
           </div>
 
@@ -6149,6 +6297,18 @@ export default function App() {
                     </button>
                   )}
                 </div>
+                <button
+                  onClick={handleVoiceSearch}
+                  title="Buscar por voz"
+                  style={{ background: isListening ? CORAL : "#F0F4FF", border: `1.5px solid ${isListening ? CORAL : "#E2E8F0"}`, borderRadius: "50%", width: "42px", height: "42px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "all 0.2s", animation: isListening ? "pulse-dot 1s ease infinite" : "none" }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isListening ? "#fff" : CORAL} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" y1="19" x2="12" y2="23"/>
+                    <line x1="8" y1="23" x2="16" y2="23"/>
+                  </svg>
+                </button>
                 <button
                   onClick={() => setShowMobileSearch(false)}
                   style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", fontWeight: 600, color: CORAL, padding: "4px 6px", flexShrink: 0 }}
@@ -6385,6 +6545,8 @@ export default function App() {
             </button>
             <button
               onClick={() => setShowCart(true)}
+              onTouchStart={(e) => { cartBtnTouchY.current = e.touches[0].clientY; }}
+              onTouchEnd={(e) => { if (cartBtnTouchY.current !== null && e.changedTouches[0].clientY - cartBtnTouchY.current < -40) setShowCart(true); cartBtnTouchY.current = null; }}
               style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "3px", background: "none", border: "none", cursor: "pointer", padding: "6px 16px", position: "relative", flex: 1, color: "#6B6560" }}
             >
               <ShoppingBag size={22} strokeWidth={1.8} />
