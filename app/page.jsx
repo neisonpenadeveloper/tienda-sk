@@ -3770,10 +3770,64 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
     setTimeout(() => setAdded(false), 2200);
   };
 
-  const handleShare = () => {
-    const url  = `${window.location.origin}/producto/${product.id}`;
-    const text = `¡Mira este producto! *${product.name}* — ${fmt(product.price)} 🛍️\n${url}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+  const handleShare = async () => {
+    const url     = `${window.location.origin}/producto/${product.id}`;
+    const caption = `¡Mira este producto! *${product.name}* — ${fmt(product.price)} 🛍️\n${url}`;
+    const imgUrl  = imgs?.[selectedImg] ?? imgs?.[0];
+
+    // Intenta crear imagen compuesta (foto + info) para compartir directamente
+    if (imgUrl && navigator.share && navigator.canShare) {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1080; canvas.height = 1350;
+        const ctx = canvas.getContext("2d");
+
+        // Fondo oscuro
+        ctx.fillStyle = "#0F172A";
+        ctx.fillRect(0, 0, 1080, 1350);
+
+        // Foto del producto (parte superior)
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = imgUrl; });
+        const side = 1080;
+        const sx = img.width > img.height ? (img.width - img.height) / 2 : 0;
+        const sy = img.height > img.width  ? (img.height - img.width) / 2 : 0;
+        const sz = Math.min(img.width, img.height);
+        ctx.drawImage(img, sx, sy, sz, sz, 0, 0, side, side);
+
+        // Franja info
+        ctx.fillStyle = "#0F172A";
+        ctx.fillRect(0, 1080, 1080, 270);
+
+        // Nombre
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 46px sans-serif";
+        const name = product.name.length > 30 ? product.name.slice(0, 30) + "…" : product.name;
+        ctx.fillText(name, 40, 1160);
+
+        // Precio
+        ctx.fillStyle = "#2563EB";
+        ctx.font = "bold 58px sans-serif";
+        ctx.fillText(fmt(product.price), 40, 1240);
+
+        // URL pequeño
+        ctx.fillStyle = "#475569";
+        ctx.font = "26px sans-serif";
+        ctx.fillText("tiendasyk.store", 40, 1310);
+
+        const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", 0.88));
+        const file = new File([blob], "producto.jpg", { type: "image/jpeg" });
+        const fp   = { files: [file] };
+        if (navigator.canShare(fp)) {
+          await navigator.share(fp).catch(() => {});
+          return;
+        }
+      } catch { /* canvas fallido — continúa */ }
+    }
+
+    // Fallback: abrir WhatsApp con el texto
+    window.open(`https://wa.me/?text=${encodeURIComponent(caption)}`, "_blank");
   };
 
   const applyImgTransform = (scale, offset, transition = "none") => {
