@@ -2281,16 +2281,12 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
   };
 
   const handleLongPressStart = () => {
-    longPressTimer.current = setTimeout(async () => {
+    longPressTimer.current = setTimeout(() => {
       if (navigator.vibrate) navigator.vibrate(60);
       setLongPressActive(true);
       const url  = `${window.location.origin}/producto/${product.id}`;
       const text = `¡Mira este producto! *${product.name}* — ${fmt(product.price)} 🛍️\n${url}`;
-      if (navigator.share && navigator.canShare?.({ text })) {
-        await navigator.share({ title: product.name, text }).catch(() => {});
-      } else {
-        await navigator.clipboard.writeText(text).catch(() => {});
-      }
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
       setTimeout(() => setLongPressActive(false), 1000);
     }, 500);
   };
@@ -3774,19 +3770,10 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
     setTimeout(() => setAdded(false), 2200);
   };
 
-  const handleShare = async () => {
+  const handleShare = () => {
     const url  = `${window.location.origin}/producto/${product.id}`;
     const text = `¡Mira este producto! *${product.name}* — ${fmt(product.price)} 🛍️\n${url}`;
-
-    if (navigator.share && navigator.canShare?.({ text })) {
-      await navigator.share({ title: product.name, text }).catch(() => {});
-      return;
-    }
-
-    // Fallback: copiar al portapapeles
-    await navigator.clipboard.writeText(text).catch(() => {});
-    setShared(true);
-    setTimeout(() => setShared(false), 2200);
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
   const applyImgTransform = (scale, offset, transition = "none") => {
