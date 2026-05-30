@@ -3616,6 +3616,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const [added, setAdded]                 = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shared, setShared]               = useState(false);
+  const [shareToast, setShareToast]       = useState(false);
   const [showQtyPicker, setShowQtyPicker] = useState(false);
   const [qtyPick, setQtyPick]             = useState(1);
   const [toggleLoading, setToggleLoading] = useState(false);
@@ -3784,11 +3785,16 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
         const ext  = mime.includes("png") ? "png" : mime.includes("webp") ? "webp" : "jpg";
         const file = new File([blob], `producto.${ext}`, { type: mime });
         await navigator.share({ files: [file] });
+        // Share exitoso — copiar link (iOS no pasa text con files)
         navigator.clipboard?.writeText(url).catch(() => {});
         setShared(true);
         setTimeout(() => setShared(false), 2500);
+        setShareToast(true);
+        setTimeout(() => setShareToast(false), 5000);
         return;
-      } catch { /* share falló — continúa al fallback */ }
+      } catch (e) {
+        if (e?.name === "AbortError") return; // usuario canceló el share sheet
+      }
     }
 
     // Fallback: abrir WhatsApp con el texto
@@ -4015,6 +4021,12 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
           </div>
         )}
 
+        {/* ── Toast "link copiado" tras compartir foto ── */}
+        {shareToast && (
+          <div style={{ position: "absolute", top: isMobile ? "56px" : "16px", left: "50%", transform: "translateX(-50%)", zIndex: 50, background: "#16A34A", color: "#fff", padding: "10px 20px", borderRadius: "24px", fontSize: "13px", fontWeight: 700, fontFamily: "var(--font-roboto), sans-serif", whiteSpace: "nowrap", pointerEvents: "none", boxShadow: "0 4px 16px rgba(22,163,74,0.4)", animation: "toastIn 0.25s ease" }}>
+            📋 Link copiado — pégalo también en WhatsApp
+          </div>
+        )}
 
         {/* ── Sticky buy bar (solo móvil, aparece al scrollear) ── */}
         {isMobile && (
