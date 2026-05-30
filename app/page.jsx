@@ -3634,6 +3634,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const [added, setAdded]                 = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shared, setShared]               = useState(false);
+  const [shareMsg, setShareMsg]           = useState("");
   const [showQtyPicker, setShowQtyPicker] = useState(false);
   const [qtyPick, setQtyPick]             = useState(1);
   const [toggleLoading, setToggleLoading] = useState(false);
@@ -3803,6 +3804,9 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
           const fp   = { files: [file], text: `${text}\n${url}` };
           if (navigator.canShare(fp)) {
             await navigator.share(fp).catch(() => {});
+            await navigator.clipboard.writeText(url).catch(() => {});
+            setShareMsg("Link copiado 📋 · Pégalo en el mensaje");
+            setTimeout(() => setShareMsg(""), 3500);
             return;
           }
         } catch { /* CORS o red — continúa */ }
@@ -4036,6 +4040,13 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
         {isMobile && (
           <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 2px", flexShrink: 0 }}>
             <div style={{ width: "36px", height: "4px", borderRadius: "2px", background: "#D0C8BF" }} />
+          </div>
+        )}
+
+        {/* ── Toast "link copiado" tras compartir imagen ── */}
+        {shareMsg && (
+          <div style={{ position: "absolute", top: isMobile ? "52px" : "16px", left: "50%", transform: "translateX(-50%)", zIndex: 30, background: "rgba(15,23,42,0.92)", color: "#fff", padding: "8px 18px", borderRadius: "20px", fontSize: "13px", fontWeight: 600, fontFamily: "var(--font-roboto), sans-serif", whiteSpace: "nowrap", pointerEvents: "none", animation: "toastIn 0.25s ease" }}>
+            {shareMsg}
           </div>
         )}
 
