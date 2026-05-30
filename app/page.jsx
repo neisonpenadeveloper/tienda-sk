@@ -3786,10 +3786,13 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
         ctx.fillStyle = "#0F172A";
         ctx.fillRect(0, 0, 1080, 1350);
 
-        // Foto del producto (parte superior)
+        // Fetch imagen via mismo dominio para evitar CORS en canvas
+        const proxyUrl = `${window.location.origin}/api/og-img/${product.id}`;
+        const imgBlob  = await fetch(proxyUrl).then(r => r.blob());
+        const blobUrl  = URL.createObjectURL(imgBlob);
         const img = new Image();
-        img.crossOrigin = "anonymous";
-        await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = imgUrl; });
+        await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = blobUrl; });
+        URL.revokeObjectURL(blobUrl);
         const side = 1080;
         const sx = img.width > img.height ? (img.width - img.height) / 2 : 0;
         const sy = img.height > img.width  ? (img.height - img.width) / 2 : 0;
