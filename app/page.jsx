@@ -2284,14 +2284,27 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
     longPressTimer.current = setTimeout(async () => {
       if (navigator.vibrate) navigator.vibrate(60);
       setLongPressActive(true);
-      const url  = `${window.location.origin}/producto/${product.id}`;
-      const text = `¡Mira este producto! *${product.name}* — ${fmt(product.price)} 🛍️`;
-      const payload = { title: product.name, text, url };
-      if (navigator.share && navigator.canShare?.(payload)) {
-        await navigator.share(payload).catch(() => {});
-      } else {
-        await navigator.clipboard.writeText(`${text}\n${url}`).catch(() => {});
+      const url    = `${window.location.origin}/producto/${product.id}`;
+      const text   = `¡Mira este producto! *${product.name}* — ${fmt(product.price)} 🛍️`;
+      const imgUrl = product.images?.[0];
+      let shared   = false;
+      if (navigator.share) {
+        if (imgUrl && navigator.canShare) {
+          try {
+            const res  = await fetch(imgUrl);
+            const blob = await res.blob();
+            const ext  = blob.type === "image/png" ? "png" : "jpg";
+            const file = new File([blob], `producto.${ext}`, { type: blob.type });
+            const fp   = { files: [file], text: `${text}\n${url}` };
+            if (navigator.canShare(fp)) { await navigator.share(fp).catch(() => {}); shared = true; }
+          } catch { /* continúa */ }
+        }
+        if (!shared) {
+          const payload = { title: product.name, text, url };
+          if (navigator.canShare?.(payload)) { await navigator.share(payload).catch(() => {}); shared = true; }
+        }
       }
+      if (!shared) await navigator.clipboard.writeText(`${text}\n${url}`).catch(() => {});
       setTimeout(() => setLongPressActive(false), 1000);
     }, 500);
   };
@@ -3776,16 +3789,34 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   };
 
   const handleShare = async () => {
-    const url     = `${window.location.origin}/producto/${product.id}`;
-    const text    = `¡Mira este producto! *${product.name}* — ${fmt(product.price)} 🛍️`;
-    const payload = { title: product.name, text, url };
-    if (navigator.share && navigator.canShare?.(payload)) {
-      await navigator.share(payload).catch(() => {});
-    } else {
-      await navigator.clipboard.writeText(`${text}\n${url}`).catch(() => {});
-      setShared(true);
-      setTimeout(() => setShared(false), 2200);
+    const url  = `${window.location.origin}/producto/${product.id}`;
+    const text = `¡Mira este producto! *${product.name}* — ${fmt(product.price)} 🛍️`;
+
+    if (navigator.share) {
+      const imgUrl = imgs?.[selectedImg] ?? imgs?.[0];
+      if (imgUrl && navigator.canShare) {
+        try {
+          const res  = await fetch(imgUrl);
+          const blob = await res.blob();
+          const ext  = blob.type === "image/png" ? "png" : "jpg";
+          const file = new File([blob], `producto.${ext}`, { type: blob.type });
+          const fp   = { files: [file], text: `${text}\n${url}` };
+          if (navigator.canShare(fp)) {
+            await navigator.share(fp).catch(() => {});
+            return;
+          }
+        } catch { /* CORS o red — continúa */ }
+      }
+      const payload = { title: product.name, text, url };
+      if (navigator.canShare?.(payload)) {
+        await navigator.share(payload).catch(() => {});
+        return;
+      }
     }
+
+    await navigator.clipboard.writeText(`${text}\n${url}`).catch(() => {});
+    setShared(true);
+    setTimeout(() => setShared(false), 2200);
   };
 
   const applyImgTransform = (scale, offset, transition = "none") => {
