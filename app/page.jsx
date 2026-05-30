@@ -3778,22 +3778,44 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
 
     if (imgUrl && navigator.share) {
       try {
-        // Proxy mismo dominio → evita problemas CORS de cache del browser
+        // 1. Fetch imagen via proxy (mismo dominio, sin CORS cache)
         const proxyUrl = `${window.location.origin}/api/og-img/${product.id}?_t=${Date.now()}`;
-        const blob = await fetch(proxyUrl).then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); });
-        const mime = blob.type || "image/webp";
-        const ext  = mime.includes("png") ? "png" : mime.includes("webp") ? "webp" : "jpg";
-        const file = new File([blob], `producto.${ext}`, { type: mime });
+        const imgBlob  = await fetch(proxyUrl).then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); });
+
+        // 2. Dibujar imagen compuesta: foto + nombre + precio + URL
+        const blobUrl = URL.createObjectURL(imgBlob);
+        const canvas  = document.createElement("canvas");
+        canvas.width  = 1080;
+        canvas.height = 1350;
+        const ctx     = canvas.getContext("2d");
+        ctx.fillStyle = "#0F172A";
+        ctx.fillRect(0, 0, 1080, 1350);
+
+        const img = new Image();
+        await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = blobUrl; });
+        URL.revokeObjectURL(blobUrl);
+        const sz = Math.min(img.width, img.height);
+        ctx.drawImage(img, (img.width - sz) / 2, (img.height - sz) / 2, sz, sz, 0, 0, 1080, 1080);
+
+        ctx.fillStyle = "#0F172A";
+        ctx.fillRect(0, 1080, 1080, 270);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 44px sans-serif";
+        ctx.fillText(product.name.length > 32 ? product.name.slice(0, 32) + "…" : product.name, 40, 1158);
+        ctx.fillStyle = "#2563EB";
+        ctx.font = "bold 54px sans-serif";
+        ctx.fillText(fmt(product.price), 40, 1236);
+        ctx.fillStyle = "#94A3B8";
+        ctx.font = "24px sans-serif";
+        ctx.fillText("tiendasyk.store  ·  " + url.replace("https://", ""), 40, 1308);
+
+        // 3. Convertir a JPEG y compartir
+        const jpeg = await new Promise(res => canvas.toBlob(res, "image/jpeg", 0.88));
+        const file = new File([jpeg], "producto.jpg", { type: "image/jpeg" });
         await navigator.share({ files: [file] });
-        // Share exitoso — copiar link (iOS no pasa text con files)
-        navigator.clipboard?.writeText(url).catch(() => {});
-        setShared(true);
-        setTimeout(() => setShared(false), 2500);
-        setShareToast(true);
-        setTimeout(() => setShareToast(false), 5000);
         return;
       } catch (e) {
-        if (e?.name === "AbortError") return; // usuario canceló el share sheet
+        if (e?.name === "AbortError") return;
       }
     }
 
