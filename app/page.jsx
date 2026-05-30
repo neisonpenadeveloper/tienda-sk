@@ -1144,6 +1144,7 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
               <Search size={18} />
             </button>
             <button
+              id="cart-icon-btn"
               onClick={onCartOpen}
               className={cartBounce ? "cart-bounce" : ""}
               style={{ position: "relative", background: "none", border: "none", cursor: "pointer", color: "#6B6560", padding: "8px" }}
@@ -2201,7 +2202,7 @@ function ProductListRow({ product, onAddToCart, wishlisted, onWishlist, onSelect
 }
 
 // ─── PRODUCT CARD ─────────────────────────────────────────────────────────────
-function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, user, onDelete, onEdit }) {
+function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, user, onDelete, onEdit, onContextMenu }) {
   const [added, setAdded]             = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [longPressActive, setLongPressActive] = useState(false);
@@ -2213,7 +2214,7 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
 
   const handleAdd = (e) => {
     e.stopPropagation();
-    onAddToCart(product);
+    onAddToCart(product, e.currentTarget.closest(".product-card"));
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
   };
@@ -2253,6 +2254,7 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
       onTouchStart={handleLongPressStart}
       onTouchEnd={handleCardTouchEnd}
       onTouchMove={handleLongPressEnd}
+      onContextMenu={(e) => { if (onContextMenu) { e.preventDefault(); onContextMenu(e, product); } }}
       className="product-card"
       style={{ background: "#fff", borderRadius: "18px", overflow: "hidden", border: longPressActive ? `2px solid ${CORAL}` : "1px solid #EDE8E2", transition: "border 0.15s", transform: longPressActive ? "scale(0.97)" : "scale(1)" }}
     >
@@ -2334,6 +2336,9 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
         >
           <Heart size={15} fill={wishlisted ? CORAL : "none"} />
         </button>
+        <div className="pc-zoom-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={CORAL} strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        </div>
       </div>
 
       <div className="pc-body" style={{ padding: "16px" }}>
@@ -4689,6 +4694,14 @@ export default function App() {
   const wasModalOpen                          = useRef(false);
   const catSwipeStartX                        = useRef(null);
   const catSwipeStartY                        = useRef(null);
+  const [priceMin, setPriceMin]               = useState("");
+  const [priceMax, setPriceMax]               = useState("");
+  const [gridCols, setGridCols]               = useState(4);
+  const [focusedCardIdx, setFocusedCardIdx]   = useState(-1);
+  const [showShortcuts, setShowShortcuts]     = useState(false);
+  const [contextMenu, setContextMenu]         = useState(null);
+  const [flyCart, setFlyCart]                 = useState(null);
+  const sortedProductsRef                     = useRef([]);
 
   useEffect(() => {
     setIsOnline(navigator.onLine);
@@ -4741,8 +4754,8 @@ export default function App() {
     return () => observer.disconnect();
   }, [visibleCount]);
 
-  // Reset visibleCount al cambiar categoría/búsqueda/orden
-  useEffect(() => { setVisibleCount(12); }, [activeCategory, searchQuery, sortBy]);
+  // Reset visibleCount y focusedCardIdx al cambiar filtros
+  useEffect(() => { setVisibleCount(12); setFocusedCardIdx(-1); }, [activeCategory, searchQuery, sortBy, priceMin, priceMax]);
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -4831,8 +4844,13 @@ export default function App() {
       }))
     : PRODUCTS;
 
+  const priceMinN = priceMin ? parseInt(priceMin, 10) : null;
+  const priceMaxN = priceMax ? parseInt(priceMax, 10) : null;
+
   const filteredProducts = displayProducts.filter(p => {
     if (!isAdmin && !p.is_active) return false;
+    if (priceMinN !== null && p.price < priceMinN) return false;
+    if (priceMaxN !== null && p.price > priceMaxN) return false;
     const q = searchQuery.trim().toLowerCase();
     if (q) {
       return (
@@ -4854,6 +4872,7 @@ export default function App() {
     if (!a.created_at || !b.created_at) return 0;
     return new Date(b.created_at) - new Date(a.created_at);
   });
+  sortedProductsRef.current = sortedProducts;
 
   useEffect(() => {
     const cards = document.querySelectorAll(".fade-in-up");
@@ -4876,24 +4895,44 @@ export default function App() {
     }
   }, [displayProducts.length]);
 
-  // Atajos de teclado globales
+  // Atajos de teclado globales + navegación con teclado en el grid
   useEffect(() => {
     const handler = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
       const isTyping = tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
-      if (e.key === "/" && !isTyping) {
-        e.preventDefault();
-        document.getElementById("main-search-input")?.focus();
-      }
+
+      if (e.key === "/" && !isTyping) { e.preventDefault(); document.getElementById("main-search-input")?.focus(); return; }
+      if (e.key === "?" && !isTyping) { setShowShortcuts(v => !v); return; }
+
       if (e.key === "Escape") {
-        if (selectedProduct) { setSelectedProduct(null); return; }
-        if (showCart) { setShowCart(false); return; }
-        if (searchQuery) { setSearchQuery(""); return; }
+        if (showShortcuts)         { setShowShortcuts(false); return; }
+        if (contextMenu)           { setContextMenu(null); return; }
+        if (selectedProduct)       { setSelectedProduct(null); return; }
+        if (showCart)              { setShowCart(false); return; }
+        if (searchQuery)           { setSearchQuery(""); return; }
+        if (focusedCardIdx >= 0)   { setFocusedCardIdx(-1); return; }
+      }
+
+      if (!isTyping && !selectedProduct && !showCart && !showMobileSearch && viewMode === "grid") {
+        const maxIdx = sortedProductsRef.current.length - 1;
+        if (e.key === "ArrowRight") { e.preventDefault(); setFocusedCardIdx(i => i < 0 ? 0 : Math.min(i + 1, maxIdx)); return; }
+        if (e.key === "ArrowLeft")  { e.preventDefault(); setFocusedCardIdx(i => i < 0 ? 0 : Math.max(i - 1, 0)); return; }
+        if (e.key === "ArrowDown")  { e.preventDefault(); setFocusedCardIdx(i => i < 0 ? 0 : Math.min(i + gridCols, maxIdx)); return; }
+        if (e.key === "ArrowUp")    { e.preventDefault(); setFocusedCardIdx(i => i < 0 ? 0 : Math.max(i - gridCols, 0)); return; }
+
+        if (focusedCardIdx >= 0) {
+          const fp = sortedProductsRef.current[focusedCardIdx];
+          if (fp) {
+            if (e.key === "Enter")                        { setSelectedProduct(fp); return; }
+            if ((e.key === "a" || e.key === "A") && !isTyping) { handleAddToCart(fp); e.preventDefault(); return; }
+            if ((e.key === "f" || e.key === "F") && !isTyping) { toggleWishlist(fp.id); e.preventDefault(); return; }
+          }
+        }
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [selectedProduct, showCart, searchQuery]);
+  }, [selectedProduct, showCart, searchQuery, showShortcuts, contextMenu, focusedCardIdx, gridCols, viewMode, showMobileSearch]);
 
   // Guarda producto en "vistos recientemente" cuando se abre el modal
   useEffect(() => {
@@ -4911,7 +4950,7 @@ export default function App() {
     categories: new Set(dbProducts.map(p => p.category)).size,
   };
 
-  const handleAddToCart = (product) => {
+  const handleAddToCart = (product, fromEl = null) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
@@ -4927,6 +4966,24 @@ export default function App() {
     setTimeout(() => setCartBounce(false), 600);
     setCartToast(product.name);
     setTimeout(() => setCartToast(null), 2500);
+
+    if (fromEl && window.innerWidth > 800) {
+      const from = fromEl.getBoundingClientRect();
+      const cartBtn = document.getElementById("cart-icon-btn");
+      const to = cartBtn?.getBoundingClientRect();
+      if (to) {
+        setFlyCart({
+          fromX: from.left + from.width / 2,
+          fromY: from.top + from.height / 2,
+          dx: (to.left + to.width / 2) - (from.left + from.width / 2),
+          dy: (to.top + to.height / 2) - (from.top + from.height / 2),
+          src: product.images?.[0] ?? null,
+          emoji: product.emoji,
+          key: Date.now(),
+        });
+        setTimeout(() => setFlyCart(null), 720);
+      }
+    }
   };
 
   const handleDeleteProduct = async (productId) => {
@@ -5030,6 +5087,33 @@ export default function App() {
           70%  { opacity: 0.9; transform: scale(0.9); }
           100% { opacity: 0; transform: scale(1.1); }
         }
+        @keyframes flyToCart {
+          0%   { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+          75%  { opacity: 0.85; transform: translate(calc(var(--fly-dx) - 50%), calc(var(--fly-dy) - 50%)) scale(0.3); }
+          100% { opacity: 0;  transform: translate(calc(var(--fly-dx) - 50%), calc(var(--fly-dy) - 50%)) scale(0.05); }
+        }
+        @keyframes shortcutsIn {
+          from { opacity: 0; transform: scale(0.95) translateY(-8px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        /* ── Zoom icon en product card ── */
+        .pc-zoom-icon {
+          position: absolute; bottom: 8px; right: 8px; z-index: 4;
+          background: rgba(255,255,255,0.92); border-radius: 50%;
+          width: 28px; height: 28px;
+          display: flex; align-items: center; justify-content: center;
+          opacity: 0; transition: opacity 0.2s ease;
+          pointer-events: none;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        }
+        @media (max-width: 800px) { .pc-zoom-icon { display: none !important; } }
+        /* ── Densidad de columnas (desktop) ── */
+        @media (min-width: 801px) {
+          .grid-cols-2 .grid-products { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+          .grid-cols-3 .grid-products { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+          .grid-cols-4 .grid-products { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+          .grid-cols-5 .grid-products { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
+        }
         @keyframes pulse-dot {
           0%,100% { box-shadow: 0 0 0 0 rgba(37,99,235,0.55); }
           60%     { box-shadow: 0 0 0 7px rgba(37,99,235,0); }
@@ -5089,8 +5173,9 @@ export default function App() {
             transform: translateY(-8px) scale(1.01);
             box-shadow: 0 24px 56px rgba(26,26,26,0.14) !important;
           }
-          .product-card:hover .pc-img { transform: scale(1.09); }
+          .product-card:hover .pc-img { transform: scale(1.18); }
           .product-card:hover .pc-overlay { transform: translateY(0); }
+          .product-card:hover .pc-zoom-icon { opacity: 1; }
         }
         .pc-img {
           width: 100%; height: 100%; object-fit: cover;
@@ -5510,7 +5595,32 @@ export default function App() {
                 return acc;
               }, {})}
             />
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, flexWrap: "wrap" }}>
+              {/* Filtro de precio — solo desktop */}
+              <div className="hidden md:flex" style={{ alignItems: "center", gap: "6px", background: "#F5F0EA", border: "1.5px solid #EDE8E2", borderRadius: "20px", padding: "5px 12px" }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9B948E" strokeWidth="2.2" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <input
+                  type="number"
+                  placeholder="Mín"
+                  value={priceMin}
+                  onChange={e => setPriceMin(e.target.value)}
+                  style={{ width: "56px", border: "none", background: "transparent", outline: "none", fontFamily: F_UI, fontSize: "12px", color: "#1A1A1A", appearance: "textfield" }}
+                />
+                <span style={{ color: "#C0B8B0", fontSize: "11px" }}>—</span>
+                <input
+                  type="number"
+                  placeholder="Máx"
+                  value={priceMax}
+                  onChange={e => setPriceMax(e.target.value)}
+                  style={{ width: "56px", border: "none", background: "transparent", outline: "none", fontFamily: F_UI, fontSize: "12px", color: "#1A1A1A", appearance: "textfield" }}
+                />
+                {(priceMin || priceMax) && (
+                  <button onClick={() => { setPriceMin(""); setPriceMax(""); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "0 2px", display: "flex", alignItems: "center" }}>
+                    <X size={11} color="#9B948E" />
+                  </button>
+                )}
+              </div>
+
               {/* Toggle vista grilla/lista — solo desktop */}
               <div className="view-toggle-wrap" style={{ display: "flex", background: "#F5F0EA", border: "1.5px solid #EDE8E2", borderRadius: "20px", overflow: "hidden" }}>
                 <button
@@ -5528,6 +5638,23 @@ export default function App() {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                 </button>
               </div>
+
+              {/* Densidad de columnas — solo desktop, solo en vista grid */}
+              {viewMode === "grid" && (
+                <div className="hidden md:flex" style={{ alignItems: "center", background: "#F5F0EA", border: "1.5px solid #EDE8E2", borderRadius: "20px", overflow: "hidden" }}>
+                  {[3,4,5].map(n => (
+                    <button
+                      key={n}
+                      onClick={() => setGridCols(n)}
+                      title={`${n} columnas`}
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "7px 11px", border: "none", cursor: "pointer", background: gridCols === n ? CORAL : "transparent", color: gridCols === n ? "#fff" : "#9B948E", transition: "all 0.18s ease", fontFamily: F_UI, fontSize: "11px", fontWeight: 700, minWidth: "34px" }}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <button
                 onClick={() => setShowSortSheet(true)}
                 style={{
@@ -5540,6 +5667,18 @@ export default function App() {
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
                 {{ newest: "Más recientes", price_asc: "Menor precio", price_desc: "Mayor precio" }[sortBy]}
                 <ChevronDown size={12} color="#9B948E" />
+              </button>
+
+              {/* Atajos de teclado — solo desktop */}
+              <button
+                onClick={() => setShowShortcuts(true)}
+                title="Ver atajos de teclado (?)"
+                className="hidden md:flex"
+                style={{ alignItems: "center", justifyContent: "center", background: "#F5F0EA", border: "1.5px solid #EDE8E2", borderRadius: "50%", width: "34px", height: "34px", cursor: "pointer", color: "#9B948E", flexShrink: 0, transition: "background 0.15s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#EDE8E2"}
+                onMouseLeave={e => e.currentTarget.style.background = "#F5F0EA"}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
               </button>
             </div>
           </div>
@@ -5580,6 +5719,7 @@ export default function App() {
           )}
 
           <div
+            className={viewMode === "grid" ? `grid-cols-${gridCols}` : ""}
             style={{ transition: "opacity 0.15s ease", opacity: gridFading ? 0 : 1 }}
             onTouchStart={(e) => { catSwipeStartX.current = e.touches[0].clientX; catSwipeStartY.current = e.touches[0].clientY; }}
             onTouchEnd={(e) => {
@@ -5623,16 +5763,21 @@ export default function App() {
           ) : (
             <div className="grid-products">
               {sortedProducts.slice(0, visibleCount).map((product, idx) => (
-                <div key={product.id} className="fade-in-up" style={{ transitionDelay: `${Math.min(idx % 8 * 0.06, 0.36)}s` }}>
+                <div
+                  key={product.id}
+                  className="fade-in-up"
+                  style={{ transitionDelay: `${Math.min(idx % 8 * 0.06, 0.36)}s`, borderRadius: "20px", outline: focusedCardIdx === idx ? `2.5px solid ${CORAL}` : "none", outlineOffset: "2px" }}
+                >
                   <ProductCard
                     product={product}
                     onAddToCart={handleAddToCart}
                     wishlisted={wishlist.includes(product.id)}
                     onWishlist={toggleWishlist}
-                    onSelect={setSelectedProduct}
+                    onSelect={(p) => { setSelectedProduct(p); setFocusedCardIdx(-1); }}
                     user={user}
                     onDelete={handleDeleteProduct}
                     onEdit={setEditingProduct}
+                    onContextMenu={isAdmin ? (e, p) => setContextMenu({ x: e.clientX, y: e.clientY, product: p }) : undefined}
                   />
                 </div>
               ))}
@@ -5721,21 +5866,27 @@ export default function App() {
 
         {/* Toast "Añadido al carrito" */}
         {cartToast && (
-          <div style={{
-            position: "fixed", bottom: "76px", left: "50%", transform: "translateX(-50%)",
-            zIndex: 1500, background: "#1A1A1A", color: "#fff",
-            padding: "11px 18px", borderRadius: "28px",
-            display: "flex", alignItems: "center", gap: "10px",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
-            animation: "toastIn 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-            fontFamily: "var(--font-roboto), sans-serif", fontSize: "13.5px", fontWeight: 600,
-            whiteSpace: "nowrap", maxWidth: "calc(100vw - 40px)", pointerEvents: "none",
-          }}>
+          <div
+            onClick={() => setShowCart(true)}
+            style={{
+              position: "fixed", bottom: "76px", left: "50%", transform: "translateX(-50%)",
+              zIndex: 1500, background: "#1A1A1A", color: "#fff",
+              padding: "11px 18px", borderRadius: "28px",
+              display: "flex", alignItems: "center", gap: "10px",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
+              animation: "toastIn 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+              fontFamily: "var(--font-roboto), sans-serif", fontSize: "13.5px", fontWeight: 600,
+              whiteSpace: "nowrap", maxWidth: "calc(100vw - 40px)", pointerEvents: "auto", cursor: "pointer",
+            }}
+          >
             <div style={{ width: "20px", height: "20px", borderRadius: "50%", background: "#16A34A", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <Check size={12} color="#fff" strokeWidth={3} />
             </div>
             <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
               {cartToast.length > 30 ? cartToast.slice(0, 30) + "…" : cartToast} · añadido
+            </span>
+            <span style={{ background: "rgba(255,255,255,0.15)", borderRadius: "16px", padding: "3px 10px", fontSize: "12px", fontWeight: 700, flexShrink: 0 }}>
+              Ver carrito →
             </span>
           </div>
         )}
@@ -5820,6 +5971,97 @@ export default function App() {
               </div>
             </div>
           </>
+        )}
+
+        {/* Modal de atajos de teclado */}
+        {showShortcuts && (
+          <>
+            <div onClick={() => setShowShortcuts(false)} style={{ position: "fixed", inset: 0, zIndex: 1300, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }} />
+            <div style={{
+              position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+              zIndex: 1301, background: "#fff", borderRadius: "20px",
+              padding: "28px 32px", width: "min(480px, 92vw)",
+              boxShadow: "0 24px 64px rgba(0,0,0,0.22)",
+              animation: "shortcutsIn 0.2s ease",
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                <h3 style={{ fontFamily: F_UI, fontSize: "17px", fontWeight: 800, color: "#1A1A1A", margin: 0 }}>Atajos de teclado</h3>
+                <button onClick={() => setShowShortcuts(false)} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px" }}><X size={18} color="#9B948E" /></button>
+              </div>
+              {[
+                { group: "Navegación" },
+                { key: "/",         desc: "Enfocar la búsqueda" },
+                { key: "Esc",       desc: "Cerrar modal / limpiar búsqueda" },
+                { key: "?",         desc: "Mostrar / ocultar esta pantalla" },
+                { group: "Grid de productos" },
+                { key: "← → ↑ ↓",  desc: "Navegar entre tarjetas" },
+                { key: "Enter",     desc: "Abrir producto seleccionado" },
+                { key: "A",         desc: "Añadir al carrito" },
+                { key: "F",         desc: "Agregar / quitar de favoritos" },
+              ].map((item, i) => item.group ? (
+                <p key={i} style={{ fontFamily: F_UI, fontSize: "10px", fontWeight: 800, color: "#9B948E", textTransform: "uppercase", letterSpacing: "1px", margin: i === 0 ? "0 0 8px" : "16px 0 8px" }}>{item.group}</p>
+              ) : (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderTop: "1px solid #F5F0EA" }}>
+                  <span style={{ fontFamily: F_UI, fontSize: "13px", color: "#4A4A4A" }}>{item.desc}</span>
+                  <kbd style={{ fontFamily: "monospace", fontSize: "12px", fontWeight: 700, background: "#F5F0EA", border: "1px solid #EDE8E2", borderRadius: "6px", padding: "3px 8px", color: "#1A1A1A", boxShadow: "0 1px 0 #D0C8BF", whiteSpace: "nowrap" }}>{item.key}</kbd>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Menú contextual admin (clic derecho) */}
+        {contextMenu && isAdmin && (
+          <>
+            <div onClick={() => setContextMenu(null)} style={{ position: "fixed", inset: 0, zIndex: 990 }} />
+            <div style={{
+              position: "fixed", top: contextMenu.y, left: contextMenu.x, zIndex: 991,
+              background: "#fff", borderRadius: "14px",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.18)", border: "1px solid #EDE8E2",
+              overflow: "hidden", minWidth: "168px",
+              animation: "scaleIn 0.12s ease",
+            }}>
+              {[
+                { label: "Editar", icon: "✏️", action: () => { setEditingProduct(contextMenu.product); setContextMenu(null); } },
+                { label: contextMenu.product.is_active ? "Desactivar" : "Activar", icon: contextMenu.product.is_active ? "⏸" : "▶", action: () => { handleToggleActive(contextMenu.product.id, contextMenu.product.is_active); setContextMenu(null); } },
+                { label: "Eliminar", icon: "🗑", action: () => { if (window.confirm(`¿Eliminar "${contextMenu.product.name}"?`)) { handleDeleteProduct(contextMenu.product.id); } setContextMenu(null); }, danger: true },
+              ].map(item => (
+                <button
+                  key={item.label}
+                  onClick={item.action}
+                  style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", padding: "11px 16px", background: "none", border: "none", cursor: "pointer", fontFamily: F_UI, fontSize: "13px", fontWeight: 500, color: item.danger ? "#EF4444" : "#1A1A1A", textAlign: "left", transition: "background 0.1s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = item.danger ? "#FFF1F0" : "#F8F5F1"}
+                  onMouseLeave={e => e.currentTarget.style.background = "none"}
+                >
+                  <span>{item.icon}</span>
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Animación fly-to-cart */}
+        {flyCart && (
+          <div
+            key={flyCart.key}
+            style={{
+              position: "fixed", top: flyCart.fromY, left: flyCart.fromX,
+              width: "52px", height: "52px", borderRadius: "14px",
+              overflow: "hidden", background: "#F5F0EA",
+              zIndex: 2000, pointerEvents: "none",
+              "--fly-dx": `${flyCart.dx}px`,
+              "--fly-dy": `${flyCart.dy}px`,
+              animation: "flyToCart 0.65s cubic-bezier(0.22,1,0.36,1) forwards",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            {flyCart.src
+              ? <img src={flyCart.src} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", padding: "6px", boxSizing: "border-box" }} />
+              : <span style={{ fontSize: "28px" }}>{flyCart.emoji}</span>
+            }
+          </div>
         )}
 
         {/* Banner instalación PWA */}
