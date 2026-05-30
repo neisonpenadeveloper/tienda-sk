@@ -2205,8 +2205,11 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
   const [added, setAdded]             = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [longPressActive, setLongPressActive] = useState(false);
+  const [heartFlash, setHeartFlash]   = useState(false);
+  const [imgLoaded, setImgLoaded]     = useState(false);
   const isOwner = !!user && ADMIN_EMAILS.has(user.email);
   const longPressTimer = useRef(null);
+  const lastTapRef = useRef(0);
 
   const handleAdd = (e) => {
     e.stopPropagation();
@@ -2232,20 +2235,37 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
   };
   const handleLongPressEnd = () => { clearTimeout(longPressTimer.current); };
 
+  const handleCardTouchEnd = () => {
+    handleLongPressEnd();
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) {
+      onWishlist(product.id);
+      setHeartFlash(true);
+      setTimeout(() => setHeartFlash(false), 600);
+      if (navigator.vibrate) navigator.vibrate(30);
+    }
+    lastTapRef.current = now;
+  };
+
   return (
     <div
       onClick={() => onSelect(product)}
       onTouchStart={handleLongPressStart}
-      onTouchEnd={handleLongPressEnd}
+      onTouchEnd={handleCardTouchEnd}
       onTouchMove={handleLongPressEnd}
       className="product-card"
       style={{ background: "#fff", borderRadius: "18px", overflow: "hidden", border: longPressActive ? `2px solid ${CORAL}` : "1px solid #EDE8E2", transition: "border 0.15s", transform: longPressActive ? "scale(0.97)" : "scale(1)" }}
     >
       <div className="pc-img-wrap" style={{ background: product.images?.length > 0 ? "#F5F0EA" : (product.color || "#F5F0EA"), height: "210px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", fontSize: "64px", overflow: "hidden" }}>
         {product.images?.length > 0 ? (
-          <Image src={product.images[0]} alt={product.name} fill className="pc-img" style={{ objectFit: "contain" }} sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 25vw" />
+          <Image src={product.images[0]} alt={product.name} fill className="pc-img" style={{ objectFit: "contain", filter: imgLoaded ? "none" : "blur(8px)", transition: "filter 0.4s ease" }} sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 25vw" onLoad={() => setImgLoaded(true)} />
         ) : (
           <span style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.12))", transition: "transform 0.5s ease" }}>{product.emoji}</span>
+        )}
+        {heartFlash && (
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10, pointerEvents: "none" }}>
+            <Heart size={72} fill={CORAL} color={CORAL} style={{ animation: "heartFlash 0.55s ease forwards", filter: "drop-shadow(0 0 12px rgba(37,99,235,0.5))" }} />
+          </div>
         )}
         {/* Quick View overlay — desktop */}
         <div className="pc-overlay" onClick={e => e.stopPropagation()}>
@@ -2846,8 +2866,18 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
     }
   }, [quickBuyProduct]);
 
-  const [deliveryForm, setDeliveryForm] = useState({ nombre: "", telefono: "", correo: "", notas: "", direccion: "", referencia: "", ciudad: "Medellín", departamento: "Antioquia", adicional: "" });
+  const DELIVERY_DEFAULT = { nombre: "", telefono: "", correo: "", notas: "", direccion: "", referencia: "", ciudad: "Medellín", departamento: "Antioquia", adicional: "" };
+  const [deliveryForm, setDeliveryForm] = useState(() => {
+    try {
+      const saved = localStorage.getItem("sk_delivery");
+      return saved ? { ...DELIVERY_DEFAULT, ...JSON.parse(saved) } : DELIVERY_DEFAULT;
+    } catch { return DELIVERY_DEFAULT; }
+  });
   const [deliveryErrors, setDeliveryErrors]       = useState({});
+
+  useEffect(() => {
+    try { localStorage.setItem("sk_delivery", JSON.stringify(deliveryForm)); } catch {}
+  }, [deliveryForm]);
 
   const handleApplyCoupon = () => {
     const code = couponInput.trim().toUpperCase();
@@ -2963,6 +2993,8 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
     setShowDeliveryForm(false);
     setDeliveryStep(1);
     setShowOrderSuccess(true);
+    try { localStorage.removeItem("sk_delivery"); } catch {}
+    setDeliveryForm(DELIVERY_DEFAULT);
   };
 
   const handleStepNext = () => {
@@ -4649,7 +4681,14 @@ export default function App() {
   const [pullY, setPullY]                     = useState(0);
   const [isRefreshing, setIsRefreshing]       = useState(false);
   const [isOnline, setIsOnline]               = useState(true);
+  const [visibleCount, setVisibleCount]       = useState(12);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
   const pullStart                             = useRef(null);
+  const loadMoreRef                           = useRef(null);
+  const deferredPrompt                        = useRef(null);
+  const wasModalOpen                          = useRef(false);
+  const catSwipeStartX                        = useRef(null);
+  const catSwipeStartY                        = useRef(null);
 
   useEffect(() => {
     setIsOnline(navigator.onLine);
@@ -4659,6 +4698,51 @@ export default function App() {
     window.addEventListener("offline", goOffline);
     return () => { window.removeEventListener("online", goOnline); window.removeEventListener("offline", goOffline); };
   }, []);
+
+  // Back button cierra modales en móvil
+  useEffect(() => {
+    const open = !!(selectedProduct || showCart || showMobileSearch || menuOpen);
+    if (open && !wasModalOpen.current) {
+      window.history.pushState({ skModal: true }, "");
+    }
+    wasModalOpen.current = open;
+  }, [selectedProduct, showCart, showMobileSearch, menuOpen]);
+
+  useEffect(() => {
+    const handlePop = () => {
+      if (selectedProduct) { setSelectedProduct(null); return; }
+      if (showCart)        { setShowCart(false); return; }
+      if (showMobileSearch){ setShowMobileSearch(false); return; }
+      if (menuOpen)        { setMenuOpen(false); return; }
+    };
+    window.addEventListener("popstate", handlePop);
+    return () => window.removeEventListener("popstate", handlePop);
+  }, [selectedProduct, showCart, showMobileSearch, menuOpen]);
+
+  // PWA install prompt
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      deferredPrompt.current = e;
+      try { if (!localStorage.getItem("sk_install_dismissed")) setShowInstallBanner(true); } catch {}
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  // Infinite scroll — cargar más al llegar al final
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) setVisibleCount(prev => prev + 8);
+    }, { threshold: 0.1 });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [visibleCount]);
+
+  // Reset visibleCount al cambiar categoría/búsqueda/orden
+  useEffect(() => { setVisibleCount(12); }, [activeCategory, searchQuery, sortBy]);
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -4939,6 +5023,12 @@ export default function App() {
         @keyframes shimmer-btn {
           0%   { background-position: -200% center; }
           100% { background-position:  200% center; }
+        }
+        @keyframes heartFlash {
+          0%   { opacity: 0; transform: scale(0.3); }
+          40%  { opacity: 1; transform: scale(1.4); }
+          70%  { opacity: 0.9; transform: scale(0.9); }
+          100% { opacity: 0; transform: scale(1.1); }
         }
         @keyframes pulse-dot {
           0%,100% { box-shadow: 0 0 0 0 rgba(37,99,235,0.55); }
@@ -5489,7 +5579,20 @@ export default function App() {
             </>
           )}
 
-          <div style={{ transition: "opacity 0.15s ease", opacity: gridFading ? 0 : 1 }}>
+          <div
+            style={{ transition: "opacity 0.15s ease", opacity: gridFading ? 0 : 1 }}
+            onTouchStart={(e) => { catSwipeStartX.current = e.touches[0].clientX; catSwipeStartY.current = e.touches[0].clientY; }}
+            onTouchEnd={(e) => {
+              if (catSwipeStartX.current === null) return;
+              const dx = e.changedTouches[0].clientX - catSwipeStartX.current;
+              const dy = Math.abs(e.changedTouches[0].clientY - catSwipeStartY.current);
+              catSwipeStartX.current = null;
+              if (Math.abs(dx) < 70 || dy > 55) return;
+              const currentIdx = ALL_CATEGORIES.findIndex(c => c.id === activeCategory);
+              if (dx < 0 && currentIdx < ALL_CATEGORIES.length - 1) handleCategoryChange(ALL_CATEGORIES[currentIdx + 1].id);
+              else if (dx > 0 && currentIdx > 0) handleCategoryChange(ALL_CATEGORIES[currentIdx - 1].id);
+            }}
+          >
           {loadingProducts ? (
             <div className="grid-products">
               {Array.from({ length: 8 }).map((_, i) => (
@@ -5500,7 +5603,7 @@ export default function App() {
             <EmptyState category={activeCategory} searchQuery={searchQuery} />
           ) : viewMode === "list" ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {sortedProducts.map((product, idx) => (
+              {sortedProducts.slice(0, visibleCount).map((product, idx) => (
                 <div key={product.id} className="fade-in-up" style={{ transitionDelay: `${Math.min(idx % 8 * 0.04, 0.24)}s` }}>
                   <ProductListRow
                     product={product}
@@ -5511,10 +5614,15 @@ export default function App() {
                   />
                 </div>
               ))}
+              {visibleCount < sortedProducts.length && (
+                <div ref={loadMoreRef} style={{ display: "flex", justifyContent: "center", padding: "16px" }}>
+                  <div className="skeleton" style={{ width: "120px", height: "20px", borderRadius: "10px" }} />
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid-products">
-              {sortedProducts.map((product, idx) => (
+              {sortedProducts.slice(0, visibleCount).map((product, idx) => (
                 <div key={product.id} className="fade-in-up" style={{ transitionDelay: `${Math.min(idx % 8 * 0.06, 0.36)}s` }}>
                   <ProductCard
                     product={product}
@@ -5528,6 +5636,11 @@ export default function App() {
                   />
                 </div>
               ))}
+            </div>
+          )}
+          {viewMode === "grid" && visibleCount < sortedProducts.length && (
+            <div ref={loadMoreRef} style={{ display: "flex", justifyContent: "center", padding: "20px 0 4px" }}>
+              <div className="skeleton" style={{ width: "140px", height: "18px", borderRadius: "10px" }} />
             </div>
           )}
           </div>
@@ -5707,6 +5820,44 @@ export default function App() {
               </div>
             </div>
           </>
+        )}
+
+        {/* Banner instalación PWA */}
+        {showInstallBanner && (
+          <div style={{
+            position: "fixed", bottom: "80px", left: "12px", right: "12px", zIndex: 1200,
+            background: "#fff", borderRadius: "18px", padding: "14px 16px",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.18)", display: "flex", alignItems: "center", gap: "12px",
+            border: "1px solid #EDE8E2", animation: "slideUp 0.35s cubic-bezier(0.16,1,0.3,1)",
+          }}>
+            <div style={{ width: "46px", height: "46px", borderRadius: "12px", overflow: "hidden", flexShrink: 0, background: "#F0F4FF" }}>
+              <img src="/header-logo.png" alt="S&K" style={{ width: "100%", height: "100%", objectFit: "contain", padding: "4px" }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontFamily: F_UI, fontSize: "13px", fontWeight: 700, color: "#1A1A1A", margin: "0 0 2px" }}>Instalar Tienda S&K</p>
+              <p style={{ fontFamily: F_UI, fontSize: "11px", color: "#6B6560", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Acceso rápido desde tu pantalla de inicio</p>
+            </div>
+            <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
+              <button
+                onClick={() => { try { localStorage.setItem("sk_install_dismissed", "1"); } catch {} setShowInstallBanner(false); }}
+                style={{ background: "none", border: "1px solid #EDE8E2", borderRadius: "10px", padding: "7px 10px", cursor: "pointer", fontFamily: F_UI, fontSize: "12px", color: "#6B6560", fontWeight: 500 }}
+              >
+                No
+              </button>
+              <button
+                onClick={async () => {
+                  if (!deferredPrompt.current) return;
+                  deferredPrompt.current.prompt();
+                  await deferredPrompt.current.userChoice.catch(() => {});
+                  deferredPrompt.current = null;
+                  setShowInstallBanner(false);
+                }}
+                style={{ background: CORAL, border: "none", borderRadius: "10px", padding: "7px 14px", cursor: "pointer", fontFamily: F_UI, fontSize: "12px", fontWeight: 700, color: "#fff" }}
+              >
+                Instalar
+              </button>
+            </div>
+          </div>
         )}
 
         {/* Bottom nav — solo móvil */}
