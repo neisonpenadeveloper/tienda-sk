@@ -3780,7 +3780,9 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
         // Proxy mismo dominio → evita problemas CORS de cache del browser
         const proxyUrl = `${window.location.origin}/api/og-img/${product.id}?_t=${Date.now()}`;
         const blob = await fetch(proxyUrl).then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); });
-        const file = new File([blob], "producto.jpg", { type: "image/jpeg" });
+        const mime = blob.type || "image/webp";
+        const ext  = mime.includes("png") ? "png" : mime.includes("webp") ? "webp" : "jpg";
+        const file = new File([blob], `producto.${ext}`, { type: mime });
         await navigator.share({ files: [file] });
         navigator.clipboard?.writeText(url).catch(() => {});
         setShared(true);
