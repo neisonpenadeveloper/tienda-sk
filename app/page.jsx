@@ -973,13 +973,13 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
                   onClick={() => setActiveCategory(cat.id)}
                   className="nav-cat-btn"
                   style={{
-                    display: "flex", alignItems: "center", gap: "6px",
-                    fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px",
+                    display: "flex", alignItems: "center", gap: "5px",
+                    fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px",
                     fontWeight: isActive ? 700 : 400,
                     color: isActive ? "#fff" : "#4A4A4A",
                     background: isActive ? CORAL : "transparent",
                     border: "none", borderRadius: "20px",
-                    padding: "7px 18px", cursor: "pointer",
+                    padding: "6px 12px", cursor: "pointer",
                     transition: "all 0.18s ease",
                   }}
                 >
@@ -999,13 +999,13 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
                       onClick={() => setShowNavAll(v => !v)}
                       className="nav-cat-btn"
                       style={{
-                        display: "flex", alignItems: "center", gap: "6px",
-                        fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px",
+                        display: "flex", alignItems: "center", gap: "5px",
+                        fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px",
                         fontWeight: isExtraActive ? 700 : 500,
                         color: isExtraActive ? "#fff" : "#4A4A4A",
                         background: isExtraActive ? CORAL : "transparent",
                         border: "none", borderRadius: "20px",
-                        padding: "7px 18px", cursor: "pointer",
+                        padding: "6px 12px", cursor: "pointer",
                         transition: "all 0.18s ease",
                       }}
                     >
@@ -1139,7 +1139,7 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
           </div>
 
           {/* Actions */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
             <button
               onClick={focusSearch}
               title="Buscar productos"
@@ -1190,64 +1190,58 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
                     onClick={onUncategorized}
                     title="Productos sin categoría"
                     style={{
-                      display: "flex", alignItems: "center", gap: "7px",
+                      display: "flex", alignItems: "center", justifyContent: "center",
                       background: "#FFF3E0", color: "#E65100", border: "1.5px solid #FFCC80",
-                      borderRadius: "24px", padding: "7px 14px",
-                      fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700,
-                      cursor: "pointer", transition: "opacity 0.15s",
+                      borderRadius: "50%", width: "34px", height: "34px",
+                      cursor: "pointer", transition: "opacity 0.15s", flexShrink: 0,
                     }}
                     onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
                     onMouseLeave={e => e.currentTarget.style.opacity = "1"}
                   >
-                    <LayoutGrid size={14} />
-                    <span className="hidden sm:inline">Sin categoría</span>
+                    <LayoutGrid size={15} />
                   </button>
                   <button
                     onClick={onCouponManager}
                     title="Gestionar cupones"
                     style={{
-                      display: "flex", alignItems: "center", gap: "7px",
+                      display: "flex", alignItems: "center", justifyContent: "center",
                       background: "#F0FDF4", color: "#15803D", border: "1.5px solid #86EFAC",
-                      borderRadius: "24px", padding: "7px 14px",
-                      fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700,
-                      cursor: "pointer", transition: "opacity 0.15s",
+                      borderRadius: "50%", width: "34px", height: "34px",
+                      cursor: "pointer", transition: "opacity 0.15s", flexShrink: 0,
                     }}
                     onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
                     onMouseLeave={e => e.currentTarget.style.opacity = "1"}
                   >
-                    <Tag size={14} />
-                    <span className="hidden sm:inline">Cupones</span>
+                    <Tag size={15} />
                   </button>
                   <button
                     onClick={onOrders}
                     title="Historial de pedidos"
                     style={{
-                      display: "flex", alignItems: "center", gap: "7px",
+                      display: "flex", alignItems: "center", justifyContent: "center",
                       background: "#EFF6FF", color: "#1D4ED8", border: "1.5px solid #BFDBFE",
-                      borderRadius: "24px", padding: "7px 14px",
-                      fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700,
-                      cursor: "pointer", transition: "opacity 0.15s",
+                      borderRadius: "50%", width: "34px", height: "34px",
+                      cursor: "pointer", transition: "opacity 0.15s", flexShrink: 0,
                     }}
                     onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
                     onMouseLeave={e => e.currentTarget.style.opacity = "1"}
                   >
-                    <Package size={14} />
-                    <span className="hidden sm:inline">Pedidos</span>
+                    <Package size={15} />
                   </button>
                   <button
                     onClick={onPublish}
                     style={{
-                      display: "flex", alignItems: "center", gap: "7px",
+                      display: "flex", alignItems: "center", gap: "6px",
                       background: CORAL, color: "#fff", border: "none",
-                      borderRadius: "24px", padding: "9px 18px",
-                      fontFamily: "var(--font-roboto), sans-serif", fontSize: "13.5px", fontWeight: 700,
-                      cursor: "pointer", transition: "opacity 0.15s",
+                      borderRadius: "24px", padding: "8px 14px",
+                      fontFamily: "var(--font-roboto), sans-serif", fontSize: "13px", fontWeight: 700,
+                      cursor: "pointer", transition: "opacity 0.15s", flexShrink: 0,
                     }}
                     onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
                     onMouseLeave={e => e.currentTarget.style.opacity = "1"}
                   >
-                    <PlusCircle size={15} />
-                    <span className="hidden sm:inline">Publicar</span>
+                    <PlusCircle size={14} />
+                    Publicar
                   </button>
                   </>
                 )}
