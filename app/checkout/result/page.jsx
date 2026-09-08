@@ -25,7 +25,7 @@ function LoadingView() {
           marginBottom: 20,
         }}
       />
-      <p style={{ color: "#6B6560", fontSize: 16, fontFamily: "'DM Sans', sans-serif" }}>
+      <p style={{ color: "#6B6560", fontSize: 16, fontFamily: "var(--font-dm-sans), sans-serif" }}>
         Verificando tu pago…
       </p>
     </div>
@@ -103,8 +103,8 @@ function ResultContent() {
 function Row({ label, value }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #EDE8E2" }}>
-      <span style={{ color: "#6B6560", fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
-      <span style={{ fontWeight: 700, fontSize: 14, color: "#1A1A1A", fontFamily: "'DM Sans', sans-serif" }}>{value}</span>
+      <span style={{ color: "#6B6560", fontSize: 14, fontFamily: "var(--font-dm-sans), sans-serif" }}>{label}</span>
+      <span style={{ fontWeight: 700, fontSize: 14, color: "#1A1A1A", fontFamily: "var(--font-dm-sans), sans-serif" }}>{value}</span>
     </div>
   );
 }
@@ -118,7 +118,7 @@ function HomeButton({ label }) {
         background: CORAL, color: "#fff",
         padding: "14px 36px", borderRadius: 28,
         fontWeight: 700, fontSize: 15,
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "var(--font-dm-sans), sans-serif",
         textDecoration: "none",
         boxShadow: "0 8px 24px rgba(232,64,42,0.30)",
       }}
@@ -144,13 +144,13 @@ const circle = {
 
 const title = {
   fontSize: 28, fontWeight: 800, color: "#1A1A1A",
-  marginBottom: 12, fontFamily: "'DM Sans', sans-serif",
+  marginBottom: 12, fontFamily: "var(--font-dm-sans), sans-serif",
 };
 
 const subtitle = {
   color: "#6B6560", fontSize: 16, lineHeight: 1.65,
   marginBottom: 28, maxWidth: 420,
-  fontFamily: "'DM Sans', sans-serif",
+  fontFamily: "var(--font-dm-sans), sans-serif",
 };
 
 const infoBox = {

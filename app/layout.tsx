@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Roboto, Exo_2, Poppins } from "next/font/google";
+import { Roboto, Exo_2, Poppins, DM_Sans } from "next/font/google";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -20,6 +20,17 @@ const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+// La usa la página de resultado del pago. Se carga aquí, con next/font, para
+// que Next la sirva desde el propio dominio: pedirla a fonts.googleapis.com
+// la bloquea la política de seguridad del sitio, y la página se quedaba con
+// una tipografía de repuesto.
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
   display: "swap",
 });
 
@@ -61,7 +72,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${roboto.variable} ${exo2.variable} ${poppins.variable} h-full antialiased`}
+      className={`${roboto.variable} ${exo2.variable} ${poppins.variable} ${dmSans.variable} h-full antialiased`}
     >
       <head>
         <link rel="manifest" href="/manifest.json" />

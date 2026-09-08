@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { createClient } from "@supabase/supabase-js";
 import { ShoppingBag, Search, Heart, Menu, X, Star, Home, Sparkles, Smile, ArrowRight, Package, Truck, PlusCircle, LogOut, LogIn, Upload, Trash2, Minus, Plus, ChevronDown, Share2, Check, Copy, Pencil, Wrench, Droplets, Tag, ChefHat, Shirt, Laptop, Activity, PawPrint, LayoutGrid, EyeOff } from "lucide-react";
@@ -38,12 +38,12 @@ const F_UI      = "var(--font-roboto), sans-serif";
   ]);
 
 // ─── CUPONES ──────────────────────────────────────────────────────────────────
-// Clave: código (en mayúsculas), Valor: porcentaje de descuento
-const COUPONS = {
-  "BIENVENIDO": 10,
-  "SK15":       10,
-  "PROMO20":    10,
-};
+// Ya no hay cupones escritos aquí. Los que había (BIENVENIDO, SK15, PROMO20)
+// viajaban dentro del JavaScript de la página: cualquiera podía leerlos, y no
+// se podían desactivar sin volver a publicar la tienda.
+//
+// Ahora viven en la tabla `coupons`, se gestionan desde el panel de admin y los
+// valida el servidor en /api/coupon y /api/checkout.
 
 // ─── MOCK DATA ────────────────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -2968,19 +2968,35 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
     try { localStorage.setItem("sk_delivery", JSON.stringify(deliveryForm)); } catch {}
   }, [deliveryForm]);
 
-  const handleApplyCoupon = () => {
+  // El cupón lo valida el servidor. Antes la tienda se descargaba la tabla
+  // entera de cupones al navegador para comprobarlo, así que cualquiera podía
+  // leer todos los códigos —incluidos los desactivados— mirando la pestaña de
+  // red. Ahora solo se pregunta por el código que escribió el cliente.
+  const handleApplyCoupon = async () => {
     const code = couponInput.trim().toUpperCase();
     if (!code) return;
-    const found = coupons?.find(c => c.code === code && c.is_active);
-    const pct = found ? found.discount_pct : (COUPONS[code] ?? null);
-    if (pct == null) {
-      setCouponError("Cupón inválido o expirado.");
-      return;
-    }
-    if (navigator.vibrate) navigator.vibrate(50);
-    setAppliedCoupon({ code, pct });
+
     setCouponError("");
-    setCouponInput("");
+
+    try {
+      const res = await fetch("/api/coupon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+
+      if (!data?.valid) {
+        setCouponError(data?.error ?? "Cupón inválido o expirado.");
+        return;
+      }
+
+      if (navigator.vibrate) navigator.vibrate(50);
+      setAppliedCoupon({ code: data.code, pct: data.pct });
+      setCouponInput("");
+    } catch {
+      setCouponError("No se pudo validar el cupón. Intenta de nuevo.");
+    }
   };
 
   const handleRemoveCoupon = () => {
@@ -2992,13 +3008,29 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
     setCheckoutError("");
     setCheckoutLoading(true);
     try {
+      const items = quickBuyProduct
+        ? [{ id: quickBuyProduct.id, quantity: 1 }]
+        : cart.map(item => ({ id: item.id, quantity: item.quantity }));
+
+      // La identidad ya no se manda en el cuerpo: va el token de sesión y el
+      // servidor lo verifica. Antes cualquiera podía crear pedidos poniendo el
+      // correo de otra persona.
+      const { data: { session } } = await supabase.auth.getSession();
+
       const res = await fetch("/api/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token
+            ? { Authorization: `Bearer ${session.access_token}` }
+            : {}),
+        },
         body: JSON.stringify({
-          cart,
-          userId:    user?.id    ?? null,
-          userEmail: user?.email ?? "",
+          cart: items,
+          // El cupón viaja como código, nunca como porcentaje: el descuento lo
+          // calcula el servidor tras comprobarlo. Así el total que cobra la
+          // pasarela es de verdad el que ve el cliente.
+          couponCode: quickBuyProduct ? null : (appliedCoupon?.code ?? null),
         }),
       });
       const data = await res.json();
@@ -3351,10 +3383,16 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
                 <span style={{ fontSize: "15px", fontWeight: 700, display: "flex", alignItems: "center", gap: "7px" }}>🛵 Pagar al recibir</span>
                 <span style={{ fontSize: "11px", fontWeight: 500, opacity: 0.85 }}>Pagas cuando llegue a tu puerta · Todo Colombia</span>
               </button>
-              <div style={{ width: "100%", padding: "14px 16px", marginBottom: "16px", background: "#F8FAFC", border: "1.5px dashed #CBD5E1", borderRadius: "16px", boxSizing: "border-box" }}>
-                <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", fontWeight: 700, color: "#94A3B8", margin: "0 0 3px", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px" }}>💳 Pagar ahora mismo</p>
-                <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#94A3B8", margin: 0 }}>Tarjeta / PSE · Próximamente disponible</p>
-              </div>
+              <button
+                onClick={handleCheckout}
+                disabled={checkoutLoading}
+                style={{ width: "100%", padding: "16px", marginBottom: "16px", background: checkoutLoading ? "#94A3B8" : "linear-gradient(135deg,#2563EB,#1D4ED8)", color: "#fff", border: "none", borderRadius: "16px", fontFamily: "var(--font-roboto), sans-serif", cursor: checkoutLoading ? "not-allowed" : "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px", boxShadow: checkoutLoading ? "none" : "0 6px 20px rgba(37,99,235,0.35)", transition: "all 0.2s" }}
+              >
+                <span style={{ fontSize: "15px", fontWeight: 700, display: "flex", alignItems: "center", gap: "7px" }}>
+                  {checkoutLoading ? "⏳ Procesando…" : "💳 Pagar ahora mismo"}
+                </span>
+                <span style={{ fontSize: "11px", fontWeight: 500, opacity: 0.85 }}>Tarjeta / PSE / Nequi · Pago seguro</span>
+              </button>
               <button onClick={() => setShowPaymentModal(false)} style={{ width: "100%", padding: "13px", background: "transparent", color: "#9B948E", border: "1.5px solid #E8E3DE", borderRadius: "28px", fontSize: "14px", fontWeight: 600, fontFamily: "var(--font-roboto), sans-serif", cursor: "pointer" }}>
                 Volver al carrito
               </button>
@@ -4926,7 +4964,8 @@ export default function App() {
   const [visibleCount, setVisibleCount]       = useState(12);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const pullStart                             = useRef(null);
-  const loadMoreRef                           = useRef(null);
+  const [loadMoreEl, setLoadMoreEl]           = useState(null);
+  const loadMoreRef                           = useCallback((node) => setLoadMoreEl(node), []);
   const deferredPrompt                        = useRef(null);
   const wasModalOpen                          = useRef(false);
   const catSwipeStartX                        = useRef(null);
@@ -5023,14 +5062,13 @@ export default function App() {
 
   // Infinite scroll — cargar más al llegar al final
   useEffect(() => {
-    const el = loadMoreRef.current;
-    if (!el) return;
+    if (!loadMoreEl) return;
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) setVisibleCount(prev => prev + 8);
-    }, { threshold: 0.1 });
-    observer.observe(el);
+    }, { threshold: 0.1, rootMargin: "300px 0px" });
+    observer.observe(loadMoreEl);
     return () => observer.disconnect();
-  }, [visibleCount]);
+  }, [loadMoreEl, visibleCount]);
 
   const handleVoiceSearch = () => {
     const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition;
@@ -5338,7 +5376,10 @@ export default function App() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,700&display=swap');
+        /* La fuente DM Sans se carga con next/font desde layout.tsx, servida
+           por el propio dominio. El @import a fonts.googleapis.com que había
+           aquí lo bloqueaba la política de seguridad del sitio (y esta página
+           ni siquiera la usa: se maqueta con las variables --font-*). */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: #FAF7F4; }
 
