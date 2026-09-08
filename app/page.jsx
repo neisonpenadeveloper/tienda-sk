@@ -45,6 +45,18 @@ const F_UI      = "var(--font-roboto), sans-serif";
 // Ahora viven en la tabla `coupons`, se gestionan desde el panel de admin y los
 // valida el servidor en /api/coupon y /api/checkout.
 
+// ─── PASARELA DE PAGO ─────────────────────────────────────────────────────────
+// El botón de "Pagar ahora mismo" solo se enseña si Wompi está configurado de
+// verdad. Sin las llaves, /api/checkout responde 503 y el cliente se queda
+// mirando un error después de haber decidido comprar; es mejor que hasta
+// entonces vea el aviso de "próximamente" y se vaya por WhatsApp, que sí
+// funciona.
+//
+// Basta con añadir NEXT_PUBLIC_WOMPI_PUBLIC_KEY (y WOMPI_INTEGRITY_SECRET, que
+// usa el servidor) en Vercel: en el siguiente despliegue el botón aparece solo,
+// sin tocar este archivo.
+const WOMPI_LISTO = Boolean(process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY);
+
 // ─── MOCK DATA ────────────────────────────────────────────────────────────────
 const CATEGORIES = [
   { id: "all",       label: "Todos",            icon: Sparkles },
@@ -3383,16 +3395,23 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
                 <span style={{ fontSize: "15px", fontWeight: 700, display: "flex", alignItems: "center", gap: "7px" }}>🛵 Pagar al recibir</span>
                 <span style={{ fontSize: "11px", fontWeight: 500, opacity: 0.85 }}>Pagas cuando llegue a tu puerta · Todo Colombia</span>
               </button>
-              <button
-                onClick={handleCheckout}
-                disabled={checkoutLoading}
-                style={{ width: "100%", padding: "16px", marginBottom: "16px", background: checkoutLoading ? "#94A3B8" : "linear-gradient(135deg,#2563EB,#1D4ED8)", color: "#fff", border: "none", borderRadius: "16px", fontFamily: "var(--font-roboto), sans-serif", cursor: checkoutLoading ? "not-allowed" : "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px", boxShadow: checkoutLoading ? "none" : "0 6px 20px rgba(37,99,235,0.35)", transition: "all 0.2s" }}
-              >
-                <span style={{ fontSize: "15px", fontWeight: 700, display: "flex", alignItems: "center", gap: "7px" }}>
-                  {checkoutLoading ? "⏳ Procesando…" : "💳 Pagar ahora mismo"}
-                </span>
-                <span style={{ fontSize: "11px", fontWeight: 500, opacity: 0.85 }}>Tarjeta / PSE / Nequi · Pago seguro</span>
-              </button>
+              {WOMPI_LISTO ? (
+                <button
+                  onClick={handleCheckout}
+                  disabled={checkoutLoading}
+                  style={{ width: "100%", padding: "16px", marginBottom: "16px", background: checkoutLoading ? "#94A3B8" : "linear-gradient(135deg,#2563EB,#1D4ED8)", color: "#fff", border: "none", borderRadius: "16px", fontFamily: "var(--font-roboto), sans-serif", cursor: checkoutLoading ? "not-allowed" : "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px", boxShadow: checkoutLoading ? "none" : "0 6px 20px rgba(37,99,235,0.35)", transition: "all 0.2s" }}
+                >
+                  <span style={{ fontSize: "15px", fontWeight: 700, display: "flex", alignItems: "center", gap: "7px" }}>
+                    {checkoutLoading ? "⏳ Procesando…" : "💳 Pagar ahora mismo"}
+                  </span>
+                  <span style={{ fontSize: "11px", fontWeight: 500, opacity: 0.85 }}>Tarjeta / PSE / Nequi · Pago seguro</span>
+                </button>
+              ) : (
+                <div style={{ width: "100%", padding: "14px 16px", marginBottom: "16px", background: "#F8FAFC", border: "1.5px dashed #CBD5E1", borderRadius: "16px", boxSizing: "border-box" }}>
+                  <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", fontWeight: 700, color: "#94A3B8", margin: "0 0 3px", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px" }}>💳 Pagar ahora mismo</p>
+                  <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "11px", color: "#94A3B8", margin: 0 }}>Tarjeta / PSE · Próximamente disponible</p>
+                </div>
+              )}
               <button onClick={() => setShowPaymentModal(false)} style={{ width: "100%", padding: "13px", background: "transparent", color: "#9B948E", border: "1.5px solid #E8E3DE", borderRadius: "28px", fontSize: "14px", fontWeight: 600, fontFamily: "var(--font-roboto), sans-serif", cursor: "pointer" }}>
                 Volver al carrito
               </button>
