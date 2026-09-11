@@ -5286,14 +5286,18 @@ export default function App() {
   });
   sortedProductsRef.current = sortedProducts;
 
+  // Las tarjetas empiezan transparentes (.fade-in-up) y aparecen al entrar en
+  // pantalla. Hay que volver a observar cada vez que el scroll infinito añade
+  // tarjetas (visibleCount): sin eso, de la 13 en adelante se quedaban en
+  // opacidad 0 y se veía un hueco en blanco debajo de los primeros productos.
   useEffect(() => {
-    const cards = document.querySelectorAll(".fade-in-up");
+    const cards = document.querySelectorAll(".fade-in-up:not(.visible)");
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("visible"); observer.unobserve(e.target); } });
     }, { threshold: 0.06 });
     cards.forEach(c => observer.observe(c));
     return () => observer.disconnect();
-  }, [sortedProducts.length, activeCategory, searchQuery]);
+  }, [sortedProducts.length, activeCategory, searchQuery, visibleCount, viewMode, loadingProducts]);
 
   useEffect(() => {
     if (displayProducts.length === 0) return;
