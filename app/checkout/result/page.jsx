@@ -1,8 +1,10 @@
 "use client";
 import { useEffect, useState, Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-const CORAL = "#E8402A";
+// Mismo azul que la tienda. Antes era el rojo de la marca vieja.
+const CORAL = "#2563EB";
 
 const fmtCOP = n =>
   new Intl.NumberFormat("es-CO", {
@@ -111,7 +113,7 @@ function Row({ label, value }) {
 
 function HomeButton({ label }) {
   return (
-    <a
+    <Link
       href="/"
       style={{
         display: "inline-block",
@@ -124,7 +126,7 @@ function HomeButton({ label }) {
       }}
     >
       {label}
-    </a>
+    </Link>
   );
 }
 

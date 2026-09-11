@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { createClient } from "@supabase/supabase-js";
-import { ShoppingBag, Search, Heart, Menu, X, Star, Home, Sparkles, Smile, ArrowRight, Package, Truck, PlusCircle, LogOut, LogIn, Upload, Trash2, Minus, Plus, ChevronDown, Share2, Check, Copy, Pencil, Wrench, Droplets, Tag, ChefHat, Shirt, Laptop, Activity, PawPrint, LayoutGrid, EyeOff } from "lucide-react";
+import { ShoppingBag, Search, Heart, Menu, X, Star, Home, Sparkles, Smile, ArrowRight, Package, Truck, PlusCircle, LogOut, LogIn, Upload, Trash2, Minus, Plus, ChevronDown, Share2, Check, Pencil, Wrench, Droplets, Tag, ChefHat, Shirt, Laptop, Activity, PawPrint, LayoutGrid, EyeOff } from "lucide-react";
 
 // ─── SUPABASE CLIENT ──────────────────────────────────────────────────────────
 const supabase = createClient(
@@ -79,17 +79,28 @@ const EXTRA_CATEGORIES = [
 
 const ALL_CATEGORIES = [...CATEGORIES, ...EXTRA_CATEGORIES];
 
-const PRODUCTS = [
-  { id: 1, category: "hogar",    name: "Lámpara Arc Minimal",    price: 189000, oldPrice: 230000, rating: 4.8, reviews: 124, badge: "Nuevo",            color: "#E8E0D5", emoji: "🕯️" },
-  { id: 2, category: "hogar",    name: "Cojín Nórdico Linen",    price:  67000,                  rating: 4.6, reviews:  89, badge: null,               color: "#D6DDD5", emoji: "🛋️" },
-  { id: 3, category: "personal", name: "Sérum Vitamina C",       price:  95000, oldPrice: 120000, rating: 4.9, reviews: 312, badge: "− 21%",            color: "#F5EDD8", emoji: "✨" },
-  { id: 4, category: "personal", name: "Set Ritual Mañana",      price: 145000,                  rating: 4.7, reviews:  56, badge: "Edición Limitada",  color: "#EAE0F0", emoji: "🌿" },
-  { id: 5, category: "juguetes", name: "Bloques Montessori Oak", price: 132000,                  rating: 4.9, reviews: 201, badge: "Bestseller",        color: "#F0E8D0", emoji: "🧸" },
-  { id: 6, category: "juguetes", name: "Rompecabezas Boreal",    price:  58000,                  rating: 4.5, reviews:  77, badge: null,               color: "#D8E8E5", emoji: "🧩" },
-];
-
 const fmt = (n) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+
+// Pone al día un carrito guardado en el navegador con los productos recién
+// traídos de la base: precio, nombre, fotos y stock actuales, y fuera lo que ya
+// no se vende. Sin esto, un carrito de hace semanas mandaba por WhatsApp precios
+// viejos y productos que ya no existen.
+function sincronizarCarrito(carrito, productos) {
+  const porId = new Map(productos.map(p => [p.id, p]));
+  const siguiente = [];
+  for (const item of carrito) {
+    const p = porId.get(item.id);
+    if (!p || p.is_active === false || p.stock === 0) continue;
+    const quantity = p.stock != null ? Math.min(item.quantity, p.stock) : item.quantity;
+    siguiente.push({
+      ...item,
+      name: p.name, price: p.price, oldPrice: p.old_price ?? null,
+      stock: p.stock, images: p.images ?? [], badge: p.badge, quantity,
+    });
+  }
+  return JSON.stringify(siguiente) === JSON.stringify(carrito) ? carrito : siguiente;
+}
 
 // ─── PUBLISH PRODUCT MODAL ────────────────────────────────────────────────────
 function PublishModal({ user, onClose, onPublished }) {
@@ -175,16 +186,17 @@ function PublishModal({ user, onClose, onPublished }) {
       const imageUrls = [];
       for (const file of images) {
         const ext = file.name.split(".").pop();
-        const fileName = `${user.id}/${Date.now()}.${ext}`;
+        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
         const { error: uploadError } = await supabase.storage
           .from("product-images")
           .upload(fileName, file);
-        if (!uploadError) {
-          const { data } = supabase.storage
-            .from("product-images")
-            .getPublicUrl(fileName);
-          imageUrls.push(data.publicUrl);
-        }
+        // Antes una foto que fallaba se saltaba en silencio y el producto se
+        // publicaba sin ella.
+        if (uploadError) throw new Error(`no se pudo subir la foto "${file.name}" (${uploadError.message})`);
+        const { data } = supabase.storage
+          .from("product-images")
+          .getPublicUrl(fileName);
+        imageUrls.push(data.publicUrl);
       }
 
       // 2. Determinar badge
@@ -571,10 +583,9 @@ function EditModal({ product, user, onClose, onSaved }) {
         const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
         const { error: uploadError } = await supabase.storage
           .from("product-images").upload(fileName, file);
-        if (!uploadError) {
-          const { data } = supabase.storage.from("product-images").getPublicUrl(fileName);
-          uploadedUrls.push(data.publicUrl);
-        }
+        if (uploadError) throw new Error(`no se pudo subir la foto "${file.name}" (${uploadError.message})`);
+        const { data } = supabase.storage.from("product-images").getPublicUrl(fileName);
+        uploadedUrls.push(data.publicUrl);
       }
 
       // Determinar badge
@@ -1586,6 +1597,15 @@ function Hero({ onShop, stats }) {
 }
 
 // ─── ADMIN STATS BAR ─────────────────────────────────────────────────────────
+function AdminStat({ label, value, color }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+      <span style={{ fontFamily: F_UI, fontSize: "12px", fontWeight: 800, color }}>{value}</span>
+      <span style={{ fontFamily: F_UI, fontSize: "11px", color: "#94A3B8" }}>{label}</span>
+    </div>
+  );
+}
+
 function AdminStatsBar({ dbProducts, onOrders }) {
   const active    = dbProducts.filter(p => p.is_active !== false).length;
   const inactive  = dbProducts.filter(p => p.is_active === false).length;
@@ -1593,28 +1613,21 @@ function AdminStatsBar({ dbProducts, onOrders }) {
   const lowStock  = dbProducts.filter(p => p.is_active !== false && p.stock != null && p.stock >= 1 && p.stock <= 5).length;
   const noCat     = dbProducts.filter(p => !p.category || !REAL_CATS.find(c => c.id === p.category)).length;
 
-  const Stat = ({ label, value, color }) => (
-    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-      <span style={{ fontFamily: F_UI, fontSize: "12px", fontWeight: 800, color }}>{value}</span>
-      <span style={{ fontFamily: F_UI, fontSize: "11px", color: "#94A3B8" }}>{label}</span>
-    </div>
-  );
-
   return (
     <div style={{
       background: "#0F172A", borderBottom: "1px solid #1E293B",
       padding: "7px 16px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap",
     }}>
       <span style={{ fontFamily: F_UI, fontSize: "10px", fontWeight: 800, color: CORAL, letterSpacing: "1px", textTransform: "uppercase", marginRight: "8px" }}>ADMIN</span>
-      <Stat label="activos"      value={active}   color="#4ADE80" />
+      <AdminStat label="activos"      value={active}   color="#4ADE80" />
       <span style={{ color: "#334155" }}>·</span>
-      <Stat label="inactivos"    value={inactive} color={inactive > 0 ? "#FB923C" : "#4ADE80"} />
+      <AdminStat label="inactivos"    value={inactive} color={inactive > 0 ? "#FB923C" : "#4ADE80"} />
       <span style={{ color: "#334155" }}>·</span>
-      <Stat label="sin stock"    value={noStock}  color={noStock  > 0 ? "#F87171" : "#4ADE80"} />
+      <AdminStat label="sin stock"    value={noStock}  color={noStock  > 0 ? "#F87171" : "#4ADE80"} />
       <span style={{ color: "#334155" }}>·</span>
-      <Stat label="stock bajo"   value={lowStock} color={lowStock > 0 ? "#FBBF24" : "#4ADE80"} />
+      <AdminStat label="stock bajo"   value={lowStock} color={lowStock > 0 ? "#FBBF24" : "#4ADE80"} />
       <span style={{ color: "#334155" }}>·</span>
-      <Stat label="sin categoría" value={noCat}   color={noCat    > 0 ? "#FBBF24" : "#4ADE80"} />
+      <AdminStat label="sin categoría" value={noCat}   color={noCat    > 0 ? "#FBBF24" : "#4ADE80"} />
       {onOrders && (
         <button onClick={onOrders} style={{ marginLeft: "auto", fontFamily: F_UI, fontSize: "11px", fontWeight: 700, color: CORAL, background: "rgba(37,99,235,0.12)", border: "none", borderRadius: "12px", padding: "3px 10px", cursor: "pointer" }}>
           📋 Pedidos
@@ -2103,7 +2116,7 @@ function EmptyState({ category, searchQuery }) {
           🔍
         </div>
         <h3 style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "22px", fontWeight: 700, color: "#1A1A1A", marginBottom: "8px" }}>
-          Sin resultados para "{searchQuery.trim()}"
+          Sin resultados para &ldquo;{searchQuery.trim()}&rdquo;
         </h3>
         <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: "#9B948E", maxWidth: "300px", lineHeight: 1.6 }}>
           Intenta con otra palabra clave. Por ejemplo: <strong>lámpara</strong>, <strong>zapatos</strong> o <strong>juguete</strong>.
@@ -2122,6 +2135,29 @@ function EmptyState({ category, searchQuery }) {
       <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: "#9B948E", maxWidth: "280px", lineHeight: 1.6 }}>
         Estamos preparando productos increíbles para <strong>{cat?.label}</strong>. ¡Vuelve pronto!
       </p>
+    </div>
+  );
+}
+
+// ─── ERROR AL CARGAR PRODUCTOS ────────────────────────────────────────────────
+function ProductsLoadError({ onRetry }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "80px 24px", textAlign: "center" }}>
+      <div style={{ width: "80px", height: "80px", borderRadius: "50%", background: CORAL_LIGHT, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "20px", fontSize: "32px" }}>
+        📡
+      </div>
+      <h3 style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "22px", fontWeight: 700, color: "#1A1A1A", marginBottom: "8px" }}>
+        No pudimos cargar los productos
+      </h3>
+      <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: "#9B948E", maxWidth: "300px", lineHeight: 1.6, marginBottom: "20px" }}>
+        Revisa tu conexión e inténtalo de nuevo.
+      </p>
+      <button
+        onClick={onRetry}
+        style={{ background: CORAL, color: "#fff", border: "none", borderRadius: "24px", padding: "11px 26px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", fontWeight: 700, cursor: "pointer" }}
+      >
+        Reintentar
+      </button>
     </div>
   );
 }
@@ -2335,7 +2371,7 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
         <div className="pc-overlay" onClick={e => e.stopPropagation()}>
           <button
             onPointerDown={createRipple}
-            onClick={e => { e.stopPropagation(); handleAdd(); }}
+            onClick={handleAdd}
             disabled={product.stock === 0}
             style={{
               background: product.stock === 0 ? "rgba(255,255,255,0.3)" : added ? "rgba(45,122,79,0.9)" : "rgba(255,255,255,0.92)",
@@ -3042,7 +3078,7 @@ function CartDrawer({ cart, onClose, onRemove, onUpdateQty, onClearCart, user, c
           // El cupón viaja como código, nunca como porcentaje: el descuento lo
           // calcula el servidor tras comprobarlo. Así el total que cobra la
           // pasarela es de verdad el que ve el cliente.
-          couponCode: quickBuyProduct ? null : (appliedCoupon?.code ?? null),
+          couponCode: appliedCoupon?.code ?? null,
         }),
       });
       const data = await res.json();
@@ -3738,6 +3774,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   const isOwner = !!user && ADMIN_EMAILS.has(user.email);
   const imgs    = product.images?.length > 0 ? product.images : null;
   const savings = product.oldPrice ? product.oldPrice - product.price : 0;
+  const agotado = product.stock === 0;
 
   const handleImgTouchStart = (e) => {
     if (e.touches.length === 2) {
@@ -3815,6 +3852,7 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
   };
 
   const handleAdd = () => {
+    if (agotado) return;
     if (isMobile && !showQtyPicker) { setShowQtyPicker(true); setQtyPick(1); return; }
     for (let i = 0; i < qtyPick; i++) onAddToCart(product);
     setAdded(true);
@@ -4130,16 +4168,17 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
               {shared ? <Check size={15} /> : <Share2 size={15} />}
             </button>
             <button
-              onClick={() => { onBuyNow?.(product); onClose(); }}
+              onClick={() => { if (agotado) return; onBuyNow?.(product); onClose(); }}
+              disabled={agotado}
               style={{
                 flexShrink: 0, padding: "9px 18px", borderRadius: "20px", border: "none",
-                background: "linear-gradient(135deg, #16A34A, #15803D)",
+                background: agotado ? "#CBD5E1" : "linear-gradient(135deg, #16A34A, #15803D)",
                 color: "#fff", fontFamily: "var(--font-roboto), sans-serif",
-                fontSize: "13px", fontWeight: 700, cursor: "pointer",
-                boxShadow: "0 4px 14px rgba(22,163,74,0.35)",
+                fontSize: "13px", fontWeight: 700, cursor: agotado ? "not-allowed" : "pointer",
+                boxShadow: agotado ? "none" : "0 4px 14px rgba(22,163,74,0.35)",
               }}
             >
-              Pagar
+              {agotado ? "Agotado" : "Pagar"}
             </button>
           </div>
         )}
@@ -4365,14 +4404,15 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
 
           {/* ── Botón pagar contra entrega ── */}
           <button
-            onPointerDown={createRipple}
-            onClick={() => { onBuyNow?.(product); onClose(); }}
+            onPointerDown={agotado ? undefined : createRipple}
+            onClick={() => { if (agotado) return; onBuyNow?.(product); onClose(); }}
+            disabled={agotado}
             style={{
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
               width: "100%", padding: "16px 20px", borderRadius: "16px", border: "none",
-              background: "linear-gradient(135deg, #16A34A, #15803D)",
-              color: "#fff", cursor: "pointer", gap: "4px",
-              boxShadow: "0 8px 24px rgba(22,163,74,0.35)",
+              background: agotado ? "#CBD5E1" : "linear-gradient(135deg, #16A34A, #15803D)",
+              color: "#fff", cursor: agotado ? "not-allowed" : "pointer", gap: "4px",
+              boxShadow: agotado ? "none" : "0 8px 24px rgba(22,163,74,0.35)",
               transition: "transform 0.15s, box-shadow 0.15s",
               position: "relative", overflow: "hidden",
             }}
@@ -4381,10 +4421,10 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
           >
             <span style={{ display: "flex", alignItems: "center", gap: "10px", fontFamily: "var(--font-roboto), sans-serif", fontSize: "17px", fontWeight: 800, letterSpacing: "-0.2px" }}>
               <Truck size={22} strokeWidth={2.5} />
-              Pagar contra entrega
+              {agotado ? "Producto agotado" : "Pagar contra entrega"}
             </span>
             <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 400, opacity: 0.88 }}>
-              Recíbelo en casa · paga al llegar
+              {agotado ? "Escríbenos por WhatsApp y te avisamos cuando llegue" : "Recíbelo en casa · paga al llegar"}
             </span>
           </button>
 
@@ -4505,21 +4545,22 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
               </div>
             ) : (
               <button
-                onPointerDown={createRipple}
+                onPointerDown={agotado ? undefined : createRipple}
                 onClick={handleAdd}
+                disabled={agotado}
                 style={{
                   flex: 1, padding: "15px",
-                  background: added ? "#2D7A4F" : CORAL,
-                  color: "#fff", border: "none", borderRadius: "28px",
+                  background: agotado ? "#E0DAD3" : added ? "#2D7A4F" : CORAL,
+                  color: agotado ? "#9B948E" : "#fff", border: "none", borderRadius: "28px",
                   fontFamily: "var(--font-roboto), sans-serif", fontSize: "15px", fontWeight: 700,
-                  cursor: "pointer", transition: "background 0.25s ease",
+                  cursor: agotado ? "not-allowed" : "pointer", transition: "background 0.25s ease",
                   display: "flex", alignItems: "center", justifyContent: "center", gap: "9px",
-                  boxShadow: added ? "0 8px 24px rgba(45,122,79,0.35)" : "0 8px 24px rgba(37,99,235,0.35)",
+                  boxShadow: agotado ? "none" : added ? "0 8px 24px rgba(45,122,79,0.35)" : "0 8px 24px rgba(37,99,235,0.35)",
                   position: "relative", overflow: "hidden",
                 }}
               >
                 <ShoppingBag size={18} />
-                {added ? "✓ Añadido al carrito" : "Agregar al carrito"}
+                {agotado ? "Agotado" : added ? "✓ Añadido al carrito" : "Agregar al carrito"}
               </button>
             )}
           </div>
@@ -4961,7 +5002,12 @@ export default function App() {
   const [showCart, setShowCart]               = useState(false);
   const [quickBuyProduct, setQuickBuyProduct] = useState(null);
   const [menuOpen, setMenuOpen]               = useState(false);
-  const [wishlist, setWishlist]               = useState([]);
+  const [wishlist, setWishlist]               = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("sk_wishlist") || "[]");
+      return Array.isArray(saved) ? saved : [];
+    } catch { return []; }
+  });
   const [user, setUser]                       = useState(null);
   const [showPublish, setShowPublish]         = useState(false);
   const [showUncategorized, setShowUncategorized] = useState(false);
@@ -4969,6 +5015,7 @@ export default function App() {
   const [dbCoupons, setDbCoupons]             = useState([]);
   const [dbProducts, setDbProducts]           = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [productsError, setProductsError]     = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [editingProduct, setEditingProduct]   = useState(null);
   const [showScrollTop, setShowScrollTop]     = useState(false);
@@ -5110,6 +5157,11 @@ export default function App() {
     try { localStorage.setItem("sk_cart", JSON.stringify(cart)); } catch {}
   }, [cart]);
 
+  // Favoritos: antes vivían solo en memoria y se perdían al recargar la página.
+  useEffect(() => {
+    try { localStorage.setItem("sk_wishlist", JSON.stringify(wishlist)); } catch {}
+  }, [wishlist]);
+
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 400);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -5117,12 +5169,25 @@ export default function App() {
   }, []);
 
   const fetchProducts = async () => {
-    const { data } = await supabase
-      .from("products")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setDbProducts(data ?? []);
-    setLoadingProducts(false);
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setDbProducts(data ?? []);
+      setProductsError(false);
+      setCart(prev => sincronizarCarrito(prev, data ?? []));
+    } catch (error) {
+      // Se deja lo que ya hubiera en pantalla y se avisa. Antes un fallo aquí
+      // mostraba los 6 productos de ejemplo del código, con precios inventados,
+      // y el cliente podía pedirlos por WhatsApp; y si la red se caía del todo,
+      // la página se quedaba cargando para siempre.
+      console.error("No se pudieron cargar los productos:", error);
+      setProductsError(true);
+    } finally {
+      setLoadingProducts(false);
+    }
   };
 
   const fetchCoupons = async () => {
@@ -5189,7 +5254,7 @@ export default function App() {
         user_id:        p.user_id,
         created_at:     p.created_at,
       }))
-    : PRODUCTS;
+    : [];
 
   const priceMinN = priceMin ? parseInt(priceMin, 10) : null;
   const priceMaxN = priceMax ? parseInt(priceMax, 10) : null;
@@ -5298,6 +5363,9 @@ export default function App() {
   };
 
   const handleAddToCart = (product, fromEl = null) => {
+    // Un producto agotado no entra al carrito venga de donde venga el clic: las
+    // tarjetas bloqueaban el botón, pero la ficha del producto no.
+    if (product.stock === 0) return;
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
@@ -5590,6 +5658,9 @@ export default function App() {
           display: flex; align-items: center; justify-content: center; gap: 6px;
           pointer-events: none;
         }
+        /* El degradado deja pasar el clic a la tarjeta, pero los botones sí
+           tienen que recibirlo: sin esto "Añadir" abría la ficha del producto. */
+        .pc-overlay button { pointer-events: auto; }
         @media (max-width: 800px) {
           .pc-overlay { display: none !important; }
         }
@@ -5938,7 +6009,7 @@ export default function App() {
         <Hero onShop={() => document.getElementById("productos")?.scrollIntoView({ behavior: "smooth" })} stats={heroStats} />
 
         <ProductCarousel
-          products={dbProducts.map(p => ({ id: p.id, name: p.name, badge: p.badge, images: p.images ?? [], color: null, emoji: p.emoji }))}
+          products={dbProducts.filter(p => p.is_active !== false).map(p => ({ id: p.id, name: p.name, badge: p.badge, images: p.images ?? [], color: null, emoji: p.emoji }))}
           onSelect={p => setSelectedProduct(displayProducts.find(dp => dp.id === p.id) ?? p)}
         />
 
@@ -5998,7 +6069,7 @@ export default function App() {
               </p>
               <h2 className="catalog-title" style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "30px", fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.5px" }}>
                 {searchQuery.trim()
-                  ? <>Resultados para <span style={{ color: CORAL }}>"{searchQuery.trim()}"</span></>
+                  ? <>Resultados para <span style={{ color: CORAL }}>&ldquo;{searchQuery.trim()}&rdquo;</span></>
                   : activeCategory === "ofertas"   ? <><span style={{ color: CORAL }}>🔥</span> Ofertas especiales</>
                   : activeCategory === "inactivos" ? <><span style={{ color: "#EA580C" }}>⏸</span> Productos inactivos</>
                   : activeCategory === "all" ? "Todos los productos" : ALL_CATEGORIES.find(c => c.id === activeCategory)?.label
@@ -6199,6 +6270,8 @@ export default function App() {
                 <ProductCardSkeleton key={i} />
               ))}
             </div>
+          ) : productsError && dbProducts.length === 0 ? (
+            <ProductsLoadError onRetry={() => { setLoadingProducts(true); fetchProducts(); }} />
           ) : sortedProducts.length === 0 ? (
             <EmptyState category={activeCategory} searchQuery={searchQuery} />
           ) : viewMode === "list" ? (
