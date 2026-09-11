@@ -46,7 +46,8 @@ export async function GET(request) {
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    // En Vercel la variable se llama SUPABASE_SERVICE_KEY; en local, _ROLE_KEY.
+    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_KEY,
     { auth: { persistSession: false } }
   );
 
