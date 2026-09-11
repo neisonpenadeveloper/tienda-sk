@@ -12,7 +12,7 @@ async function getProduct(id: string) {
   if (!UUID_RE.test(id)) return null;
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/products?id=eq.${id}&select=name,price,images&is_active=eq.true&limit=1`,
+      `${SUPABASE_URL}/rest/v1/products?id=eq.${id}&select=name,price,images,category&is_active=eq.true&limit=1`,
       { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
     );
     const [p] = await res.json();
@@ -51,7 +51,10 @@ export default async function OGImage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const product = await getProduct(id);
+  const encontrado = await getProduct(id);
+  // Los productos del Sex Shop se comparten con una imagen genérica de la
+  // tienda: sin foto, nombre ni precio en la vista previa.
+  const product = encontrado?.category === "adultos" ? null : encontrado;
 
   let imgSrc: string | null = null;
   const rawImgUrl: string | undefined = Array.isArray(product?.images)

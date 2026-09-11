@@ -9,7 +9,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 async function getProduct(id: string) {
   if (!UUID_RE.test(id)) return null;
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/products?id=eq.${id}&select=name,description,price,images&is_active=eq.true&limit=1`,
+    `${SUPABASE_URL}/rest/v1/products?id=eq.${id}&select=name,description,price,images,category&is_active=eq.true&limit=1`,
     {
       headers: {
         apikey: SUPABASE_KEY,
@@ -37,10 +37,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const product = await getProduct(id);
 
-  if (!product) {
+  // Los productos del Sex Shop no enseñan nombre ni precio en la vista previa
+  // de WhatsApp ni se indexan: el enlace se ve como uno más de la tienda.
+  if (!product || product.category === "adultos") {
     return {
       title: "Producto | Tienda S&K",
       description: "Descubre productos en Tienda S&K",
+      robots: { index: false },
     };
   }
 
