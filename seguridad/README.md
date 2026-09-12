@@ -74,6 +74,17 @@ coincide con el del pedido, no se marca como pagado: queda en `revisar`.
 - **Se podía enumerar el contenido del bucket de imágenes.** Las fotos siguen
   viéndose (un bucket público las sirve por su URL), pero ya no se puede pedir
   la lista de lo que hay dentro.
+
+  **Corrección del 2026-09-11: esto NO quedó arreglado a la primera.** Al
+  aplicar `politicas.sql` se cerraron los pedidos y los cupones, pero un
+  desconocido seguía enumerando **171 archivos en 3 carpetas**, entre ellos las
+  fotos de los 2 productos en borrador (uno de la sección de adultos, que se
+  mantiene discreta a propósito). La causa: el script borraba solo las
+  políticas cuyo nombre contenía `product-images`, y la que abre el bucket la
+  crea el panel de Supabase con otro nombre. Peor aún, la consulta de
+  comprobación filtraba por ese mismo patrón, así que el agujero tampoco salía
+  al verificar y todo parecía correcto. Ambas cosas están arregladas en
+  `politicas.sql`; hay que **volver a ejecutarlo** para cerrarlo.
 - **Sin freno de peticiones.** Se podían crear pedidos en bucle. Ahora hay un
   límite por IP en `/api/checkout` y `/api/coupon`.
 - **Cupones escritos en el código** (`BIENVENIDO`, `SK15`, `PROMO20`): viajaban

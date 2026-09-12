@@ -129,13 +129,26 @@ create policy "el administrador gestiona los cupones"
 --  reglas—, pero ya no se puede pedir la lista de lo que hay dentro.
 -- ────────────────────────────────────────────────────────────────────────────
 
+-- Se borran TODAS las políticas de storage.objects, no solo las que llevan
+-- "product-images" en el nombre.
+--
+-- Por qué: la primera versión filtraba por nombre y, al aplicarla el
+-- 2026-09-11, el agujero SIGUIÓ ABIERTO — un desconocido enumeraba 171
+-- archivos en 3 carpetas. La política que lo permite la crea el panel de
+-- Supabase al marcar el bucket como público, y se llama de otra forma
+-- ("Public Access" o parecido), así que el filtro nunca la tocaba.
+-- Filtrar por nombre es frágil: no se puede adivinar cómo llamó otro a su
+-- política.
+--
+-- Es seguro borrarlas todas porque este proyecto tiene UN SOLO bucket
+-- (`product-images`; comprobado el 2026-09-11). Si algún día se añade otro,
+-- revisar esto ANTES de ejecutarlo: lo dejaría sin reglas.
 do $$
 declare politica record;
 begin
   for politica in
     select policyname from pg_policies
     where schemaname = 'storage' and tablename = 'objects'
-      and policyname like '%product-images%'
   loop
     execute format('drop policy %I on storage.objects', politica.policyname);
   end loop;
@@ -155,8 +168,14 @@ create policy "product-images: el administrador gestiona los archivos"
 --  Al terminar deberías ver una fila por cada política de la lista de abajo.
 -- ────────────────────────────────────────────────────────────────────────────
 
+-- Ojo: aquí NO se filtra por nombre de política.
+-- Antes ponía `policyname like '%product-images%'` y eso escondía justo el
+-- problema: una política ajena que dejaba enumerar el bucket no salía en la
+-- comprobación, así que parecía que todo había quedado bien. Se listan todas
+-- las de storage.objects; si aparece alguna que no sea la del administrador,
+-- ese es el agujero.
 select schemaname, tablename, policyname, cmd, roles
 from pg_policies
 where (schemaname = 'public' and tablename in ('orders', 'coupons', 'products'))
-   or (schemaname = 'storage' and policyname like '%product-images%')
+   or (schemaname = 'storage' and tablename = 'objects')
 order by tablename, policyname;
