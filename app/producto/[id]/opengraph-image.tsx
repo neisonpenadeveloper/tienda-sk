@@ -30,19 +30,28 @@ function fmt(n: number) {
   }).format(n);
 }
 
-function toDataUrl(buf: ArrayBuffer): string {
-  const bytes = new Uint8Array(buf);
-  const isWebP =
-    bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[8] === 0x57 && bytes[9] === 0x45;
-  const isPNG = bytes[0] === 0x89 && bytes[1] === 0x50;
-  const mime = isWebP ? "image/webp" : isPNG ? "image/png" : "image/jpeg";
-  // Convert to base64 in chunks to avoid call stack limits
-  let b64 = "";
-  const chunk = 8192;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    b64 += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  return `data:${mime};base64,${btoa(b64)}`;
+/**
+ * Convierte la URL pública de una foto en la de Supabase Image Transformation.
+ *
+ * Hace falta porque Satori —el motor detrás de ImageResponse— NO sabe
+ * decodificar WebP, y muchísimas fotos de la tienda lo son: el bot optimiza a
+ * WebP al publicar, y varias subidas a mano son WebP con nombre `.png`, así que
+ * la extensión no sirve para detectarlas. Con una foto WebP dentro, la imagen
+ * salía VACÍA (HTTP 200 pero 0 bytes) y WhatsApp no enseñaba nada.
+ * Medido el 2026-09-11: 23 de 37 productos activos estaban así.
+ *
+ * La ruta `render/image/public` entrega JPEG cuando el original es WebP, y deja
+ * igual los PNG y JPEG, que a Satori ya le sirven. Comprobado contra la tienda
+ * real: 4/4 WebP salieron JPEG y 5/5 de los que ya funcionaban siguieron bien.
+ *
+ * Ojo si se cambia: `format=jpeg` NO existe, Supabase responde 400. Lo único
+ * que decide el formato de salida es el del original.
+ */
+function urlLegiblePorSatori(url: string): string {
+  return (
+    url.replace("/object/public/", "/render/image/public/") +
+    "?width=630&height=630&resize=cover"
+  );
 }
 
 export default async function OGImage({
@@ -56,16 +65,30 @@ export default async function OGImage({
   // tienda: sin foto, nombre ni precio en la vista previa.
   const product = encontrado?.category === "adultos" ? null : encontrado;
 
-  let imgSrc: string | null = null;
+  // Se pasa el ArrayBuffer tal cual, sin base64: Satori tiene un presupuesto de
+  // 500 KB para TODO (JSX, fuentes e imagenes) y el base64 infla un 33%. Una de
+  // las fotos PNG de la tienda pesa 315 KB, que en base64 serian ~432 KB: al
+  // borde. Crudo cabe de sobra.
+  let imgSrc: ArrayBuffer | null = null;
   const rawImgUrl: string | undefined = Array.isArray(product?.images)
     ? product.images[0]
     : undefined;
 
   if (rawImgUrl) {
     try {
-      const r = await fetch(rawImgUrl);
-      const buf = await r.arrayBuffer();
-      imgSrc = toDataUrl(buf);
+      const r = await fetch(urlLegiblePorSatori(rawImgUrl));
+      if (r.ok) {
+        const buf = await r.arrayBuffer();
+
+        // Ultima red de seguridad: si aun asi no llega un PNG o un JPEG, la
+        // tarjeta se publica SIN foto. Vale mas una imagen con el nombre y el
+        // precio que los 0 bytes que devolvia antes, que en WhatsApp se ven
+        // igual que un enlace sin vista previa.
+        const b = new Uint8Array(buf.slice(0, 4));
+        const esPng = b[0] === 0x89 && b[1] === 0x50;
+        const esJpeg = b[0] === 0xff && b[1] === 0xd8;
+        if (esPng || esJpeg) imgSrc = buf;
+      }
     } catch {
       /* sin imagen */
     }
@@ -84,7 +107,9 @@ export default async function OGImage({
         {imgSrc && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={imgSrc}
+            // Satori acepta un ArrayBuffer aqui en tiempo de ejecucion; el tipo
+            // de HTML solo admite string, de ahi la conversion.
+            src={imgSrc as unknown as string}
             style={{ width: 630, height: 630, objectFit: "cover", flexShrink: 0 }}
             alt=""
           />

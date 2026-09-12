@@ -3980,10 +3980,32 @@ function ProductModal({ product, wishlisted, onWishlist, onAddToCart, onClose, u
         if (!jpeg) throw new Error("toBlob-null");
 
         const file = new File([jpeg], "producto.jpg", { type: "image/jpeg" });
-        await navigator.share({ files: [file] });
-        return;
+
+        // Se manda tambien el texto, aunque WhatsApp suele ignorarlo cuando el
+        // envio lleva un archivo: otras apps (Telegram, correo, notas) si lo
+        // respetan, y no cuesta nada. Por eso ademas se copia el enlace al
+        // portapapeles y se avisa con el toast: en WhatsApp el nombre, el
+        // precio y la direccion van DIBUJADOS dentro de la imagen (arriba), y
+        // el enlace pegable queda a un toque.
+        if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], text: caption });
+
+          try {
+            await navigator.clipboard?.writeText(caption);
+            setShareToast(true);
+            setTimeout(() => setShareToast(false), 2600);
+          } catch { /* sin portapapeles: el usuario ya tiene la imagen */ }
+
+          setShared(true);
+          setTimeout(() => setShared(false), 2200);
+          return;
+        }
       } catch (e) {
         if (e?.name === "AbortError") return;
+        // No se traga el fallo en silencio: sin esto, cualquier error aqui
+        // dejaba al usuario con un texto pelado y sin ninguna pista de por que
+        // no salio la foto.
+        console.warn("[compartir] no se pudo enviar la imagen:", e);
       }
     }
 
