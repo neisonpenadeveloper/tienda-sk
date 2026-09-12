@@ -2426,8 +2426,24 @@ function ProductCard({ product, onAddToCart, wishlisted, onWishlist, onSelect, u
       style={{ background: "#fff", borderRadius: "18px", overflow: "hidden", border: longPressActive ? `2px solid ${CORAL}` : "1px solid #EDE8E2", transition: "border 0.15s", transform: longPressActive ? "scale(0.97)" : "scale(1)" }}
     >
       <div className="pc-img-wrap" style={{ background: product.images?.length > 0 ? "#F5F0EA" : (product.color || "#F5F0EA"), height: "210px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", fontSize: "64px", overflow: "hidden" }}>
+        {/*
+          OJO: abajo, cuando la imagen ya cargo, el filtro se deja en
+          `undefined`, NO en "none". React omite las propiedades undefined, y
+          esa diferencia es justo lo que arregla el modo oscuro.
+
+          El modo oscuro de la tienda invierte la pagina entera
+          (`.dark { filter: invert(1) hue-rotate(180deg) }`) y despues vuelve a
+          invertir imagenes y videos para devolverlos a su color. Un
+          `filter: "none"` en linea le ganaba a esa regla de la hoja de estilos,
+          asi que las fotos se quedaban invertidas: se veian lavadas y
+          translucidas mientras el resto de la pagina si se oscurecia.
+
+          Comprobado en produccion el 2026-09-12: con el estilo en linea el
+          valor calculado era `none`; sin el, `invert(1) hue-rotate(180deg)`.
+          El desenfoque de carga se conserva, que es para lo que estaba.
+        */}
         {product.images?.length > 0 ? (
-          <Image src={product.images[0]} alt={product.name} fill className="pc-img" style={{ objectFit: "contain", filter: imgLoaded ? "none" : "blur(8px)", transition: "filter 0.4s ease" }} sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 25vw" onLoad={() => setImgLoaded(true)} />
+          <Image src={product.images[0]} alt={product.name} fill className="pc-img" style={{ objectFit: "contain", filter: imgLoaded ? undefined : "blur(8px)", transition: "filter 0.4s ease" }} sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 25vw" onLoad={() => setImgLoaded(true)} />
         ) : (
           <span style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.12))", transition: "transform 0.5s ease" }}>{product.emoji}</span>
         )}
