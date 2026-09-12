@@ -965,7 +965,11 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
 
           {/* Logo */}
           <div className="nav-logo-wrap flex items-center flex-shrink-0" style={{ height: "52px" }}>
-            <img src="/header-logo.png" alt="Tienda S&K" className="nav-logo" style={{ height: "52px", width: "auto" }} />
+            {/* 208x104: el DOBLE de los 52px a los que se dibuja, que es lo que
+                necesita una pantalla retina. El archivo anterior era de
+                1774x887 y pesaba 749 KB — el 40% del peso de la pagina en
+                movil— para verse exactamente igual. Este pesa 7 KB. */}
+            <img src="/header-logo@2x.png" alt="Tienda S&K" className="nav-logo" style={{ height: "52px", width: "auto" }} />
           </div>
 
           {/* Buscador móvil — abre overlay full-screen */}
@@ -979,8 +983,12 @@ function Navbar({ cartCount, cartBounce, menuOpen, setMenuOpen, activeCategory, 
               cursor: "pointer", transition: "border-color 0.2s",
             }}
           >
-            <Search size={14} color={searchQuery ? CORAL : "#9B948E"} style={{ flexShrink: 0 }} />
-            <span style={{ flex: 1, fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: searchQuery ? "#1A1A1A" : "#9B948E", textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {/* Gris #6B6560 y no #9B948E: medido sobre el fondo #F0F4FF de esta
+                caja, el claro daba 2.72:1 de contraste, muy por debajo del
+                minimo legible de 4.5:1. Es el buscador, lo primero que toca
+                alguien que ya sabe lo que quiere; tiene que leerse. */}
+            <Search size={14} color={searchQuery ? CORAL : "#6B6560"} style={{ flexShrink: 0 }} />
+            <span style={{ flex: 1, fontFamily: "var(--font-roboto), sans-serif", fontSize: "14px", color: searchQuery ? "#1A1A1A" : "#6B6560", textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {searchQuery || "Buscar..."}
             </span>
             {searchQuery && (
@@ -1447,7 +1455,10 @@ function Hero({ onShop, stats }) {
     return (
       <section style={{
         background: "linear-gradient(145deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)",
-        padding: "32px 20px 36px",
+        // Margenes ajustados para que asome la primera fila de productos sin
+        // hacer scroll. Medido: el hero ocupaba 730px de los 844 de un movil,
+        // asi que el cliente veia la portada entera sin un solo producto.
+        padding: "20px 20px 24px",
         position: "relative",
         overflow: "hidden",
       }}>
@@ -1456,7 +1467,7 @@ function Hero({ onShop, stats }) {
 
         <div style={{ position: "relative", zIndex: 1 }}>
           {/* Badge */}
-          <div style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: "20px", padding: "5px 14px", marginBottom: "18px" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: "20px", padding: "5px 14px", marginBottom: "12px" }}>
             <span className="pulse-dot" style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#4ADE80", display: "inline-block" }} />
             <span style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.88)" }}>
               🛵 Paga al recibir · A todo Colombia
@@ -1464,7 +1475,7 @@ function Hero({ onShop, stats }) {
           </div>
 
           {/* Título grande */}
-          <h1 style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "40px", fontWeight: 900, color: "#fff", letterSpacing: "-1.5px", lineHeight: 1.1, margin: "0 0 8px" }}>
+          <h1 style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "36px", fontWeight: 900, color: "#fff", letterSpacing: "-1.5px", lineHeight: 1.05, margin: "0 0 6px" }}>
             Date ese{" "}
             <span style={{ background: "linear-gradient(135deg, #93C5FD, #60A5FA)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
               gusto
@@ -1473,10 +1484,13 @@ function Hero({ onShop, stats }) {
           <p style={{ fontFamily: "var(--font-roboto), sans-serif", fontSize: "18px", fontWeight: 700, color: "rgba(255,255,255,0.75)", margin: "0 0 10px", letterSpacing: "-0.3px" }}>
             que mereces
           </p>
+          {/* Roboto en vez de Poppins: Poppins se cargaba entera (una familia
+              de Google Fonts mas en cada visita movil) para DOS textos de la
+              portada. Roboto ya esta cargada y a este tamano no se distingue. */}
           <p style={{
-            fontFamily: "var(--font-poppins), sans-serif",
+            fontFamily: "var(--font-roboto), sans-serif",
             fontSize: "16px", fontWeight: 400,
-            color: "rgba(255,255,255,0.65)", margin: "0 0 24px",
+            color: "rgba(255,255,255,0.65)", margin: "0 0 16px",
             letterSpacing: "0.2px", lineHeight: 1.5,
           }}>
             nosotros te lo llevamos
@@ -1571,10 +1585,13 @@ function Hero({ onShop, stats }) {
             </span>
             {" "}que mereces
           </h1>
+          {/* Igual que en el hero movil: Roboto en lugar de Poppins. El gris
+              sube a #6B6560 porque #9B948E sobre este fondo crema da 2.7:1 de
+              contraste, por debajo del minimo legible de 4.5:1. */}
           <p style={{
-            fontFamily: "var(--font-poppins), sans-serif",
+            fontFamily: "var(--font-roboto), sans-serif",
             fontSize: "clamp(13px, 1.4vw, 16px)", fontWeight: 400,
-            color: "#9B948E", margin: 0, letterSpacing: "0.2px",
+            color: "#6B6560", margin: 0, letterSpacing: "0.2px",
           }}>
             nosotros te lo llevamos
           </p>
@@ -2753,10 +2770,16 @@ function CarouselCard({ product, onSelect, cardWidth }) {
             background: "linear-gradient(to top, rgba(0,0,0,0.68) 0%, transparent 100%)",
             padding: "36px 14px 14px", zIndex: 2,
           }}>
+            {/* Dos lineas en vez de una. Con `nowrap` los nombres largos se
+                cortaban a media palabra sobre la foto ("RELOJ DELUXE HOM...",
+                "Cortador De Verduras..."), y el cliente no llegaba a saber que
+                producto era. La tarjeta de la cuadricula ya usaba dos lineas;
+                esta del carrusel se habia quedado atras. */}
             <p style={{
               fontFamily: F_UI, fontSize: "14px", fontWeight: 700,
-              color: "#fff", margin: 0, whiteSpace: "nowrap",
-              overflow: "hidden", textOverflow: "ellipsis",
+              color: "#fff", margin: 0, lineHeight: 1.25,
+              display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+              overflow: "hidden",
               textShadow: "0 1px 4px rgba(0,0,0,0.4)",
             }}>{product.name}</p>
           </div>
@@ -2860,7 +2883,10 @@ function ProductCarousel({ products, onSelect }) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px", marginBottom: "14px" }}>
           <button onClick={prev} className="carousel-nav-btn" style={{ width: "34px", height: "34px", borderRadius: "50%", border: `1.5px solid ${CORAL}`, background: "#fff", color: CORAL, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s", fontSize: "18px", fontWeight: 700, flexShrink: 0 }}>‹</button>
           <div style={{ textAlign: "center" }}>
-            <p style={{ fontFamily: F_UI, fontSize: "9px", color: "#9B948E", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", margin: "0 0 2px" }}>Selección especial</p>
+            {/* 9px en mayusculas y muy espaciado ya cuesta de leer; con el gris
+                claro daba 2.99:1 de contraste sobre blanco, por debajo del
+                minimo de 4.5:1. Mismo gris que usa el resto de la ficha. */}
+            <p style={{ fontFamily: F_UI, fontSize: "9px", color: "#6B6560", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", margin: "0 0 2px" }}>Selección especial</p>
             <h2 style={{ fontFamily: F_DISPLAY, fontSize: "16px", fontWeight: 600, color: "#1A1A1A", margin: 0, fontStyle: "italic" }}>Productos para ti ✨</h2>
           </div>
           <button onClick={next} className="carousel-nav-btn" style={{ width: "34px", height: "34px", borderRadius: "50%", border: "none", background: CORAL, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s", fontSize: "18px", fontWeight: 700, flexShrink: 0 }}>›</button>
@@ -6869,7 +6895,7 @@ export default function App({ zona = "tienda" }) {
             border: "1px solid #EDE8E2", animation: "slideUp 0.35s cubic-bezier(0.16,1,0.3,1)",
           }}>
             <div style={{ width: "46px", height: "46px", borderRadius: "12px", overflow: "hidden", flexShrink: 0, background: "#F0F4FF" }}>
-              <img src="/header-logo.png" alt="S&K" style={{ width: "100%", height: "100%", objectFit: "contain", padding: "4px" }} />
+              <img src="/header-logo@2x.png" alt="S&K" style={{ width: "100%", height: "100%", objectFit: "contain", padding: "4px" }} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ fontFamily: F_UI, fontSize: "13px", fontWeight: 700, color: "#1A1A1A", margin: "0 0 2px" }}>Instalar Tienda S&K</p>

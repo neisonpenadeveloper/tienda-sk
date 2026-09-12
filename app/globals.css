@@ -23,3 +23,26 @@ body {
   color: var(--foreground);
   font-family: var(--font-roboto), sans-serif;
 }
+
+/*
+ * Respeta a quien pide menos movimiento.
+ *
+ * La tienda tiene una veintena de animaciones (confeti, vuelo al carrito,
+ * brillos, marquesina). Para la mayoria son un gusto; para quien sufre mareo
+ * o migrana con el movimiento, o para un Android modesto, son un problema.
+ * El sistema operativo ya lo pregunta —"reducir movimiento" en ajustes de
+ * accesibilidad— y aqui simplemente se obedece.
+ *
+ * No se anula del todo (eso rompe animaciones que sirven de aviso): se dejan
+ * en 1ms, asi terminan al instante pero sus eventos siguen disparandose.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

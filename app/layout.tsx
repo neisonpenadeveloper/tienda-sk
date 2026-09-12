@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Roboto, Exo_2, Poppins, DM_Sans } from "next/font/google";
+import { Roboto, Exo_2 } from "next/font/google";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -16,23 +16,15 @@ const exo2 = Exo_2({
   display: "swap",
 });
 
-const poppins = Poppins({
-  variable: "--font-poppins",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  display: "swap",
-});
+// Poppins se retiro el 2026-09-12: se descargaba entera en cada visita para
+// DOS textos de la portada ("nosotros te lo llevamos", en el hero movil y en
+// el de escritorio). Ambos usan ya Roboto, que a ese tamano no se distingue.
+// Una familia menos que bajar en cada carga movil.
 
-// La usa la página de resultado del pago. Se carga aquí, con next/font, para
-// que Next la sirva desde el propio dominio: pedirla a fonts.googleapis.com
-// la bloquea la política de seguridad del sitio, y la página se quedaba con
-// una tipografía de repuesto.
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  display: "swap",
-});
+// DM Sans se movio el 2026-09-12 a app/checkout/result/layout.jsx, que es la
+// unica ruta que la usa. Aqui se descargaba en cada visita a la portada para
+// una pagina que solo se ve despues de pagar. Sigue auto-hospedada con
+// next/font, asi que la CSP la sigue permitiendo igual.
 
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL ?? "https://tiendasyk.store";
@@ -72,7 +64,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${roboto.variable} ${exo2.variable} ${poppins.variable} ${dmSans.variable} h-full antialiased`}
+      className={`${roboto.variable} ${exo2.variable} h-full antialiased`}
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
@@ -81,7 +73,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Tienda S&K" />
-        <link rel="apple-touch-icon" href="/header-logo.png" />
+        {/* 180x180, el tamano que pide iOS. Antes apuntaba a header-logo.png:
+            1774x887 y 749 KB para dibujarse como un icono de pantalla de
+            inicio. */}
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <script
           dangerouslySetInnerHTML={{
             __html: `if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); }); }`,

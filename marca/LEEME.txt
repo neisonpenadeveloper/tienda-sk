@@ -1,0 +1,19 @@
+ARCHIVOS MAESTROS DE LA MARCA
+=============================
+
+Estos son los originales en alta resolucion. NO se sirven al publico: viven
+fuera de public/ a proposito, para que no viajen al navegador de cada visitante.
+
+  logo.png                  1022 KB - logo completo, maxima resolucion
+  header-logo-original.png   750 KB - 1774x887, origen de todo lo demas
+
+De aqui salen los archivos que SI se publican, en public/:
+
+  header-logo@2x.png     208x104    7 KB   logo del encabezado (se ve a 52px)
+  apple-touch-icon.png   180x180    6 KB   icono de iOS
+  icon-192.png           192x192    7 KB   icono PWA
+  icon-512-maskable.png  512x512   35 KB   icono PWA grande
+
+Si algun dia cambias el logo, regenera esos cuatro desde el maestro. Antes se
+servia el de 750 KB para dibujarlo a 52 px de alto: el 40% del peso de la
+pagina en movil para que se viera exactamente igual.
